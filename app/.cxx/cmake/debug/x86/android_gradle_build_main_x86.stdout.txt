@@ -1,0 +1,3 @@
+ninja: Entering directory `C:\Users\andys\AndroidStudioProjects\mydreamland\app\.cxx\cmake\debug\x86'
+[1/2] Building CXX object CMakeFiles/main.dir/main.cpp.o
+[2/2] Linking CXX shared library C:\Users\andys\AndroidStudioProjects\mydreamland\app\build\intermediates\cmake\debug\obj\x86\libmain.so

@@ -1,0 +1,4 @@
+C:/Users/andys/AndroidStudioProjects/mydreamland/app/.cxx/cmake/release/armeabi-v7a/CMakeFiles/native_app_glue.dir
+C:/Users/andys/AndroidStudioProjects/mydreamland/app/.cxx/cmake/release/armeabi-v7a/CMakeFiles/edit_cache.dir
+C:/Users/andys/AndroidStudioProjects/mydreamland/app/.cxx/cmake/release/armeabi-v7a/CMakeFiles/main.dir
+C:/Users/andys/AndroidStudioProjects/mydreamland/app/.cxx/cmake/release/armeabi-v7a/CMakeFiles/rebuild_cache.dir

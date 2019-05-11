@@ -1,0 +1,7 @@
+# ninja log v5
+1	213	5792083827684502	CMakeFiles/main.dir/main.cpp.o	b8db578b0117b582
+7	231	5792083827834128	CMakeFiles/native_app_glue.dir/C_/Users/andys/AppData/Local/Android/Sdk/ndk-bundle/sources/android/native_app_glue/android_native_app_glue.c.o	3a8a05f7edb2a9ca
+232	397	5792083829629267	libnative_app_glue.a	e0e7e4100ccba19b
+398	528	5792083830855971	C:/Users/andys/AndroidStudioProjects/mydreamland/app/build/intermediates/cmake/debug/obj/x86_64/libmain.so	58a8206d371e3bac
+7	258	5792416046059273	CMakeFiles/main.dir/main.cpp.o	b8db578b0117b582
+259	558	5792416049071454	C:/Users/andys/AndroidStudioProjects/mydreamland/app/build/intermediates/cmake/debug/obj/x86_64/libmain.so	58a8206d371e3bac

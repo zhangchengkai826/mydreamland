@@ -1,0 +1,13 @@
+[
+{
+  "directory": "C:/Users/andys/AndroidStudioProjects/mydreamland/app/.cxx/cmake/debug/armeabi-v7a",
+  "command": "C:\\Users\\andys\\AppData\\Local\\Android\\Sdk\\ndk-bundle\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\clang.exe --target=armv7-none-linux-androideabi27 --gcc-toolchain=C:/Users/andys/AppData/Local/Android/Sdk/ndk-bundle/toolchains/llvm/prebuilt/windows-x86_64 --sysroot=C:/Users/andys/AppData/Local/Android/Sdk/ndk-bundle/toolchains/llvm/prebuilt/windows-x86_64/sysroot   -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -mfpu=vfpv3-d16 -fno-addrsig -march=armv7-a -mthumb -mfpu=neon -Wa,--noexecstack -Wformat -Werror=format-security  -O0 -fno-limit-debug-info  -fPIC   -o CMakeFiles\\native_app_glue.dir\\C_\\Users\\andys\\AppData\\Local\\Android\\Sdk\\ndk-bundle\\sources\\android\\native_app_glue\\android_native_app_glue.c.o   -c C:\\Users\\andys\\AppData\\Local\\Android\\Sdk\\ndk-bundle\\sources\\android\\native_app_glue\\android_native_app_glue.c",
+  "file": "C:\\Users\\andys\\AppData\\Local\\Android\\Sdk\\ndk-bundle\\sources\\android\\native_app_glue\\android_native_app_glue.c"
+},
+
+{
+  "directory": "C:/Users/andys/AndroidStudioProjects/mydreamland/app/.cxx/cmake/debug/armeabi-v7a",
+  "command": "C:\\Users\\andys\\AppData\\Local\\Android\\Sdk\\ndk-bundle\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\clang++.exe --target=armv7-none-linux-androideabi27 --gcc-toolchain=C:/Users/andys/AppData/Local/Android/Sdk/ndk-bundle/toolchains/llvm/prebuilt/windows-x86_64 --sysroot=C:/Users/andys/AppData/Local/Android/Sdk/ndk-bundle/toolchains/llvm/prebuilt/windows-x86_64/sysroot  -Dmain_EXPORTS -IC:/Users/andys/AppData/Local/Android/Sdk/ndk-bundle/sources/android/native_app_glue  -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -mfpu=vfpv3-d16 -fno-addrsig -march=armv7-a -mthumb -mfpu=neon -Wa,--noexecstack -Wformat -Werror=format-security -stdlib=libc++  -std=gnu++11 -Wall -Werror -O0 -fno-limit-debug-info  -fPIC   -o CMakeFiles\\main.dir\\main.cpp.o -c C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\src\\main\\cpp\\main.cpp",
+  "file": "C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\src\\main\\cpp\\main.cpp"
+}
+]

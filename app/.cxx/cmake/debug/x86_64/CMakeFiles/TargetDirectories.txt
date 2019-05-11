@@ -1,0 +1,4 @@
+C:/Users/andys/AndroidStudioProjects/mydreamland/app/.cxx/cmake/debug/x86_64/CMakeFiles/native_app_glue.dir
+C:/Users/andys/AndroidStudioProjects/mydreamland/app/.cxx/cmake/debug/x86_64/CMakeFiles/edit_cache.dir
+C:/Users/andys/AndroidStudioProjects/mydreamland/app/.cxx/cmake/debug/x86_64/CMakeFiles/main.dir
+C:/Users/andys/AndroidStudioProjects/mydreamland/app/.cxx/cmake/debug/x86_64/CMakeFiles/rebuild_cache.dir

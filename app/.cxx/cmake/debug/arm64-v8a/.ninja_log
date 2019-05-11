@@ -1,0 +1,13 @@
+# ninja log v5
+1	571	5792047347568418	CMakeFiles/native-lib.dir/native-lib.cpp.o	8fa8df4edadad650
+573	771	5792047349633162	C:/Users/andys/AndroidStudioProjects/mydreamland/app/build/intermediates/cmake/debug/obj/arm64-v8a/libnative-lib.so	798cf6c992daa53c
+1	102	5792064945176941	CMakeFiles/main.dir/main.cpp.o	1d0dbeb052da1934
+102	215	5792064946393686	C:/Users/andys/AndroidStudioProjects/mydreamland/app/build/intermediates/cmake/debug/obj/arm64-v8a/libmain.so	a01a213983169470
+1	228	5792083547515157	CMakeFiles/native_app_glue.dir/C_/Users/andys/AppData/Local/Android/Sdk/ndk-bundle/sources/android/native_app_glue/android_native_app_glue.c.o	66132e31e3a9fea2
+3	179	5792083818857834	libnative_app_glue.a	9a5a79841041b240
+9	187	5792083818828031	CMakeFiles/main.dir/main.cpp.o	8cb13aa31070d2ea
+188	292	5792083819965144	C:/Users/andys/AndroidStudioProjects/mydreamland/app/build/intermediates/cmake/debug/obj/arm64-v8a/libmain.so	4180ffa1c16de91
+4	174	5792084348304315	CMakeFiles/main.dir/main.cpp.o	8cb13aa31070d2ea
+174	271	5792084349431299	C:/Users/andys/AndroidStudioProjects/mydreamland/app/build/intermediates/cmake/debug/obj/arm64-v8a/libmain.so	4180ffa1c16de91
+8	303	5792416034939266	CMakeFiles/main.dir/main.cpp.o	8cb13aa31070d2ea
+304	543	5792416037402430	C:/Users/andys/AndroidStudioProjects/mydreamland/app/build/intermediates/cmake/debug/obj/arm64-v8a/libmain.so	4180ffa1c16de91

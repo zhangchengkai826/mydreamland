@@ -1,0 +1,72 @@
+{
+  "variant": {
+    "module": {
+      "rootBuildGradleFolder": "C:\\Users\\andys\\AndroidStudioProjects\\mydreamland",
+      "sdkFolder": "C:\\Users\\andys\\AppData\\Local\\Android\\Sdk",
+      "isNativeCompilerSettingsCacheEnabled": false,
+      "isBuildOnlyTargetAbiEnabled": true,
+      "splitsAbiFilterSet": [],
+      "intermediatesFolder": "C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\build\\intermediates",
+      "gradleModulePathName": ":app",
+      "moduleRootFolder": "C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app",
+      "makeFile": "C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\src\\main\\cpp\\CMakeLists.txt",
+      "buildSystem": "CMAKE",
+      "compilerSettingsCacheFolder": "C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\.cxx",
+      "cxxFolder": "C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\.cxx",
+      "ndkFolder": "C:\\Users\\andys\\AppData\\Local\\Android\\Sdk\\ndk-bundle",
+      "ndkVersion": "19.2.5345600",
+      "ndkSupportedAbiList": [
+        "ARMEABI_V7A",
+        "ARM64_V8A",
+        "X86",
+        "X86_64"
+      ],
+      "ndkDefaultAbiList": [
+        "ARMEABI_V7A",
+        "ARM64_V8A",
+        "X86",
+        "X86_64"
+      ],
+      "cmakeToolchainFile": "."
+    },
+    "buildSystemArgumentList": [],
+    "cFlagList": [],
+    "cppFlagsList": [
+      ""
+    ],
+    "variantName": "debug",
+    "soFolder": "C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\build\\intermediates\\cmake\\debug\\lib",
+    "objFolder": "C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\build\\intermediates\\cmake\\debug\\obj",
+    "jsonFolder": "C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\.cxx\\cmake\\debug",
+    "gradleBuildOutputFolder": "C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\.cxx\\cxx\\debug",
+    "isDebuggableEnabled": true,
+    "validAbiList": [
+      "ARMEABI_V7A",
+      "ARM64_V8A",
+      "X86",
+      "X86_64"
+    ],
+    "buildTargetSet": []
+  },
+  "abi": "X86",
+  "abiPlatformVersion": 27,
+  "cxxBuildFolder": "C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\.cxx\\cmake\\debug\\x86",
+  "jsonFile": "C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\.cxx\\cmake\\debug\\x86\\android_gradle_build.json",
+  "gradleBuildOutputFolder": "C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\.cxx\\cxx\\debug\\x86",
+  "objFolder": "C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\build\\intermediates\\cmake\\debug\\obj\\x86",
+  "buildCommandFile": "C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\.cxx\\cmake\\debug\\x86\\build_command.txt",
+  "buildOutputFile": "C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\.cxx\\cmake\\debug\\x86\\build_output.txt",
+  "modelOutputFile": "C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\.cxx\\cmake\\debug\\x86\\build_model.json",
+  "cmake": {
+    "cmakeListsWrapperFile": "C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\.cxx\\cxx\\debug\\x86\\CMakeLists.txt",
+    "toolchainWrapperFile": "C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\.cxx\\cxx\\debug\\x86\\android_gradle_build.toolchain.cmake",
+    "buildGenerationStateFile": "C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\.cxx\\cxx\\debug\\x86\\build_generation_state.json",
+    "cacheKeyFile": "C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\.cxx\\cxx\\debug\\x86\\compiler_cache_key.json",
+    "compilerCacheUseFile": "C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\.cxx\\cxx\\debug\\x86\\compiler_cache_use.json",
+    "compilerCacheWriteFile": "C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\.cxx\\cxx\\debug\\x86\\compiler_cache_write.json",
+    "toolchainSettingsFromCacheFile": "C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\.cxx\\cxx\\debug\\x86\\compiler_settings_cache.cmake",
+    "cmakeWrappingBaseFolder": "."
+  },
+  "jsonGenerationLoggingRecordFile": "C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\.cxx\\cmake\\debug\\x86\\json_generation_record.json",
+  "compileCommandsJsonFile": "C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\.cxx\\cmake\\debug\\x86\\compile_commands.json"
+}

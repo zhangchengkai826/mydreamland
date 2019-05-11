@@ -1,0 +1,25 @@
+{
+  "buildFiles": [
+    "C:\\Users\\andys\\AppData\\Local\\Android\\Sdk\\ndk-bundle\\build\\cmake\\platforms.cmake",
+    "C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\src\\main\\cpp\\CMakeLists.txt",
+    "C:\\Users\\andys\\AppData\\Local\\Android\\Sdk\\ndk-bundle\\build\\cmake\\android.toolchain.cmake"
+  ],
+  "cleanCommands": [
+    "ninja.exe -C \"C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\.cxx\\cmake\\release\\armeabi-v7a\" clean"
+  ],
+  "buildTargetsCommand": "ninja.exe -C \"C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\.cxx\\cmake\\release\\armeabi-v7a\" {LIST_OF_TARGETS_TO_BUILD}",
+  "libraries": {
+    "native_app_glue-Release-armeabi-v7a": {
+      "artifactName": "native_app_glue",
+      "buildCommand": "ninja.exe -C \"C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\.cxx\\cmake\\release\\armeabi-v7a\" native_app_glue",
+      "abi": "armeabi-v7a",
+      "output": "C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\.cxx\\cmake\\release\\armeabi-v7a\\libnative_app_glue.a"
+    },
+    "main-Release-armeabi-v7a": {
+      "artifactName": "main",
+      "buildCommand": "ninja.exe -C \"C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\.cxx\\cmake\\release\\armeabi-v7a\" main",
+      "abi": "armeabi-v7a",
+      "output": "C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\build\\intermediates\\cmake\\release\\obj\\armeabi-v7a\\libmain.so"
+    }
+  }
+}

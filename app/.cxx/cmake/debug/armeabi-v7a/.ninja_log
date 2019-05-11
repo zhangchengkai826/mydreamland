@@ -1,0 +1,15 @@
+# ninja log v5
+1	451	5792047354599615	CMakeFiles/native-lib.dir/native-lib.cpp.o	cb413d8cab9d3e4f
+454	579	5792047355955993	C:/Users/andys/AndroidStudioProjects/mydreamland/app/build/intermediates/cmake/debug/obj/armeabi-v7a/libnative-lib.so	6c8334720098dc0c
+1	96	5792064947869747	CMakeFiles/main.dir/main.cpp.o	232f438b6e960fce
+97	237	5792064949305898	C:/Users/andys/AndroidStudioProjects/mydreamland/app/build/intermediates/cmake/debug/obj/armeabi-v7a/libmain.so	fdbea7783451f58c
+10	97	5792072808582235	CMakeFiles/main.dir/main.cpp.o	f4a5393de2edf87c
+2	383	5792072811364569	CMakeFiles/native_app_glue.dir/C_/Users/andys/AppData/Local/Android/Sdk/ndk-bundle/sources/android/native_app_glue/android_native_app_glue.c.o	8d43b07557a6d203
+384	689	5792072814585950	libnative_app_glue.a	702d3abc82be84da
+4	90	5792079163659023	CMakeFiles/main.dir/main.cpp.o	f4a5393de2edf87c
+3	177	5792083815496833	CMakeFiles/main.dir/main.cpp.o	f4a5393de2edf87c
+177	281	5792083816603864	C:/Users/andys/AndroidStudioProjects/mydreamland/app/build/intermediates/cmake/debug/obj/armeabi-v7a/libmain.so	f894e42fc5b2f7a7
+4	165	5792084351396045	CMakeFiles/main.dir/main.cpp.o	f4a5393de2edf87c
+165	265	5792084352463191	C:/Users/andys/AndroidStudioProjects/mydreamland/app/build/intermediates/cmake/debug/obj/armeabi-v7a/libmain.so	f894e42fc5b2f7a7
+4	334	5792416028427662	CMakeFiles/main.dir/main.cpp.o	f4a5393de2edf87c
+335	635	5792416031458592	C:/Users/andys/AndroidStudioProjects/mydreamland/app/build/intermediates/cmake/debug/obj/armeabi-v7a/libmain.so	f894e42fc5b2f7a7
