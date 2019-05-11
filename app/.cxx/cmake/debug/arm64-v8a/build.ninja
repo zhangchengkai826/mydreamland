@@ -93,7 +93,7 @@ build CMakeFiles/main.dir/main.cpp.o: CXX_COMPILER__main C$:/Users/andys/Android
 build C$:/Users/andys/AndroidStudioProjects/mydreamland/app/build/intermediates/cmake/debug/obj/arm64-v8a/libmain.so: CXX_SHARED_LIBRARY_LINKER__main CMakeFiles/main.dir/main.cpp.o | libnative_app_glue.a C$:/Users/andys/AppData/Local/Android/Sdk/ndk-bundle/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/lib/aarch64-linux-android/27/liblog.so || libnative_app_glue.a
   LANGUAGE_COMPILE_FLAGS = -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -fno-addrsig -Wa,--noexecstack -Wformat -Werror=format-security -stdlib=libc++  -std=gnu++11 -Wall -Werror -O0 -fno-limit-debug-info
   LINK_FLAGS = -Wl,--exclude-libs,libgcc.a -Wl,--exclude-libs,libatomic.a -static-libstdc++ -Wl,--build-id -Wl,--warn-shared-textrel -Wl,--fatal-warnings -Wl,--no-undefined -Qunused-arguments -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now  -u ANativeActivity_onCreate
-  LINK_LIBRARIES = -landroid libnative_app_glue.a -llog -latomic -lm
+  LINK_LIBRARIES = -landroid libnative_app_glue.a -lvulkan -llog -latomic -lm
   OBJECT_DIR = CMakeFiles\main.dir
   POST_BUILD = cd .
   PRE_LINK = cd .

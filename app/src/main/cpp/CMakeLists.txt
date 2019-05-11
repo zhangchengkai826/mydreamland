@@ -54,4 +54,5 @@ target_link_libraries( # Specifies the target library.
                        # included in the NDK.
         android
         native_app_glue
+        vulkan
         ${log-lib} )
