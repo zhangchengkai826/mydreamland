@@ -231,7 +231,7 @@ Project_SOURCE_DIR:STATIC=C:/Users/andys/AndroidStudioProjects/mydreamland/app/s
 log-lib:FILEPATH=C:/Users/andys/AppData/Local/Android/Sdk/ndk-bundle/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/lib/x86_64-linux-android/27/liblog.so
 
 //Dependencies for the target
-main_LIB_DEPENDS:STATIC=general;android;general;native_app_glue;general;C:/Users/andys/AppData/Local/Android/Sdk/ndk-bundle/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/lib/x86_64-linux-android/27/liblog.so;
+main_LIB_DEPENDS:STATIC=general;android;general;native_app_glue;general;vulkan;general;C:/Users/andys/AppData/Local/Android/Sdk/ndk-bundle/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/lib/x86_64-linux-android/27/liblog.so;
 
 //Dependencies for the target
 native-lib_LIB_DEPENDS:STATIC=general;C:/Users/andys/AppData/Local/Android/Sdk/ndk-bundle/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/lib/x86_64-linux-android/27/liblog.so;

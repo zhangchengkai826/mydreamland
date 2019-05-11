@@ -5,35 +5,15 @@
   },
   {
     "level": "INFO",
-    "message": "rebuilding JSON C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\.cxx\\cmake\\debug\\arm64-v8a\\android_gradle_build.json due to:"
+    "message": "No CMake version was specified in build.gradle. Choosing a suitable version."
   },
   {
     "level": "INFO",
-    "message": "- a dependent build file changed"
+    "message": "- Found CMake \u00273.11.0\u0027 via cmake.dir\u003d\u0027C:\\Users\\andys\\software\\cmake-3.11.0-win64-x64\u0027."
   },
   {
     "level": "INFO",
-    "message": "  - C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\src\\main\\cpp\\CMakeLists.txt"
-  },
-  {
-    "level": "INFO",
-    "message": "keeping json folder \u0027C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\.cxx\\cmake\\debug\\arm64-v8a\u0027 but regenerating project"
-  },
-  {
-    "level": "INFO",
-    "message": "executing cmake Executable : C:\\Users\\andys\\software\\cmake-3.11.0-win64-x64\\bin\\cmake.exe\narguments : \n-HC:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\src\\main\\cpp\n-BC:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\.cxx\\cmake\\debug\\arm64-v8a\n-DANDROID_ABI\u003darm64-v8a\n-DANDROID_PLATFORM\u003dandroid-27\n-DCMAKE_LIBRARY_OUTPUT_DIRECTORY\u003dC:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\build\\intermediates\\cmake\\debug\\obj\\arm64-v8a\n-DCMAKE_BUILD_TYPE\u003dDebug\n-DANDROID_NDK\u003dC:\\Users\\andys\\AppData\\Local\\Android\\Sdk\\ndk-bundle\n-DCMAKE_CXX_FLAGS\u003d\n-DCMAKE_SYSTEM_NAME\u003dAndroid\n-DCMAKE_ANDROID_ARCH_ABI\u003darm64-v8a\n-DCMAKE_SYSTEM_VERSION\u003d27\n-DCMAKE_EXPORT_COMPILE_COMMANDS\u003dON\n-DCMAKE_ANDROID_NDK\u003dC:\\Users\\andys\\AppData\\Local\\Android\\Sdk\\ndk-bundle\n-DCMAKE_TOOLCHAIN_FILE\u003dC:\\Users\\andys\\AppData\\Local\\Android\\Sdk\\ndk-bundle\\build\\cmake\\android.toolchain.cmake\n-G Ninja\njvmArgs : \n\n"
-  },
-  {
-    "level": "INFO",
-    "message": "done executing cmake"
-  },
-  {
-    "level": "INFO",
-    "message": "write build output C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\.cxx\\cmake\\debug\\arm64-v8a\\build_output.txt"
-  },
-  {
-    "level": "INFO",
-    "message": "write command file C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\.cxx\\cmake\\debug\\arm64-v8a\\build_command.txt"
+    "message": "JSON \u0027C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\.cxx\\cmake\\debug\\arm64-v8a\\android_gradle_build.json\u0027 was up-to-date"
   },
   {
     "level": "INFO",

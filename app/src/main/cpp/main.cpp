@@ -24,6 +24,7 @@ struct engine {
     VkInstance vkInstance;
     VkSurfaceKHR vkSurface;
     VkPhysicalDevice vkGpu;
+    VkDevice vkDevice;
 };
 
 static int32_t engine_handle_input(struct android_app *app, AInputEvent *event) {
@@ -42,7 +43,7 @@ static int engine_init_display(struct engine *engine) {
     VkApplicationInfo appInfo = {
             .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
             .pNext = nullptr,
-            .apiVersion = VK_MAKE_VERSION(1, 0, 0),
+            .apiVersion = VK_MAKE_VERSION(1, 0, 66),
             .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
             .engineVersion = VK_MAKE_VERSION(1, 0, 0),
             .pApplicationName = "mydreamland",
@@ -85,9 +86,85 @@ static int engine_init_display(struct engine *engine) {
     vkEnumeratePhysicalDevices(engine->vkInstance, &gpuCount, tmpGpus);
     engine->vkGpu = tmpGpus[0];  // Pick up the first GPU Device
 
+    // check for vulkan info on this GPU device
+    VkPhysicalDeviceProperties gpuProperties;
+    vkGetPhysicalDeviceProperties(engine->vkGpu, &gpuProperties);
+    LOGI("Vulkan Physical Device Name: %s", gpuProperties.deviceName);
+    LOGI("Vulkan Physical Device Info: apiVersion: %x \n\t driverVersion: %x",
+         gpuProperties.apiVersion, gpuProperties.driverVersion);
+    LOGI("API Version Supported: %d.%d.%d",
+         VK_VERSION_MAJOR(gpuProperties.apiVersion),
+         VK_VERSION_MINOR(gpuProperties.apiVersion),
+         VK_VERSION_PATCH(gpuProperties.apiVersion));
 
+    VkSurfaceCapabilitiesKHR surfaceCapabilities;
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(engine->vkGpu, engine->vkSurface,
+                                              &surfaceCapabilities);
+
+    LOGI("Vulkan Surface Capabilities:\n");
+    LOGI("\timage count: %u - %u\n", surfaceCapabilities.minImageCount,
+         surfaceCapabilities.maxImageCount);
+    LOGI("\tarray layers: %u\n", surfaceCapabilities.maxImageArrayLayers);
+    LOGI("\timage size (now): %dx%d\n", surfaceCapabilities.currentExtent.width,
+         surfaceCapabilities.currentExtent.height);
+    LOGI("\timage size (extent): %dx%d - %dx%d\n",
+         surfaceCapabilities.minImageExtent.width,
+         surfaceCapabilities.minImageExtent.height,
+         surfaceCapabilities.maxImageExtent.width,
+         surfaceCapabilities.maxImageExtent.height);
+    LOGI("\tusage: %x\n", surfaceCapabilities.supportedUsageFlags);
+    LOGI("\tcurrent transform: %u\n", surfaceCapabilities.currentTransform);
+    LOGI("\tallowed transforms: %x\n", surfaceCapabilities.supportedTransforms);
+    LOGI("\tcomposite alpha flags: %u\n", surfaceCapabilities.currentTransform);
+
+    // Find a GFX queue family
+    uint32_t queueFamilyCount;
+    vkGetPhysicalDeviceQueueFamilyProperties(engine->vkGpu, &queueFamilyCount, nullptr);
+    assert(queueFamilyCount);
+    std::vector<VkQueueFamilyProperties> queueFamilyProperties(queueFamilyCount);
+    vkGetPhysicalDeviceQueueFamilyProperties(engine->vkGpu, &queueFamilyCount,
+                                             queueFamilyProperties.data());
+
+    uint32_t queueFamilyIndex;
+    for (queueFamilyIndex = 0; queueFamilyIndex < queueFamilyCount; queueFamilyIndex++) {
+        if (queueFamilyProperties[queueFamilyIndex].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            break;
+        }
+    }
+    assert(queueFamilyIndex < queueFamilyCount);
+
+    // Create a logical device from GPU we picked
+    float priorities[] = {
+            1.0f,
+    };
+    VkDeviceQueueCreateInfo queueCreateInfo{
+            .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = 0,
+            .queueCount = 1,
+            .queueFamilyIndex = queueFamilyIndex,
+            .pQueuePriorities = priorities,
+    };
+    VkDeviceCreateInfo deviceCreateInfo{
+            .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+            .pNext = nullptr,
+            .queueCreateInfoCount = 1,
+            .pQueueCreateInfos = &queueCreateInfo,
+            .enabledLayerCount = 0,
+            .ppEnabledLayerNames = nullptr,
+            .enabledExtensionCount = static_cast<uint32_t>(deviceExt.size()),
+            .ppEnabledExtensionNames = deviceExt.data(),
+            .pEnabledFeatures = nullptr,
+    };
+    vkCreateDevice(engine->vkGpu, &deviceCreateInfo, nullptr, &engine->vkDevice);
 
     return 0;
+}
+
+static void engine_term_display(struct engine *engine) {
+    vkDestroyDevice(engine->vkDevice, nullptr);
+    vkDestroySurfaceKHR(engine->vkInstance, engine->vkSurface, nullptr);
+    vkDestroyInstance(engine->vkInstance, nullptr);
 }
 
 static void engine_handle_cmd(struct android_app *app, int32_t cmd) {
@@ -106,7 +183,7 @@ static void engine_handle_cmd(struct android_app *app, int32_t cmd) {
             break;
         case APP_CMD_TERM_WINDOW:
             // The window is being hidden or closed, clean it up.
-            //engine_term_display(engine);
+            engine_term_display(engine);
             break;
         case APP_CMD_GAINED_FOCUS:
             break;

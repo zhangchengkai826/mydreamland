@@ -5,14 +5,6 @@
   },
   {
     "level": "INFO",
-    "message": "No CMake version was specified in build.gradle. Choosing a suitable version."
-  },
-  {
-    "level": "INFO",
-    "message": "- Found CMake \u00273.11.0\u0027 via cmake.dir\u003d\u0027C:\\Users\\andys\\software\\cmake-3.11.0-win64-x64\u0027."
-  },
-  {
-    "level": "INFO",
     "message": "rebuilding JSON C:\\Users\\andys\\AndroidStudioProjects\\mydreamland\\app\\.cxx\\cmake\\release\\x86\\android_gradle_build.json due to:"
   },
   {
