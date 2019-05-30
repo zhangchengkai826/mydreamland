@@ -1,7 +1,0 @@
-Executable : ninja.exe
-arguments : 
--C
-C:\Users\andys\AndroidStudioProjects\mydreamland\app\.cxx\cmake\debug\arm64-v8a
-main
-jvmArgs : 
-

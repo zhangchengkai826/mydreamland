@@ -10,21 +10,62 @@
 
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, "main", __VA_ARGS__)
 
+static bool g_b_debug = true;
+
+static VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
+        VkDebugReportFlagsEXT msgFlags,
+        VkDebugReportObjectTypeEXT objType,
+        uint64_t srcObject, size_t location,
+        int32_t msgCode, const char *pLayerPrefix,
+        const char *pMsg, void * pUserData )
+{
+    if (msgFlags & VK_DEBUG_REPORT_ERROR_BIT_EXT) {
+        __android_log_print(ANDROID_LOG_ERROR,
+                            "main",
+                            "ERROR: [%s] Code %i : %s",
+                            pLayerPrefix, msgCode, pMsg);
+    } else if (msgFlags & VK_DEBUG_REPORT_WARNING_BIT_EXT) {
+        __android_log_print(ANDROID_LOG_WARN,
+                            "main",
+                            "WARNING: [%s] Code %i : %s",
+                            pLayerPrefix, msgCode, pMsg);
+    } else if (msgFlags & VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT) {
+        __android_log_print(ANDROID_LOG_WARN,
+                            "main",
+                            "PERFORMANCE WARNING: [%s] Code %i : %s",
+                            pLayerPrefix, msgCode, pMsg);
+    } else if (msgFlags & VK_DEBUG_REPORT_INFORMATION_BIT_EXT) {
+        __android_log_print(ANDROID_LOG_INFO,
+                            "main", "INFO: [%s] Code %i : %s",
+                            pLayerPrefix, msgCode, pMsg);
+    } else if (msgFlags & VK_DEBUG_REPORT_DEBUG_BIT_EXT) {
+        __android_log_print(ANDROID_LOG_VERBOSE,
+                            "main", "DEBUG: [%s] Code %i : %s",
+                            pLayerPrefix, msgCode, pMsg);
+    }
+
+    // Returning false tells the layer not to stop when the event occurs, so
+    // they see the same behavior with and without validation layers enabled.
+    return VK_FALSE;
+}
+
 struct saved_state {
-    int32_t x;
-    int32_t y;
+    int32_t x = 0;
+    int32_t y = 0;
 };
 
 struct engine {
-    struct android_app *app;
+    struct android_app *app = nullptr;
 
-    int animating;
+    int animating = 0;
     struct saved_state state;
 
-    VkInstance vkInstance;
-    VkSurfaceKHR vkSurface;
-    VkPhysicalDevice vkGpu;
-    VkDevice vkDevice;
+    VkInstance vkInstance = VK_NULL_HANDLE;
+    VkDebugReportCallbackEXT vkDebugReportCallbackExt = VK_NULL_HANDLE;
+    VkSurfaceKHR vkSurface = VK_NULL_HANDLE;
+    VkPhysicalDevice vkGpu = VK_NULL_HANDLE;
+    VkDevice vkDevice = VK_NULL_HANDLE;
+    VkQueue vkQueue = VK_NULL_HANDLE;
 };
 
 static int32_t engine_handle_input(struct android_app *app, AInputEvent *event) {
@@ -40,6 +81,29 @@ static int32_t engine_handle_input(struct android_app *app, AInputEvent *event) 
 }
 
 static int engine_init_display(struct engine *engine) {
+    uint32_t extensionCount = 0;
+    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+    std::vector<VkExtensionProperties> extensions(extensionCount);
+    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
+    LOGI("Vulkan Available Extensions:\n");
+    for(const auto &extension: extensions) {
+        LOGI("\tExtension Name: %s\t\tVersion: %d\n", extension.extensionName,
+                extension.specVersion);
+    }
+
+    uint32_t layerCount = 0;
+    vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+    std::vector<VkLayerProperties> layers(layerCount);
+    std::vector<const char *> layerNames;
+    vkEnumerateInstanceLayerProperties(&layerCount, layers.data());
+    LOGI("Vulkan Available Layers:\n");
+    for(const auto &layer: layers) {
+        LOGI("\tLayer Name: %s\t\tSpec Version: %d\t\tImpl Version: %d\n\t\tDesc: %s\n",
+             layer.layerName, layer.specVersion, layer.implementationVersion,
+             layer.description);
+        layerNames.push_back(static_cast<const char *>(layer.layerName));
+    }
+
     VkApplicationInfo appInfo = {
             .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
             .pNext = nullptr,
@@ -54,6 +118,9 @@ static int engine_init_display(struct engine *engine) {
     std::vector<const char *> instanceExt, deviceExt;
     instanceExt.push_back("VK_KHR_surface");
     instanceExt.push_back("VK_KHR_android_surface");
+    if(g_b_debug && layerCount > 0) {
+        instanceExt.push_back("VK_EXT_debug_report");
+    }
     deviceExt.push_back("VK_KHR_swapchain");
 
     // Create the Vulkan instance
@@ -66,7 +133,30 @@ static int engine_init_display(struct engine *engine) {
             .enabledLayerCount = 0,
             .ppEnabledLayerNames = nullptr,
     };
+    if(g_b_debug && layerCount > 0) {
+        instanceCreateInfo.enabledLayerCount = layerCount;
+        instanceCreateInfo.ppEnabledLayerNames = layerNames.data();
+    }
     vkCreateInstance(&instanceCreateInfo, nullptr, &engine->vkInstance);
+
+    if(g_b_debug &&layerCount > 0) {
+        VkDebugReportCallbackCreateInfoEXT debugReportCallbackCreateInfo{
+            .sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT,
+            .pNext = nullptr,
+            .flags = VK_DEBUG_REPORT_ERROR_BIT_EXT |
+                    VK_DEBUG_REPORT_WARNING_BIT_EXT |
+                    VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT |
+                    VK_DEBUG_REPORT_INFORMATION_BIT_EXT |
+                    VK_DEBUG_REPORT_DEBUG_BIT_EXT,
+            .pfnCallback = DebugReportCallback,
+            .pUserData = nullptr
+        };
+        PFN_vkCreateDebugReportCallbackEXT vkCreateDebugReportCallbackExt;
+        vkCreateDebugReportCallbackExt = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(
+                engine->vkInstance, "vkCreateDebugReportCallbackEXT");
+        vkCreateDebugReportCallbackExt(engine->vkInstance, &debugReportCallbackCreateInfo, nullptr,
+                &engine->vkDebugReportCallbackExt);
+    }
 
     // if we create a surface, we need the surface extension
     VkAndroidSurfaceCreateInfoKHR createInfo{
@@ -82,6 +172,7 @@ static int engine_init_display(struct engine *engine) {
     // for this sample, we use the very first GPU device found on the system
     uint32_t gpuCount = 0;
     vkEnumeratePhysicalDevices(engine->vkInstance, &gpuCount, nullptr);
+    assert(gpuCount > 0);
     VkPhysicalDevice tmpGpus[gpuCount];
     vkEnumeratePhysicalDevices(engine->vkInstance, &gpuCount, tmpGpus);
     engine->vkGpu = tmpGpus[0];  // Pick up the first GPU Device
@@ -90,12 +181,22 @@ static int engine_init_display(struct engine *engine) {
     VkPhysicalDeviceProperties gpuProperties;
     vkGetPhysicalDeviceProperties(engine->vkGpu, &gpuProperties);
     LOGI("Vulkan Physical Device Name: %s", gpuProperties.deviceName);
+    LOGI("Vulkan Physical Device Id: %d", gpuProperties.deviceID);
+    // Vulkan Physical Device Type: VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU
+    LOGI("Vulkan Physical Device Type: %d", gpuProperties.deviceType);
+    LOGI("Vulkan Physical Device Vendor Id: %d", gpuProperties.vendorID);
     LOGI("Vulkan Physical Device Info: apiVersion: %x \n\t driverVersion: %x",
          gpuProperties.apiVersion, gpuProperties.driverVersion);
     LOGI("API Version Supported: %d.%d.%d",
          VK_VERSION_MAJOR(gpuProperties.apiVersion),
          VK_VERSION_MINOR(gpuProperties.apiVersion),
          VK_VERSION_PATCH(gpuProperties.apiVersion));
+
+    VkPhysicalDeviceFeatures gpuFeatures;
+    vkGetPhysicalDeviceFeatures(engine->vkGpu, &gpuFeatures);
+    LOGI("Vulkan Physical Device Support Tessellation Shader: %d", gpuFeatures.tessellationShader);
+    LOGI("Vulkan Physical Device Support Geometry Shader: %d", gpuFeatures.geometryShader);
+    LOGI("Vulkan Physical Device Support Index32: %d", gpuFeatures.fullDrawIndexUint32);
 
     VkSurfaceCapabilitiesKHR surfaceCapabilities;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(engine->vkGpu, engine->vkSurface,
@@ -115,7 +216,7 @@ static int engine_init_display(struct engine *engine) {
     LOGI("\tusage: %x\n", surfaceCapabilities.supportedUsageFlags);
     LOGI("\tcurrent transform: %u\n", surfaceCapabilities.currentTransform);
     LOGI("\tallowed transforms: %x\n", surfaceCapabilities.supportedTransforms);
-    LOGI("\tcomposite alpha flags: %u\n", surfaceCapabilities.currentTransform);
+    LOGI("\tcomposite alpha flags: %u\n", surfaceCapabilities.supportedCompositeAlpha);
 
     // Find a GFX queue family
     uint32_t queueFamilyCount;
@@ -154,9 +255,15 @@ static int engine_init_display(struct engine *engine) {
             .ppEnabledLayerNames = nullptr,
             .enabledExtensionCount = static_cast<uint32_t>(deviceExt.size()),
             .ppEnabledExtensionNames = deviceExt.data(),
-            .pEnabledFeatures = nullptr,
+            .pEnabledFeatures = &gpuFeatures,
     };
+    if(g_b_debug && layerCount > 0) {
+        deviceCreateInfo.enabledLayerCount = layerCount;
+        deviceCreateInfo.ppEnabledLayerNames = layerNames.data();
+    }
     vkCreateDevice(engine->vkGpu, &deviceCreateInfo, nullptr, &engine->vkDevice);
+
+    vkGetDeviceQueue(engine->vkDevice, queueFamilyIndex, 0, &engine->vkQueue);
 
     return 0;
 }
@@ -164,6 +271,12 @@ static int engine_init_display(struct engine *engine) {
 static void engine_term_display(struct engine *engine) {
     vkDestroyDevice(engine->vkDevice, nullptr);
     vkDestroySurfaceKHR(engine->vkInstance, engine->vkSurface, nullptr);
+
+    PFN_vkDestroyDebugReportCallbackEXT vkDestroyDebugReportCallbackEXT;
+    vkDestroyDebugReportCallbackEXT = (PFN_vkDestroyDebugReportCallbackEXT)
+            vkGetInstanceProcAddr(engine->vkInstance, "vkDestroyDebugReportCallbackEXT");
+    vkDestroyDebugReportCallbackEXT(engine->vkInstance, engine->vkDebugReportCallbackExt, nullptr);
+
     vkDestroyInstance(engine->vkInstance, nullptr);
 }
 
@@ -198,7 +311,7 @@ static void engine_handle_cmd(struct android_app *app, int32_t cmd) {
 
 void android_main(android_app *app)
 {
-    struct engine engine = {nullptr};
+    struct engine engine;
 
     app->userData = &engine;
     app->onAppCmd = engine_handle_cmd;
@@ -226,6 +339,7 @@ void android_main(android_app *app)
 
         if(engine.animating) {
             //engine_draw_frame(&engine);
+            engine.animating = 0;
         }
     }
 }
