@@ -66,6 +66,7 @@ struct engine {
     VkPhysicalDevice vkGpu = VK_NULL_HANDLE;
     VkDevice vkDevice = VK_NULL_HANDLE;
     VkQueue vkQueue = VK_NULL_HANDLE;
+    VkSwapchainKHR vkSwapchain = VK_NULL_HANDLE;
 };
 
 static int32_t engine_handle_input(struct android_app *app, AInputEvent *event) {
@@ -123,7 +124,7 @@ static int engine_init_display(struct engine *engine) {
     if(g_b_debug && layerCount > 0) {
         instanceExt.push_back("VK_EXT_debug_report");
     }
-    deviceExt.push_back("VK_EXT_swapchain_colorspace");
+    deviceExt.push_back("VK_KHR_swapchain");
 
     // create the Vulkan instance
     VkInstanceCreateInfo instanceCreateInfo{
@@ -162,12 +163,12 @@ static int engine_init_display(struct engine *engine) {
     }
 
     // if we create a surface, we need the surface extension
-    VkAndroidSurfaceCreateInfoKHR createInfo{
+    VkAndroidSurfaceCreateInfoKHR surfaceCreateInfoKhr{
             .sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR,
             .pNext = nullptr,
             .flags = 0,
             .window = engine->app->window};
-    vkCreateAndroidSurfaceKHR(engine->vkInstance, &createInfo, nullptr,
+    vkCreateAndroidSurfaceKHR(engine->vkInstance, &surfaceCreateInfoKhr, nullptr,
                                       &engine->vkSurface);
 
     // Find one GPU to use:
@@ -258,13 +259,13 @@ static int engine_init_display(struct engine *engine) {
     std::vector<VkSurfaceFormatKHR> formats(formatCount);
     vkGetPhysicalDeviceSurfaceFormatsKHR(engine->vkGpu, engine->vkSurface, &formatCount,
                                          formats.data());
-    VkSurfaceFormatKHR surfaceFormat = {VK_FORMAT_R8G8B8A8_UNORM,
+    VkSurfaceFormatKHR surfaceFormatChosen = {VK_FORMAT_R8G8B8A8_UNORM,
                                         VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
     bool b_formatSupport = false;
     LOGI("Vulkan Physical Device Supported Formats:\n");
     for(const auto &format: formats) {
-        if(format.format == surfaceFormat.format && format.colorSpace ==
-                                                    surfaceFormat.colorSpace) {
+        if(format.format == surfaceFormatChosen.format && format.colorSpace ==
+                                                    surfaceFormatChosen.colorSpace) {
             b_formatSupport = true;
         }
         if(format.format == VK_FORMAT_UNDEFINED) {
@@ -281,6 +282,16 @@ static int engine_init_display(struct engine *engine) {
     std::vector<VkPresentModeKHR> presentModes(presentModeCount);
     vkGetPhysicalDeviceSurfacePresentModesKHR(engine->vkGpu, engine->vkSurface, &presentModeCount,
                                               presentModes.data());
+    VkPresentModeKHR presentModeChosen = VK_PRESENT_MODE_FIFO_KHR;
+    bool b_presentModeSupport = false;
+    LOGI("Vulkan Physical Device Supported Present Modes:\n");
+    for(const auto &pm: presentModes) {
+        if(pm == presentModeChosen) {
+            b_presentModeSupport = true;
+        }
+        LOGI("\tPresent Mode: %d\n", pm);
+    }
+    assert(b_presentModeSupport);
 
     // Create a logical device from GPU we picked
     float priorities[] = {
@@ -314,10 +325,39 @@ static int engine_init_display(struct engine *engine) {
     // get queue from logical device
     vkGetDeviceQueue(engine->vkDevice, queueFamilyIndex, 0, &engine->vkQueue);
 
+    // create swap chain
+    assert(surfaceCapabilities.minImageCount > 1);
+    uint32_t imageCount = surfaceCapabilities.minImageCount;
+    if(imageCount + 1 <= surfaceCapabilities.maxImageCount) {
+        imageCount += 1;
+    }
+    VkSwapchainCreateInfoKHR swapchainCreateInfo{
+            .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
+            .pNext = nullptr,
+            .flags = 0,
+            .surface = engine->vkSurface,
+            .minImageCount = imageCount,
+            .imageFormat = surfaceFormatChosen.format,
+            .imageColorSpace = surfaceFormatChosen.colorSpace,
+            .imageExtent = surfaceCapabilities.currentExtent,
+            .imageArrayLayers = 1,
+            .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+            .imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
+            .queueFamilyIndexCount = 0,
+            .pQueueFamilyIndices = nullptr,
+            .preTransform = surfaceCapabilities.currentTransform,
+            .compositeAlpha = VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR,
+            .presentMode = presentModeChosen,
+            .clipped = VK_TRUE,
+            .oldSwapchain = VK_NULL_HANDLE,
+    };
+    vkCreateSwapchainKHR(engine->vkDevice, &swapchainCreateInfo, nullptr, &engine->vkSwapchain);
+
     return 0;
 }
 
 static void engine_term_display(struct engine *engine) {
+    vkDestroySwapchainKHR(engine->vkDevice, engine->vkSwapchain, nullptr);
     vkDestroyDevice(engine->vkDevice, nullptr);
     vkDestroySurfaceKHR(engine->vkInstance, engine->vkSurface, nullptr);
 
