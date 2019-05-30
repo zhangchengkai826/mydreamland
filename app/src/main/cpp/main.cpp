@@ -81,6 +81,7 @@ static int32_t engine_handle_input(struct android_app *app, AInputEvent *event) 
 }
 
 static int engine_init_display(struct engine *engine) {
+    // print available instance extensions
     uint32_t extensionCount = 0;
     vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
     std::vector<VkExtensionProperties> extensions(extensionCount);
@@ -91,6 +92,7 @@ static int engine_init_display(struct engine *engine) {
                 extension.specVersion);
     }
 
+    // print available layers
     uint32_t layerCount = 0;
     vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
     std::vector<VkLayerProperties> layers(layerCount);
@@ -121,9 +123,9 @@ static int engine_init_display(struct engine *engine) {
     if(g_b_debug && layerCount > 0) {
         instanceExt.push_back("VK_EXT_debug_report");
     }
-    deviceExt.push_back("VK_KHR_swapchain");
+    deviceExt.push_back("VK_EXT_swapchain_colorspace");
 
-    // Create the Vulkan instance
+    // create the Vulkan instance
     VkInstanceCreateInfo instanceCreateInfo{
             .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
             .pNext = nullptr,
@@ -139,6 +141,7 @@ static int engine_init_display(struct engine *engine) {
     }
     vkCreateInstance(&instanceCreateInfo, nullptr, &engine->vkInstance);
 
+    // create Vulkan Debug Report Callback
     if(g_b_debug &&layerCount > 0) {
         VkDebugReportCallbackCreateInfoEXT debugReportCallbackCreateInfo{
             .sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT,
@@ -168,7 +171,7 @@ static int engine_init_display(struct engine *engine) {
                                       &engine->vkSurface);
 
     // Find one GPU to use:
-    // On Android, every GPU device is equal -- supporting graphics/compute/present
+    // on Android, every GPU device is equal -- supporting graphics/compute/present
     // for this sample, we use the very first GPU device found on the system
     uint32_t gpuCount = 0;
     vkEnumeratePhysicalDevices(engine->vkInstance, &gpuCount, nullptr);
@@ -177,7 +180,7 @@ static int engine_init_display(struct engine *engine) {
     vkEnumeratePhysicalDevices(engine->vkInstance, &gpuCount, tmpGpus);
     engine->vkGpu = tmpGpus[0];  // Pick up the first GPU Device
 
-    // check for vulkan info on this GPU device
+    // check for Vulkan info on this GPU device
     VkPhysicalDeviceProperties gpuProperties;
     vkGetPhysicalDeviceProperties(engine->vkGpu, &gpuProperties);
     LOGI("Vulkan Physical Device Name: %s", gpuProperties.deviceName);
@@ -197,6 +200,16 @@ static int engine_init_display(struct engine *engine) {
     LOGI("Vulkan Physical Device Support Tessellation Shader: %d", gpuFeatures.tessellationShader);
     LOGI("Vulkan Physical Device Support Geometry Shader: %d", gpuFeatures.geometryShader);
     LOGI("Vulkan Physical Device Support Index32: %d", gpuFeatures.fullDrawIndexUint32);
+
+    uint32_t deviceExtensionCount = 0;
+    vkEnumerateDeviceExtensionProperties(engine->vkGpu, nullptr, &deviceExtensionCount, nullptr);
+    std::vector<VkExtensionProperties> deviceExtension(deviceExtensionCount);
+    vkEnumerateInstanceExtensionProperties(nullptr, &deviceExtensionCount, deviceExtension.data());
+    LOGI("Vulkan Physical Device Available Extensions:\n");
+    for(const auto &extension: deviceExtension) {
+        LOGI("\tExtension Name: %s\t\tVersion: %d\n", extension.extensionName,
+             extension.specVersion);
+    }
 
     VkSurfaceCapabilitiesKHR surfaceCapabilities;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(engine->vkGpu, engine->vkSurface,
@@ -218,7 +231,7 @@ static int engine_init_display(struct engine *engine) {
     LOGI("\tallowed transforms: %x\n", surfaceCapabilities.supportedTransforms);
     LOGI("\tcomposite alpha flags: %u\n", surfaceCapabilities.supportedCompositeAlpha);
 
-    // Find a GFX queue family
+    // Find the family index of a graphics queue family
     uint32_t queueFamilyCount;
     vkGetPhysicalDeviceQueueFamilyProperties(engine->vkGpu, &queueFamilyCount, nullptr);
     assert(queueFamilyCount);
@@ -233,6 +246,41 @@ static int engine_init_display(struct engine *engine) {
         }
     }
     assert(queueFamilyIndex < queueFamilyCount);
+
+    VkBool32 b_presentSupport = false;
+    vkGetPhysicalDeviceSurfaceSupportKHR(engine->vkGpu, queueFamilyIndex, engine->vkSurface,
+            &b_presentSupport);
+    assert(b_presentSupport);
+
+    uint32_t formatCount;
+    vkGetPhysicalDeviceSurfaceFormatsKHR(engine->vkGpu, engine->vkSurface, &formatCount, nullptr);
+    assert(formatCount > 0);
+    std::vector<VkSurfaceFormatKHR> formats(formatCount);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(engine->vkGpu, engine->vkSurface, &formatCount,
+                                         formats.data());
+    VkSurfaceFormatKHR surfaceFormat = {VK_FORMAT_R8G8B8A8_UNORM,
+                                        VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
+    bool b_formatSupport = false;
+    LOGI("Vulkan Physical Device Supported Formats:\n");
+    for(const auto &format: formats) {
+        if(format.format == surfaceFormat.format && format.colorSpace ==
+                                                    surfaceFormat.colorSpace) {
+            b_formatSupport = true;
+        }
+        if(format.format == VK_FORMAT_UNDEFINED) {
+            b_formatSupport = true;
+        }
+        LOGI("\tFormat: %d\tColor Space: %d\n", format.format, format.colorSpace);
+    }
+    assert(b_formatSupport);
+
+    uint32_t presentModeCount;
+    vkGetPhysicalDeviceSurfacePresentModesKHR(engine->vkGpu, engine->vkSurface, &presentModeCount,
+                                              nullptr);
+    assert(presentModeCount > 0);
+    std::vector<VkPresentModeKHR> presentModes(presentModeCount);
+    vkGetPhysicalDeviceSurfacePresentModesKHR(engine->vkGpu, engine->vkSurface, &presentModeCount,
+                                              presentModes.data());
 
     // Create a logical device from GPU we picked
     float priorities[] = {
@@ -263,6 +311,7 @@ static int engine_init_display(struct engine *engine) {
     }
     vkCreateDevice(engine->vkGpu, &deviceCreateInfo, nullptr, &engine->vkDevice);
 
+    // get queue from logical device
     vkGetDeviceQueue(engine->vkDevice, queueFamilyIndex, 0, &engine->vkQueue);
 
     return 0;
