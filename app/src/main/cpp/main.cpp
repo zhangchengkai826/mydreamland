@@ -507,6 +507,15 @@ static int engine_init_display(struct engine *engine) {
         .attachment = 0,
         .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
     };
+    VkSubpassDependency subpassDependency{
+        .srcSubpass = VK_SUBPASS_EXTERNAL,
+        .dstSubpass = 0,
+        .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        .srcAccessMask = 0,
+        .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+
+    };
     VkSubpassDescription subpassDescription{
         .flags = 0,
         .colorAttachmentCount = 1,
@@ -528,8 +537,8 @@ static int engine_init_display(struct engine *engine) {
         .pAttachments = &colorAttachment,
         .subpassCount = 1,
         .pSubpasses = &subpassDescription,
-        .dependencyCount = 0,
-        .pDependencies = nullptr,
+        .dependencyCount = 1,
+        .pDependencies = &subpassDependency,
     };
     vkCreateRenderPass(engine->vkDevice, &renderPassCreateInfo, nullptr, &engine->renderPass);
 
@@ -641,10 +650,62 @@ static int engine_init_display(struct engine *engine) {
         vkEndCommandBuffer(engine->commandBuffers[i]);
     }
 
+    // create semaphores
+    VkSemaphoreCreateInfo semaphoreCreateInfo{
+        .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+    };
+    vkCreateSemaphore(engine->vkDevice, &semaphoreCreateInfo, nullptr,
+            &engine->imageAvailableSemaphore);
+    vkCreateSemaphore(engine->vkDevice, &semaphoreCreateInfo, nullptr,
+            &engine->renderFinishedSemaphore);
+
     return 0;
 }
 
+static void engine_draw_frame(struct engine * engine) {
+    uint32_t imageIndex;
+    vkAcquireNextImageKHR(engine->vkDevice, engine->vkSwapchain,
+            std::numeric_limits<uint64_t>::max(), engine->imageAvailableSemaphore, VK_NULL_HANDLE,
+            &imageIndex);
+
+    VkSemaphore waitSemaphores[] = {engine->imageAvailableSemaphore};
+    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+    VkSemaphore signalSemaphores[] = {engine->renderFinishedSemaphore};
+    VkSubmitInfo submitInfo{
+        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+        .pNext = nullptr,
+        .waitSemaphoreCount = 1,
+        .pWaitSemaphores = waitSemaphores,
+        .pWaitDstStageMask = waitStages,
+        .commandBufferCount = 1,
+        .pCommandBuffers = &engine->commandBuffers[imageIndex],
+        .signalSemaphoreCount = 1,
+        .pSignalSemaphores = signalSemaphores,
+    };
+    vkQueueSubmit(engine->vkQueue, 1, &submitInfo, VK_NULL_HANDLE);
+
+    VkPresentInfoKHR presentInfo{
+        .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+        .pNext = nullptr,
+        .waitSemaphoreCount = 1,
+        .pWaitSemaphores = signalSemaphores,
+        .swapchainCount = 1,
+        .pSwapchains = &engine->vkSwapchain,
+        .pImageIndices = &imageIndex,
+        .pResults = nullptr,
+    };
+    vkQueuePresentKHR(engine->vkQueue, &presentInfo);
+
+}
+
 static void engine_term_display(struct engine *engine) {
+    vkDeviceWaitIdle(engine->vkDevice);
+
+    vkDestroySemaphore(engine->vkDevice, engine->renderFinishedSemaphore, nullptr);
+    vkDestroySemaphore(engine->vkDevice, engine->imageAvailableSemaphore, nullptr);
+
     vkDestroyCommandPool(engine->vkDevice, engine->commandPool, nullptr);
 
     for(auto framebuffer: engine->swapChainFrameBuffers) {
@@ -728,7 +789,7 @@ void android_main(android_app *app)
         }
 
         if(engine.animating) {
-            //engine_draw_frame(&engine);
+            engine_draw_frame(&engine);
             engine.animating = 0;
         }
     }

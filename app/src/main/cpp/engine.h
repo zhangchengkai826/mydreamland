@@ -33,15 +33,17 @@ struct engine {
     VkDevice vkDevice = VK_NULL_HANDLE;
     VkQueue vkQueue = VK_NULL_HANDLE;
     VkSwapchainKHR vkSwapchain = VK_NULL_HANDLE;
-    VkFormat swapChainImageFormat;
+    VkFormat swapChainImageFormat = VK_FORMAT_UNDEFINED;
     std::vector<VkImage> swapChainImages;
     std::vector<VkImageView> swapChainImageViews;
     VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
-    VkRenderPass renderPass;
-    VkPipeline graphicsPipeline;
+    VkRenderPass renderPass = VK_NULL_HANDLE;
+    VkPipeline graphicsPipeline = VK_NULL_HANDLE;
     std::vector<VkFramebuffer> swapChainFrameBuffers;
-    VkCommandPool commandPool;
+    VkCommandPool commandPool = VK_NULL_HANDLE;
     std::vector<VkCommandBuffer> commandBuffers;
+    VkSemaphore imageAvailableSemaphore = VK_NULL_HANDLE;
+    VkSemaphore renderFinishedSemaphore = VK_NULL_HANDLE;
 };
 
 #endif //MYDREAMLAND_ENGINE_H
