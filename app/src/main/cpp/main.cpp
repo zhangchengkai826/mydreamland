@@ -7,15 +7,13 @@
 
 void android_main(android_app *app)
 {
-    struct engine engine;
-
     app->userData = &engine;
-    app->onAppCmd = engine_handle_cmd;
-    app->onInputEvent = engine_handle_input;
+    app->onAppCmd = Engine::cmdHandler;
+    app->onInputEvent = Engine::inputHandler;
     engine.app = app;
 
     if(app->savedState != nullptr) {
-        engine.state = *(struct saved_state *)app->savedState;
+        engine.state = *reinterpret_cast<Engine::SavedState *>(app->savedState);
     }
 
     while(true) {
@@ -34,8 +32,8 @@ void android_main(android_app *app)
         }
 
         if(engine.animating) {
-            engine_draw_frame(&engine);
-            engine.animating = 0;
+            engine.drawFrame();
+            engine.animating = false;
         }
     }
 }

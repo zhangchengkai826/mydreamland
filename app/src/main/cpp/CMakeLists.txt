@@ -36,7 +36,8 @@ add_library(native_app_glue STATIC
 add_library(engine STATIC
 
         engine/private/engine.cpp
-        engine/private/engine_shader_helper.cpp)
+        engine/private/engine_shader_helper.cpp
+        engine/private/engine_debug_output.cpp)
 
 target_include_directories(main PRIVATE
         ${ANDROID_NDK}/sources/android/native_app_glue)

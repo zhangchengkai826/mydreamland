@@ -2,13 +2,9 @@
 // Created by andys on 6/1/2019.
 //
 
-#include "../public/engine.h"
+#include "engine.h"
 
-#include "engine_shader_helper.h"
-
-#define MAX_FRAMES_IN_FLIGHT 2
-
-static bool g_b_debug = true;
+Engine engine;
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
         VkDebugReportFlagsEXT msgFlags,
@@ -47,7 +43,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
     return VK_FALSE;
 }
 
-static int engine_init_display(struct engine *engine) {
+int Engine::initDisplay() {
     // print available instance extensions
     uint32_t extensionCount = 0;
     vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
@@ -87,7 +83,7 @@ static int engine_init_display(struct engine *engine) {
     std::vector<const char *> instanceExt, deviceExt;
     instanceExt.push_back("VK_KHR_surface");
     instanceExt.push_back("VK_KHR_android_surface");
-    if(g_b_debug && layerCount > 0) {
+    if(DEBUG_ON && layerCount > 0) {
         instanceExt.push_back("VK_EXT_debug_report");
     }
     deviceExt.push_back("VK_KHR_swapchain");
@@ -102,14 +98,14 @@ static int engine_init_display(struct engine *engine) {
             .enabledLayerCount = 0,
             .ppEnabledLayerNames = nullptr,
     };
-    if(g_b_debug && layerCount > 0) {
+    if(DEBUG_ON && layerCount > 0) {
         instanceCreateInfo.enabledLayerCount = layerCount;
         instanceCreateInfo.ppEnabledLayerNames = layerNames.data();
     }
-    vkCreateInstance(&instanceCreateInfo, nullptr, &engine->vkInstance);
+    vkCreateInstance(&instanceCreateInfo, nullptr, &vkInstance);
 
     // create Vulkan Debug Report Callback
-    if(g_b_debug &&layerCount > 0) {
+    if(DEBUG_ON &&layerCount > 0) {
         VkDebugReportCallbackCreateInfoEXT debugReportCallbackCreateInfo{
                 .sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT,
                 .pNext = nullptr,
@@ -123,9 +119,9 @@ static int engine_init_display(struct engine *engine) {
         };
         PFN_vkCreateDebugReportCallbackEXT vkCreateDebugReportCallbackExt;
         vkCreateDebugReportCallbackExt = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(
-                engine->vkInstance, "vkCreateDebugReportCallbackEXT");
-        vkCreateDebugReportCallbackExt(engine->vkInstance, &debugReportCallbackCreateInfo, nullptr,
-                                       &engine->vkDebugReportCallbackExt);
+                vkInstance, "vkCreateDebugReportCallbackEXT");
+        vkCreateDebugReportCallbackExt(vkInstance, &debugReportCallbackCreateInfo, nullptr,
+                                       &vkDebugReportCallbackExt);
     }
 
     // if we create a surface, we need the surface extension
@@ -133,23 +129,23 @@ static int engine_init_display(struct engine *engine) {
             .sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR,
             .pNext = nullptr,
             .flags = 0,
-            .window = engine->app->window};
-    vkCreateAndroidSurfaceKHR(engine->vkInstance, &surfaceCreateInfoKhr, nullptr,
-                              &engine->vkSurface);
+            .window = app->window};
+    vkCreateAndroidSurfaceKHR(vkInstance, &surfaceCreateInfoKhr, nullptr,
+                              &vkSurface);
 
     // Find one GPU to use:
     // on Android, every GPU device is equal -- supporting graphics/compute/present
     // for this sample, we use the very first GPU device found on the system
     uint32_t gpuCount = 0;
-    vkEnumeratePhysicalDevices(engine->vkInstance, &gpuCount, nullptr);
+    vkEnumeratePhysicalDevices(vkInstance, &gpuCount, nullptr);
     assert(gpuCount > 0);
     VkPhysicalDevice tmpGpus[gpuCount];
-    vkEnumeratePhysicalDevices(engine->vkInstance, &gpuCount, tmpGpus);
-    engine->vkGpu = tmpGpus[0];  // Pick up the first GPU Device
+    vkEnumeratePhysicalDevices(vkInstance, &gpuCount, tmpGpus);
+    vkGpu = tmpGpus[0];  // Pick up the first GPU Device
 
     // check for Vulkan info on this GPU device
     VkPhysicalDeviceProperties gpuProperties;
-    vkGetPhysicalDeviceProperties(engine->vkGpu, &gpuProperties);
+    vkGetPhysicalDeviceProperties(vkGpu, &gpuProperties);
     LOGI("Vulkan Physical Device Name: %s", gpuProperties.deviceName);
     LOGI("Vulkan Physical Device Id: %d", gpuProperties.deviceID);
     // Vulkan Physical Device Type: VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU
@@ -163,13 +159,13 @@ static int engine_init_display(struct engine *engine) {
          VK_VERSION_PATCH(gpuProperties.apiVersion));
 
     VkPhysicalDeviceFeatures gpuFeatures;
-    vkGetPhysicalDeviceFeatures(engine->vkGpu, &gpuFeatures);
+    vkGetPhysicalDeviceFeatures(vkGpu, &gpuFeatures);
     LOGI("Vulkan Physical Device Support Tessellation Shader: %d", gpuFeatures.tessellationShader);
     LOGI("Vulkan Physical Device Support Geometry Shader: %d", gpuFeatures.geometryShader);
     LOGI("Vulkan Physical Device Support Index32: %d", gpuFeatures.fullDrawIndexUint32);
 
     uint32_t deviceExtensionCount = 0;
-    vkEnumerateDeviceExtensionProperties(engine->vkGpu, nullptr, &deviceExtensionCount, nullptr);
+    vkEnumerateDeviceExtensionProperties(vkGpu, nullptr, &deviceExtensionCount, nullptr);
     std::vector<VkExtensionProperties> deviceExtension(deviceExtensionCount);
     vkEnumerateInstanceExtensionProperties(nullptr, &deviceExtensionCount, deviceExtension.data());
     LOGI("Vulkan Physical Device Available Extensions:\n");
@@ -179,7 +175,7 @@ static int engine_init_display(struct engine *engine) {
     }
 
     VkSurfaceCapabilitiesKHR surfaceCapabilities;
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(engine->vkGpu, engine->vkSurface,
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vkGpu, vkSurface,
                                               &surfaceCapabilities);
 
     LOGI("Vulkan Surface Capabilities:\n");
@@ -200,10 +196,10 @@ static int engine_init_display(struct engine *engine) {
 
     // Find the family index of a graphics queue family
     uint32_t queueFamilyCount;
-    vkGetPhysicalDeviceQueueFamilyProperties(engine->vkGpu, &queueFamilyCount, nullptr);
+    vkGetPhysicalDeviceQueueFamilyProperties(vkGpu, &queueFamilyCount, nullptr);
     assert(queueFamilyCount);
     std::vector<VkQueueFamilyProperties> queueFamilyProperties(queueFamilyCount);
-    vkGetPhysicalDeviceQueueFamilyProperties(engine->vkGpu, &queueFamilyCount,
+    vkGetPhysicalDeviceQueueFamilyProperties(vkGpu, &queueFamilyCount,
                                              queueFamilyProperties.data());
 
     uint32_t queueFamilyIndex;
@@ -215,15 +211,15 @@ static int engine_init_display(struct engine *engine) {
     assert(queueFamilyIndex < queueFamilyCount);
 
     VkBool32 b_presentSupport = false;
-    vkGetPhysicalDeviceSurfaceSupportKHR(engine->vkGpu, queueFamilyIndex, engine->vkSurface,
+    vkGetPhysicalDeviceSurfaceSupportKHR(vkGpu, queueFamilyIndex, vkSurface,
                                          &b_presentSupport);
     assert(b_presentSupport);
 
     uint32_t formatCount;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(engine->vkGpu, engine->vkSurface, &formatCount, nullptr);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(vkGpu, vkSurface, &formatCount, nullptr);
     assert(formatCount > 0);
     std::vector<VkSurfaceFormatKHR> formats(formatCount);
-    vkGetPhysicalDeviceSurfaceFormatsKHR(engine->vkGpu, engine->vkSurface, &formatCount,
+    vkGetPhysicalDeviceSurfaceFormatsKHR(vkGpu, vkSurface, &formatCount,
                                          formats.data());
     VkSurfaceFormatKHR surfaceFormatChosen = {VK_FORMAT_R8G8B8A8_UNORM,
                                               VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
@@ -240,14 +236,14 @@ static int engine_init_display(struct engine *engine) {
         LOGI("\tFormat: %d\tColor Space: %d\n", format.format, format.colorSpace);
     }
     assert(b_formatSupport);
-    engine->swapChainImageFormat = surfaceFormatChosen.format;
+    swapChainImageFormat = surfaceFormatChosen.format;
 
     uint32_t presentModeCount;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(engine->vkGpu, engine->vkSurface, &presentModeCount,
+    vkGetPhysicalDeviceSurfacePresentModesKHR(vkGpu, vkSurface, &presentModeCount,
                                               nullptr);
     assert(presentModeCount > 0);
     std::vector<VkPresentModeKHR> presentModes(presentModeCount);
-    vkGetPhysicalDeviceSurfacePresentModesKHR(engine->vkGpu, engine->vkSurface, &presentModeCount,
+    vkGetPhysicalDeviceSurfacePresentModesKHR(vkGpu, vkSurface, &presentModeCount,
                                               presentModes.data());
     VkPresentModeKHR presentModeChosen = VK_PRESENT_MODE_FIFO_KHR;
     bool b_presentModeSupport = false;
@@ -283,14 +279,14 @@ static int engine_init_display(struct engine *engine) {
             .ppEnabledExtensionNames = deviceExt.data(),
             .pEnabledFeatures = &gpuFeatures,
     };
-    if(g_b_debug && layerCount > 0) {
+    if(DEBUG_ON && layerCount > 0) {
         deviceCreateInfo.enabledLayerCount = layerCount;
         deviceCreateInfo.ppEnabledLayerNames = layerNames.data();
     }
-    vkCreateDevice(engine->vkGpu, &deviceCreateInfo, nullptr, &engine->vkDevice);
+    vkCreateDevice(vkGpu, &deviceCreateInfo, nullptr, &vkDevice);
 
     // get queue from logical device
-    vkGetDeviceQueue(engine->vkDevice, queueFamilyIndex, 0, &engine->vkQueue);
+    vkGetDeviceQueue(vkDevice, queueFamilyIndex, 0, &vkQueue);
 
     // create swap chain
     assert(surfaceCapabilities.minImageCount > 1);
@@ -302,7 +298,7 @@ static int engine_init_display(struct engine *engine) {
             .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
             .pNext = nullptr,
             .flags = 0,
-            .surface = engine->vkSurface,
+            .surface = vkSurface,
             .minImageCount = imageCount,
             .imageFormat = surfaceFormatChosen.format,
             .imageColorSpace = surfaceFormatChosen.colorSpace,
@@ -312,28 +308,28 @@ static int engine_init_display(struct engine *engine) {
             .imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
             .queueFamilyIndexCount = 0,
             .pQueueFamilyIndices = nullptr,
-            .preTransform = surfaceCapabilities.currentTransform,
+            .preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
             .compositeAlpha = VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR,
             .presentMode = presentModeChosen,
             .clipped = VK_TRUE,
             .oldSwapchain = VK_NULL_HANDLE,
     };
-    vkCreateSwapchainKHR(engine->vkDevice, &swapchainCreateInfo, nullptr, &engine->vkSwapchain);
+    vkCreateSwapchainKHR(vkDevice, &swapchainCreateInfo, nullptr, &vkSwapchain);
 
     // retrieve swap chain images
-    vkGetSwapchainImagesKHR(engine->vkDevice, engine->vkSwapchain, &imageCount, nullptr);
-    engine->swapChainImages.resize(imageCount);
-    vkGetSwapchainImagesKHR(engine->vkDevice, engine->vkSwapchain, &imageCount,
-                            engine->swapChainImages.data());
+    vkGetSwapchainImagesKHR(vkDevice, vkSwapchain, &imageCount, nullptr);
+    swapChainImages.resize(imageCount);
+    vkGetSwapchainImagesKHR(vkDevice, vkSwapchain, &imageCount,
+                            swapChainImages.data());
 
     // create swap chain image views
-    engine->swapChainImageViews.resize(engine->swapChainImages.size());
-    for(int i = 0; i < engine->swapChainImageViews.size(); i++) {
+    swapChainImageViews.resize(swapChainImages.size());
+    for(int i = 0; i < swapChainImageViews.size(); i++) {
         VkImageViewCreateInfo imgViewCreateInfo {
                 .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-                .image = engine->swapChainImages[i],
+                .image = swapChainImages[i],
                 .viewType = VK_IMAGE_VIEW_TYPE_2D,
-                .format = engine->swapChainImageFormat,
+                .format = swapChainImageFormat,
                 .components.r = VK_COMPONENT_SWIZZLE_IDENTITY,
                 .components.g = VK_COMPONENT_SWIZZLE_IDENTITY,
                 .components.b = VK_COMPONENT_SWIZZLE_IDENTITY,
@@ -344,16 +340,16 @@ static int engine_init_display(struct engine *engine) {
                 .subresourceRange.baseArrayLayer = 0,
                 .subresourceRange.layerCount = 1,
         };
-        vkCreateImageView(engine->vkDevice, &imgViewCreateInfo, nullptr,
-                          &engine->swapChainImageViews[i]);
+        vkCreateImageView(vkDevice, &imgViewCreateInfo, nullptr,
+                          &swapChainImageViews[i]);
     }
 
     // create graphics pipeline
-    auto vertShaderCode = readFile(engine, "shaders/shader.vert.spv");
-    auto fragShaderCode = readFile(engine, "shaders/shader.frag.spv");
+    auto vertShaderCode = readFile("shaders/shader.vert.spv");
+    auto fragShaderCode = readFile("shaders/shader.frag.spv");
 
-    VkShaderModule vertShaderModule = createShaderModule(engine, vertShaderCode);
-    VkShaderModule fragShaderModule = createShaderModule(engine, fragShaderCode);
+    VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
+    VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
 
     VkPipelineShaderStageCreateInfo vertShaderStageInfo{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
@@ -478,11 +474,11 @@ static int engine_init_display(struct engine *engine) {
             .pushConstantRangeCount = 0,
             .pPushConstantRanges = nullptr,
     };
-    vkCreatePipelineLayout(engine->vkDevice, &pipelineLayoutCreateInfo, nullptr,
-                           &engine->pipelineLayout);
+    vkCreatePipelineLayout(vkDevice, &pipelineLayoutCreateInfo, nullptr,
+                           &pipelineLayout);
 
     VkAttachmentDescription colorAttachment{
-            .format = engine->swapChainImageFormat,
+            .format = swapChainImageFormat,
             .samples = VK_SAMPLE_COUNT_1_BIT,
             .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
             .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
@@ -530,7 +526,7 @@ static int engine_init_display(struct engine *engine) {
             .dependencyCount = 1,
             .pDependencies = &subpassDependency,
     };
-    vkCreateRenderPass(engine->vkDevice, &renderPassCreateInfo, nullptr, &engine->renderPass);
+    vkCreateRenderPass(vkDevice, &renderPassCreateInfo, nullptr, &renderPass);
 
     VkGraphicsPipelineCreateInfo pipelineCreateInfo{
             .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
@@ -546,37 +542,37 @@ static int engine_init_display(struct engine *engine) {
             .pViewportState = &viewportStateCreateInfo,
             .pColorBlendState = &colorBlendStateCreateInfo,
             .pDynamicState = nullptr,
-            .layout = engine->pipelineLayout,
-            .renderPass = engine->renderPass,
+            .layout = pipelineLayout,
+            .renderPass = renderPass,
             .subpass = 0,
             .basePipelineHandle = VK_NULL_HANDLE,
             .basePipelineIndex = -1,
     };
-    vkCreateGraphicsPipelines(engine->vkDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr,
-                              &engine->graphicsPipeline);
+    vkCreateGraphicsPipelines(vkDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr,
+                              &graphicsPipeline);
 
-    vkDestroyShaderModule(engine->vkDevice, vertShaderModule, nullptr);
-    vkDestroyShaderModule(engine->vkDevice, fragShaderModule, nullptr);
+    vkDestroyShaderModule(vkDevice, vertShaderModule, nullptr);
+    vkDestroyShaderModule(vkDevice, fragShaderModule, nullptr);
 
     // create frame buffers
-    engine->swapChainFrameBuffers.resize(engine->swapChainImageViews.size());
-    for(size_t i = 0; i < engine->swapChainFrameBuffers.size(); i++) {
+    swapChainFrameBuffers.resize(swapChainImageViews.size());
+    for(size_t i = 0; i < swapChainFrameBuffers.size(); i++) {
         VkImageView attachments[] = {
-                engine->swapChainImageViews[i]
+                swapChainImageViews[i]
         };
         VkFramebufferCreateInfo framebufferCreateInfo{
                 .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
                 .pNext = nullptr,
                 .flags = 0,
-                .renderPass = engine->renderPass,
+                .renderPass = renderPass,
                 .attachmentCount = 1,
                 .pAttachments = attachments,
                 .width = surfaceCapabilities.currentExtent.width,
                 .height = surfaceCapabilities.currentExtent.height,
                 .layers = 1
         };
-        vkCreateFramebuffer(engine->vkDevice, &framebufferCreateInfo, nullptr,
-                            &engine->swapChainFrameBuffers[i]);
+        vkCreateFramebuffer(vkDevice, &framebufferCreateInfo, nullptr,
+                            &swapChainFrameBuffers[i]);
     }
 
     // create command pool
@@ -586,29 +582,29 @@ static int engine_init_display(struct engine *engine) {
             .flags = 0,
             .pNext = nullptr,
     };
-    vkCreateCommandPool(engine->vkDevice, &commandPoolCreateInfo, nullptr, &engine->commandPool);
+    vkCreateCommandPool(vkDevice, &commandPoolCreateInfo, nullptr, &commandPool);
 
     // allocate command buffer
-    engine->commandBuffers.resize(engine->swapChainFrameBuffers.size());
+    commandBuffers.resize(swapChainFrameBuffers.size());
     VkCommandBufferAllocateInfo commandBufferAllocateInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
             .pNext = nullptr,
-            .commandPool = engine->commandPool,
+            .commandPool = commandPool,
             .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-            .commandBufferCount = static_cast<uint32_t>(engine->commandBuffers.size()),
+            .commandBufferCount = static_cast<uint32_t>(commandBuffers.size()),
     };
-    vkAllocateCommandBuffers(engine->vkDevice, &commandBufferAllocateInfo,
-                             engine->commandBuffers.data());
+    vkAllocateCommandBuffers(vkDevice, &commandBufferAllocateInfo,
+                             commandBuffers.data());
 
     // record command buffer
-    for(size_t i = 0; i < engine->commandBuffers.size(); i++) {
+    for(size_t i = 0; i < commandBuffers.size(); i++) {
         VkCommandBufferBeginInfo commandBufferBeginInfo{
                 .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
                 .pNext = nullptr,
                 .flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT,
                 .pInheritanceInfo = nullptr,
         };
-        vkBeginCommandBuffer(engine->commandBuffers[i], &commandBufferBeginInfo);
+        vkBeginCommandBuffer(commandBuffers[i], &commandBufferBeginInfo);
 
         VkClearValue clearColor;
         clearColor.color.float32[0] = 0.0f;
@@ -618,8 +614,8 @@ static int engine_init_display(struct engine *engine) {
         VkRenderPassBeginInfo renderPassBeginInfo{
                 .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
                 .pNext = nullptr,
-                .renderPass = engine->renderPass,
-                .framebuffer = engine->swapChainFrameBuffers[i],
+                .renderPass = renderPass,
+                .framebuffer = swapChainFrameBuffers[i],
                 .renderArea.offset = {0, 0},
                 .renderArea.extent = surfaceCapabilities.currentExtent,
                 .clearValueCount = 1,
@@ -627,23 +623,23 @@ static int engine_init_display(struct engine *engine) {
         };
         PFN_vkCmdBeginRenderPass vkCmdBeginRenderPass;
         vkCmdBeginRenderPass = (PFN_vkCmdBeginRenderPass)vkGetInstanceProcAddr(
-                engine->vkInstance, "vkCmdBeginRenderPass");
-        vkCmdBeginRenderPass(engine->commandBuffers[i], &renderPassBeginInfo,
+                vkInstance, "vkCmdBeginRenderPass");
+        vkCmdBeginRenderPass(commandBuffers[i], &renderPassBeginInfo,
                              VK_SUBPASS_CONTENTS_INLINE);
 
-        vkCmdBindPipeline(engine->commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
-                          engine->graphicsPipeline);
+        vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
+                          graphicsPipeline);
 
-        vkCmdDraw(engine->commandBuffers[i], 3, 1, 0, 0);
+        vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
 
-        vkCmdEndRenderPass(engine->commandBuffers[i]);
-        vkEndCommandBuffer(engine->commandBuffers[i]);
+        vkCmdEndRenderPass(commandBuffers[i]);
+        vkEndCommandBuffer(commandBuffers[i]);
     }
 
     // create sync objects
-    engine->imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    engine->renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    engine->inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+    imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+    renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+    inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
     VkSemaphoreCreateInfo semaphoreCreateInfo{
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
             .pNext = nullptr,
@@ -655,29 +651,29 @@ static int engine_init_display(struct engine *engine) {
             .flags = VK_FENCE_CREATE_SIGNALED_BIT,
     };
     for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        vkCreateSemaphore(engine->vkDevice, &semaphoreCreateInfo, nullptr,
-                          &engine->imageAvailableSemaphores[i]);
-        vkCreateSemaphore(engine->vkDevice, &semaphoreCreateInfo, nullptr,
-                          &engine->renderFinishedSemaphores[i]);
-        vkCreateFence(engine->vkDevice, &fenceCreateInfo, nullptr, &engine->inFlightFences[i]);
+        vkCreateSemaphore(vkDevice, &semaphoreCreateInfo, nullptr,
+                          &imageAvailableSemaphores[i]);
+        vkCreateSemaphore(vkDevice, &semaphoreCreateInfo, nullptr,
+                          &renderFinishedSemaphores[i]);
+        vkCreateFence(vkDevice, &fenceCreateInfo, nullptr, &inFlightFences[i]);
     }
 
     return 0;
 }
 
-void engine_draw_frame(struct engine * engine) {
-    vkWaitForFences(engine->vkDevice, 1, &engine->inFlightFences[engine->currentFrame], VK_TRUE,
+void Engine::drawFrame() {
+    vkWaitForFences(vkDevice, 1, &inFlightFences[currentFrame], VK_TRUE,
                     std::numeric_limits<uint64_t>::max());
-    vkResetFences(engine->vkDevice, 1, &engine->inFlightFences[engine->currentFrame]);
+    vkResetFences(vkDevice, 1, &inFlightFences[currentFrame]);
 
     uint32_t imageIndex;
-    vkAcquireNextImageKHR(engine->vkDevice, engine->vkSwapchain,
+    vkAcquireNextImageKHR(vkDevice, vkSwapchain,
                           std::numeric_limits<uint64_t>::max(),
-                          engine->imageAvailableSemaphores[engine->currentFrame], VK_NULL_HANDLE, &imageIndex);
+                          imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
 
-    VkSemaphore waitSemaphores[] = {engine->imageAvailableSemaphores[engine->currentFrame]};
+    VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
     VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-    VkSemaphore signalSemaphores[] = {engine->renderFinishedSemaphores[engine->currentFrame]};
+    VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
     VkSubmitInfo submitInfo{
             .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
             .pNext = nullptr,
@@ -685,11 +681,11 @@ void engine_draw_frame(struct engine * engine) {
             .pWaitSemaphores = waitSemaphores,
             .pWaitDstStageMask = waitStages,
             .commandBufferCount = 1,
-            .pCommandBuffers = &engine->commandBuffers[imageIndex],
+            .pCommandBuffers = &commandBuffers[imageIndex],
             .signalSemaphoreCount = 1,
             .pSignalSemaphores = signalSemaphores,
     };
-    vkQueueSubmit(engine->vkQueue, 1, &submitInfo, engine->inFlightFences[engine->currentFrame]);
+    vkQueueSubmit(vkQueue, 1, &submitInfo, inFlightFences[currentFrame]);
 
     VkPresentInfoKHR presentInfo{
             .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
@@ -697,80 +693,88 @@ void engine_draw_frame(struct engine * engine) {
             .waitSemaphoreCount = 1,
             .pWaitSemaphores = signalSemaphores,
             .swapchainCount = 1,
-            .pSwapchains = &engine->vkSwapchain,
+            .pSwapchains = &vkSwapchain,
             .pImageIndices = &imageIndex,
             .pResults = nullptr,
     };
-    vkQueuePresentKHR(engine->vkQueue, &presentInfo);
+    vkQueuePresentKHR(vkQueue, &presentInfo);
 
-    engine->currentFrame = (engine->currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+    currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-static void engine_term_display(struct engine *engine) {
-    vkDeviceWaitIdle(engine->vkDevice);
+void Engine::termDisplay() {
+    vkDeviceWaitIdle(vkDevice);
 
     for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        vkDestroyFence(engine->vkDevice, engine->inFlightFences[i], nullptr);
-        vkDestroySemaphore(engine->vkDevice, engine->renderFinishedSemaphores[i], nullptr);
-        vkDestroySemaphore(engine->vkDevice, engine->imageAvailableSemaphores[i], nullptr);
+        vkDestroyFence(vkDevice, inFlightFences[i], nullptr);
+        vkDestroySemaphore(vkDevice, renderFinishedSemaphores[i], nullptr);
+        vkDestroySemaphore(vkDevice, imageAvailableSemaphores[i], nullptr);
     }
 
-    vkDestroyCommandPool(engine->vkDevice, engine->commandPool, nullptr);
+    vkDestroyCommandPool(vkDevice, commandPool, nullptr);
 
-    for(auto framebuffer: engine->swapChainFrameBuffers) {
-        vkDestroyFramebuffer(engine->vkDevice, framebuffer, nullptr);
+    for(auto framebuffer: swapChainFrameBuffers) {
+        vkDestroyFramebuffer(vkDevice, framebuffer, nullptr);
     }
 
-    vkDestroyPipeline(engine->vkDevice, engine->graphicsPipeline, nullptr);
-    vkDestroyRenderPass(engine->vkDevice, engine->renderPass, nullptr);
-    vkDestroyPipelineLayout(engine->vkDevice, engine->pipelineLayout, nullptr);
+    vkDestroyPipeline(vkDevice, graphicsPipeline, nullptr);
+    vkDestroyRenderPass(vkDevice, renderPass, nullptr);
+    vkDestroyPipelineLayout(vkDevice, pipelineLayout, nullptr);
 
-    for(auto imageView: engine->swapChainImageViews) {
-        vkDestroyImageView(engine->vkDevice, imageView, nullptr);
+    for(auto imageView: swapChainImageViews) {
+        vkDestroyImageView(vkDevice, imageView, nullptr);
     }
-    vkDestroySwapchainKHR(engine->vkDevice, engine->vkSwapchain, nullptr);
-    vkDestroyDevice(engine->vkDevice, nullptr);
-    vkDestroySurfaceKHR(engine->vkInstance, engine->vkSurface, nullptr);
+    vkDestroySwapchainKHR(vkDevice, vkSwapchain, nullptr);
+    vkDestroyDevice(vkDevice, nullptr);
+    vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
 
     PFN_vkDestroyDebugReportCallbackEXT vkDestroyDebugReportCallbackEXT;
     vkDestroyDebugReportCallbackEXT = (PFN_vkDestroyDebugReportCallbackEXT)
-            vkGetInstanceProcAddr(engine->vkInstance, "vkDestroyDebugReportCallbackEXT");
-    vkDestroyDebugReportCallbackEXT(engine->vkInstance, engine->vkDebugReportCallbackExt, nullptr);
+            vkGetInstanceProcAddr(vkInstance, "vkDestroyDebugReportCallbackEXT");
+    vkDestroyDebugReportCallbackEXT(vkInstance, vkDebugReportCallbackExt, nullptr);
 
-    vkDestroyInstance(engine->vkInstance, nullptr);
+    vkDestroyInstance(vkInstance, nullptr);
 }
 
-void engine_handle_cmd(struct android_app *app, int32_t cmd) {
-    auto engine = (struct engine *)app->userData;
+void Engine::cmdHandler(struct android_app *app, int32_t cmd) {
+    engine.cmdHandlerInternal(app, cmd);
+}
+
+void Engine::cmdHandlerInternal(struct android_app *app, int32_t cmd) {
+    auto engine = reinterpret_cast<Engine *>(app->userData);
     switch (cmd) {
         case APP_CMD_SAVE_STATE:
             // The system has asked us to save our current state.  Do so.
-            app->savedState = malloc(sizeof(struct saved_state));
-            *((struct saved_state*)app->savedState) = engine->state;
-            app->savedStateSize = sizeof(struct saved_state);
+            app->savedState = malloc(sizeof(struct SavedState));
+            *((struct SavedState*)app->savedState) = engine->state;
+            app->savedStateSize = sizeof(struct SavedState);
             break;
         case APP_CMD_INIT_WINDOW:
             // The window is being shown, get it ready.
-            engine_init_display(engine);
+            initDisplay();
             break;
         case APP_CMD_TERM_WINDOW:
             // The window is being hidden or closed, clean it up.
-            engine_term_display(engine);
+            termDisplay();
             break;
         case APP_CMD_GAINED_FOCUS:
             break;
         case APP_CMD_LOST_FOCUS:
-            engine->animating = 0;
+            engine->animating = false;
             break;
         default:
             break;
     }
 }
 
-int32_t engine_handle_input(struct android_app *app, AInputEvent *event) {
-    auto engine = (struct engine *)app->userData;
+int32_t Engine::inputHandler(struct android_app *app, AInputEvent *event) {
+    return engine.inputHandlerInternal(app, event);
+}
+
+int32_t Engine::inputHandlerInternal(struct android_app *app, AInputEvent *event) {
+    auto engine = reinterpret_cast<Engine *>(app->userData);
     if(AInputEvent_getType(event) == AINPUT_EVENT_TYPE_MOTION) {
-        engine->animating = 1;
+        engine->animating = true;
         engine->state.x = (int32_t)AMotionEvent_getX(event, 0);
         engine->state.y = (int32_t)AMotionEvent_getY(event, 0);
         LOGI("x: %d, y: %d", engine->state.x, engine->state.y);

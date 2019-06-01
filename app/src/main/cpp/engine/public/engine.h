@@ -15,16 +15,25 @@
 
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, "main", __VA_ARGS__)
 
-struct saved_state {
-    int32_t x = 0;
-    int32_t y = 0;
-};
+class Engine {
+public:
+    struct SavedState {
+        int32_t x = 0;
+        int32_t y = 0;
+    };
 
-struct engine {
     struct android_app *app = nullptr;
+    struct SavedState state;
+    bool animating = false;
 
-    int animating = 0;
-    struct saved_state state;
+    static void cmdHandler(struct android_app *app, int32_t cmd);
+    static int32_t inputHandler(struct android_app *app, AInputEvent *event);
+
+    void drawFrame();
+
+private:
+    constexpr static int MAX_FRAMES_IN_FLIGHT = 2;
+    constexpr static bool DEBUG_ON = true;
 
     VkInstance vkInstance = VK_NULL_HANDLE;
     VkDebugReportCallbackEXT vkDebugReportCallbackExt = VK_NULL_HANDLE;
@@ -46,10 +55,18 @@ struct engine {
     std::vector<VkSemaphore> renderFinishedSemaphores;
     std::vector<VkFence> inFlightFences;
     int currentFrame = 0;
+
+    /* engine.cpp */
+    void cmdHandlerInternal(struct android_app *app, int32_t cmd);
+    int32_t inputHandlerInternal(struct android_app *app, AInputEvent *event);
+    int initDisplay();
+    void termDisplay();
+
+    /* engine_shader_helper.cpp */
+    std::vector<char> readFile(const char *fileName);
+    VkShaderModule createShaderModule(const std::vector<char> &code);
 };
 
-int32_t engine_handle_input(struct android_app *app, AInputEvent *event);
-void engine_handle_cmd(struct android_app *app, int32_t cmd);
-void engine_draw_frame(struct engine * engine);
+extern Engine engine;
 
 #endif //MYDREAMLAND_ENGINE_H
