@@ -13,8 +13,6 @@
 #include "../../../../../../../../AppData/Local/Android/Sdk/ndk-bundle/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/include/vulkan/vulkan.h"
 #include "../../../../../../../../AppData/Local/Android/Sdk/ndk-bundle/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/include/vulkan/vulkan_android.h"
 
-#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, "main", __VA_ARGS__)
-
 class Engine {
 public:
     struct SavedState {
@@ -67,6 +65,6 @@ private:
     VkShaderModule createShaderModule(const std::vector<char> &code);
 };
 
-extern Engine engine;
+extern Engine gEngine;
 
 #endif //MYDREAMLAND_ENGINE_H

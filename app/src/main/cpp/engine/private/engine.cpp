@@ -4,7 +4,7 @@
 
 #include "engine.h"
 
-Engine engine;
+Engine gEngine;
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportCallback(
         VkDebugReportFlagsEXT msgFlags,
@@ -49,10 +49,10 @@ int Engine::initDisplay() {
     vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
     std::vector<VkExtensionProperties> extensions(extensionCount);
     vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
-    LOGI("Vulkan Available Extensions:\n");
+    __android_log_print(ANDROID_LOG_INFO, "main", "Vulkan Available Extensions:");
     for(const auto &extension: extensions) {
-        LOGI("\tExtension Name: %s\t\tVersion: %d\n", extension.extensionName,
-             extension.specVersion);
+        __android_log_print(ANDROID_LOG_INFO, "main", "\tExtension Name: %s\t\tVersion: %d",
+                extension.extensionName,extension.specVersion);
     }
 
     // print available layers
@@ -61,11 +61,12 @@ int Engine::initDisplay() {
     std::vector<VkLayerProperties> layers(layerCount);
     std::vector<const char *> layerNames;
     vkEnumerateInstanceLayerProperties(&layerCount, layers.data());
-    LOGI("Vulkan Available Layers:\n");
+    __android_log_print(ANDROID_LOG_INFO, "main", "Vulkan Available Layers:");
     for(const auto &layer: layers) {
-        LOGI("\tLayer Name: %s\t\tSpec Version: %d\t\tImpl Version: %d\n\t\tDesc: %s\n",
-             layer.layerName, layer.specVersion, layer.implementationVersion,
-             layer.description);
+        __android_log_print(ANDROID_LOG_INFO, "main",
+                "\tLayer Name: %s\t\tSpec Version: %d\t\tImpl Version: %d\n\t\tDesc: %s",
+                layer.layerName, layer.specVersion, layer.implementationVersion,
+                layer.description);
         layerNames.push_back(static_cast<const char *>(layer.layerName));
     }
 
@@ -146,31 +147,39 @@ int Engine::initDisplay() {
     // check for Vulkan info on this GPU device
     VkPhysicalDeviceProperties gpuProperties;
     vkGetPhysicalDeviceProperties(vkGpu, &gpuProperties);
-    LOGI("Vulkan Physical Device Name: %s", gpuProperties.deviceName);
-    LOGI("Vulkan Physical Device Id: %d", gpuProperties.deviceID);
-    // Vulkan Physical Device Type: VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU
-    LOGI("Vulkan Physical Device Type: %d", gpuProperties.deviceType);
-    LOGI("Vulkan Physical Device Vendor Id: %d", gpuProperties.vendorID);
-    LOGI("Vulkan Physical Device Info: apiVersion: %x \n\t driverVersion: %x",
+    __android_log_print(ANDROID_LOG_INFO, "main", "Vulkan Physical Device Name: %s",
+            gpuProperties.deviceName);
+    __android_log_print(ANDROID_LOG_INFO, "main", "Vulkan Physical Device Id: %d",
+            gpuProperties.deviceID);
+    __android_log_print(ANDROID_LOG_INFO, "main", "Vulkan Physical Device Type: %d",
+            gpuProperties.deviceType);
+    __android_log_print(ANDROID_LOG_INFO, "main", "Vulkan Physical Device Vendor Id: %d",
+            gpuProperties.vendorID);
+    __android_log_print(ANDROID_LOG_INFO, "main",
+            "Vulkan Physical Device Info: apiVersion: %x \n\t driverVersion: %x",
          gpuProperties.apiVersion, gpuProperties.driverVersion);
-    LOGI("API Version Supported: %d.%d.%d",
+    __android_log_print(ANDROID_LOG_INFO, "main", "API Version Supported: %d.%d.%d",
          VK_VERSION_MAJOR(gpuProperties.apiVersion),
          VK_VERSION_MINOR(gpuProperties.apiVersion),
          VK_VERSION_PATCH(gpuProperties.apiVersion));
 
     VkPhysicalDeviceFeatures gpuFeatures;
     vkGetPhysicalDeviceFeatures(vkGpu, &gpuFeatures);
-    LOGI("Vulkan Physical Device Support Tessellation Shader: %d", gpuFeatures.tessellationShader);
-    LOGI("Vulkan Physical Device Support Geometry Shader: %d", gpuFeatures.geometryShader);
-    LOGI("Vulkan Physical Device Support Index32: %d", gpuFeatures.fullDrawIndexUint32);
+    __android_log_print(ANDROID_LOG_INFO, "main",
+            "Vulkan Physical Device Support Tessellation Shader: %d", gpuFeatures.tessellationShader);
+    __android_log_print(ANDROID_LOG_INFO, "main",
+            "Vulkan Physical Device Support Geometry Shader: %d", gpuFeatures.geometryShader);
+    __android_log_print(ANDROID_LOG_INFO, "main",
+            "Vulkan Physical Device Support Index32: %d", gpuFeatures.fullDrawIndexUint32);
 
     uint32_t deviceExtensionCount = 0;
     vkEnumerateDeviceExtensionProperties(vkGpu, nullptr, &deviceExtensionCount, nullptr);
     std::vector<VkExtensionProperties> deviceExtension(deviceExtensionCount);
     vkEnumerateInstanceExtensionProperties(nullptr, &deviceExtensionCount, deviceExtension.data());
-    LOGI("Vulkan Physical Device Available Extensions:\n");
+    __android_log_print(ANDROID_LOG_INFO, "main", "Vulkan Physical Device Available Extensions:\n");
     for(const auto &extension: deviceExtension) {
-        LOGI("\tExtension Name: %s\t\tVersion: %d\n", extension.extensionName,
+        __android_log_print(ANDROID_LOG_INFO, "main",
+                "\tExtension Name: %s\t\tVersion: %d\n", extension.extensionName,
              extension.specVersion);
     }
 
@@ -178,21 +187,28 @@ int Engine::initDisplay() {
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vkGpu, vkSurface,
                                               &surfaceCapabilities);
 
-    LOGI("Vulkan Surface Capabilities:\n");
-    LOGI("\timage count: %u - %u\n", surfaceCapabilities.minImageCount,
+    __android_log_print(ANDROID_LOG_INFO, "main", "Vulkan Surface Capabilities:\n");
+    __android_log_print(ANDROID_LOG_INFO, "main",
+            "\timage count: %u - %u\n", surfaceCapabilities.minImageCount,
          surfaceCapabilities.maxImageCount);
-    LOGI("\tarray layers: %u\n", surfaceCapabilities.maxImageArrayLayers);
-    LOGI("\timage size (now): %dx%d\n", surfaceCapabilities.currentExtent.width,
+    __android_log_print(ANDROID_LOG_INFO, "main",
+            "\tarray layers: %u\n", surfaceCapabilities.maxImageArrayLayers);
+    __android_log_print(ANDROID_LOG_INFO, "main",
+            "\timage size (now): %dx%d\n", surfaceCapabilities.currentExtent.width,
          surfaceCapabilities.currentExtent.height);
-    LOGI("\timage size (extent): %dx%d - %dx%d\n",
+    __android_log_print(ANDROID_LOG_INFO, "main", "\timage size (extent): %dx%d - %dx%d\n",
          surfaceCapabilities.minImageExtent.width,
          surfaceCapabilities.minImageExtent.height,
          surfaceCapabilities.maxImageExtent.width,
          surfaceCapabilities.maxImageExtent.height);
-    LOGI("\tusage: %x\n", surfaceCapabilities.supportedUsageFlags);
-    LOGI("\tcurrent transform: %u\n", surfaceCapabilities.currentTransform);
-    LOGI("\tallowed transforms: %x\n", surfaceCapabilities.supportedTransforms);
-    LOGI("\tcomposite alpha flags: %u\n", surfaceCapabilities.supportedCompositeAlpha);
+    __android_log_print(ANDROID_LOG_INFO, "main",
+            "\tusage: %x\n", surfaceCapabilities.supportedUsageFlags);
+    __android_log_print(ANDROID_LOG_INFO, "main",
+            "\tcurrent transform: %u\n", surfaceCapabilities.currentTransform);
+    __android_log_print(ANDROID_LOG_INFO, "main",
+            "\tallowed transforms: %x\n", surfaceCapabilities.supportedTransforms);
+    __android_log_print(ANDROID_LOG_INFO, "main",
+            "\tcomposite alpha flags: %u\n", surfaceCapabilities.supportedCompositeAlpha);
 
     // Find the family index of a graphics queue family
     uint32_t queueFamilyCount;
@@ -224,7 +240,8 @@ int Engine::initDisplay() {
     VkSurfaceFormatKHR surfaceFormatChosen = {VK_FORMAT_R8G8B8A8_UNORM,
                                               VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
     bool b_formatSupport = false;
-    LOGI("Vulkan Physical Device Supported Formats:\n");
+    __android_log_print(ANDROID_LOG_INFO, "main",
+            "Vulkan Physical Device Supported Formats:\n");
     for(const auto &format: formats) {
         if(format.format == surfaceFormatChosen.format && format.colorSpace ==
                                                           surfaceFormatChosen.colorSpace) {
@@ -233,7 +250,8 @@ int Engine::initDisplay() {
         if(format.format == VK_FORMAT_UNDEFINED) {
             b_formatSupport = true;
         }
-        LOGI("\tFormat: %d\tColor Space: %d\n", format.format, format.colorSpace);
+        __android_log_print(ANDROID_LOG_INFO, "main",
+                "\tFormat: %d\tColor Space: %d\n", format.format, format.colorSpace);
     }
     assert(b_formatSupport);
     swapChainImageFormat = surfaceFormatChosen.format;
@@ -247,12 +265,13 @@ int Engine::initDisplay() {
                                               presentModes.data());
     VkPresentModeKHR presentModeChosen = VK_PRESENT_MODE_FIFO_KHR;
     bool b_presentModeSupport = false;
-    LOGI("Vulkan Physical Device Supported Present Modes:\n");
+    __android_log_print(ANDROID_LOG_INFO, "main",
+            "Vulkan Physical Device Supported Present Modes:\n");
     for(const auto &pm: presentModes) {
         if(pm == presentModeChosen) {
             b_presentModeSupport = true;
         }
-        LOGI("\tPresent Mode: %d\n", pm);
+        __android_log_print(ANDROID_LOG_INFO, "main", "\tPresent Mode: %d\n", pm);
     }
     assert(b_presentModeSupport);
 
@@ -737,7 +756,7 @@ void Engine::termDisplay() {
 }
 
 void Engine::cmdHandler(struct android_app *app, int32_t cmd) {
-    engine.cmdHandlerInternal(app, cmd);
+    gEngine.cmdHandlerInternal(app, cmd);
 }
 
 void Engine::cmdHandlerInternal(struct android_app *app, int32_t cmd) {
@@ -768,7 +787,7 @@ void Engine::cmdHandlerInternal(struct android_app *app, int32_t cmd) {
 }
 
 int32_t Engine::inputHandler(struct android_app *app, AInputEvent *event) {
-    return engine.inputHandlerInternal(app, event);
+    return gEngine.inputHandlerInternal(app, event);
 }
 
 int32_t Engine::inputHandlerInternal(struct android_app *app, AInputEvent *event) {
@@ -777,7 +796,8 @@ int32_t Engine::inputHandlerInternal(struct android_app *app, AInputEvent *event
         engine->animating = true;
         engine->state.x = (int32_t)AMotionEvent_getX(event, 0);
         engine->state.y = (int32_t)AMotionEvent_getY(event, 0);
-        LOGI("x: %d, y: %d", engine->state.x, engine->state.y);
+        __android_log_print(ANDROID_LOG_INFO, "main", "x: %d, y: %d",
+                engine->state.x, engine->state.y);
         return 1;
     }
     return 0;

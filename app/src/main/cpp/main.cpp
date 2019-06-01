@@ -7,20 +7,20 @@
 
 void android_main(android_app *app)
 {
-    app->userData = &engine;
+    app->userData = &gEngine;
     app->onAppCmd = Engine::cmdHandler;
     app->onInputEvent = Engine::inputHandler;
-    engine.app = app;
+    gEngine.app = app;
 
     if(app->savedState != nullptr) {
-        engine.state = *reinterpret_cast<Engine::SavedState *>(app->savedState);
+        gEngine.state = *reinterpret_cast<Engine::SavedState *>(app->savedState);
     }
 
     while(true) {
         int events;
         struct android_poll_source *source;
 
-        while(ALooper_pollAll(engine.animating ? 0 : -1, nullptr, &events,
+        while(ALooper_pollAll(gEngine.animating ? 0 : -1, nullptr, &events,
                                        (void **)&source) >= 0) {
             if(source != nullptr) {
                 source->process(app, source);
@@ -31,9 +31,9 @@ void android_main(android_app *app)
             }
         }
 
-        if(engine.animating) {
-            engine.drawFrame();
-            engine.animating = false;
+        if(gEngine.animating) {
+            gEngine.drawFrame();
+            gEngine.animating = false;
         }
     }
 }
