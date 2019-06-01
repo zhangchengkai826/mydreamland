@@ -2,7 +2,7 @@
 // Created by andys on 5/31/2019.
 //
 
-#include "shaderHelper.h"
+#include "engine_shader_helper.h"
 
 std::vector<char> readFile(struct engine *engine, const char *fileName) {
     AAsset* shaderFile = AAssetManager_open(engine->app->activity->assetManager,

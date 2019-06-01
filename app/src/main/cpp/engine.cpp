@@ -4,7 +4,7 @@
 
 #include "engine.h"
 
-#include "shaderHelper.h"
+#include "engine_shader_helper.h"
 
 #define MAX_FRAMES_IN_FLIGHT 2
 
