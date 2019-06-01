@@ -42,8 +42,14 @@ struct engine {
     std::vector<VkFramebuffer> swapChainFrameBuffers;
     VkCommandPool commandPool = VK_NULL_HANDLE;
     std::vector<VkCommandBuffer> commandBuffers;
-    VkSemaphore imageAvailableSemaphore = VK_NULL_HANDLE;
-    VkSemaphore renderFinishedSemaphore = VK_NULL_HANDLE;
+    std::vector<VkSemaphore> imageAvailableSemaphores;
+    std::vector<VkSemaphore> renderFinishedSemaphores;
+    std::vector<VkFence> inFlightFences;
+    int currentFrame = 0;
 };
+
+int32_t engine_handle_input(struct android_app *app, AInputEvent *event);
+void engine_handle_cmd(struct android_app *app, int32_t cmd);
+void engine_draw_frame(struct engine * engine);
 
 #endif //MYDREAMLAND_ENGINE_H
