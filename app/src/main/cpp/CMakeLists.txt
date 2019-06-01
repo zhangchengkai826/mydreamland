@@ -22,13 +22,27 @@ add_library( # Sets the name of the library.
              SHARED
 
              # Provides a relative path to your source file(s).
-             main.cpp engine.cpp engine_shader_helper.cpp)
+             main.cpp)
 
 target_include_directories(main PRIVATE
         ${ANDROID_NDK}/sources/android/native_app_glue)
 
+target_include_directories(main PRIVATE
+        engine/public)
+
 add_library(native_app_glue STATIC
         ${ANDROID_NDK}/sources/android/native_app_glue/android_native_app_glue.c)
+
+add_library(engine STATIC
+
+        engine/private/engine.cpp
+        engine/private/engine_shader_helper.cpp)
+
+target_include_directories(main PRIVATE
+        ${ANDROID_NDK}/sources/android/native_app_glue)
+
+target_include_directories(engine PRIVATE
+        engine/public)
 
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because CMake includes system libraries in the search path by
@@ -53,6 +67,7 @@ target_link_libraries( # Specifies the target library.
                        # Links the target library to the log library
                        # included in the NDK.
         android
-        native_app_glue
         vulkan
+        native_app_glue
+        engine
         ${log-lib} )

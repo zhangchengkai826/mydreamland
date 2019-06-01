@@ -5,13 +5,13 @@
 #ifndef MYDREAMLAND_ENGINE_H
 #define MYDREAMLAND_ENGINE_H
 
-#include <vector>
+#include "../../../../../../../../AppData/Local/Android/Sdk/ndk-bundle/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/include/c++/v1/vector"
 
-#include <android/log.h>
-#include <android_native_app_glue.h>
+#include "../../../../../../../../AppData/Local/Android/Sdk/ndk-bundle/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/include/android/log.h"
+#include "../../../../../../../../AppData/Local/Android/Sdk/ndk-bundle/sources/android/native_app_glue/android_native_app_glue.h"
 
-#include <vulkan/vulkan.h>
-#include <vulkan/vulkan_android.h>
+#include "../../../../../../../../AppData/Local/Android/Sdk/ndk-bundle/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/include/vulkan/vulkan.h"
+#include "../../../../../../../../AppData/Local/Android/Sdk/ndk-bundle/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/include/vulkan/vulkan_android.h"
 
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, "main", __VA_ARGS__)
 
