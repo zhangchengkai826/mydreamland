@@ -39,6 +39,9 @@ struct engine {
     VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
     VkRenderPass renderPass;
     VkPipeline graphicsPipeline;
+    std::vector<VkFramebuffer> swapChainFrameBuffers;
+    VkCommandPool commandPool;
+    std::vector<VkCommandBuffer> commandBuffers;
 };
 
 #endif //MYDREAMLAND_ENGINE_H

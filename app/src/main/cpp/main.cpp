@@ -332,7 +332,7 @@ static int engine_init_display(struct engine *engine) {
 
     // retrieve swap chain images
     vkGetSwapchainImagesKHR(engine->vkDevice, engine->vkSwapchain, &imageCount, nullptr);
-    engine->swapChainImages.reserve(imageCount);
+    engine->swapChainImages.resize(imageCount);
     vkGetSwapchainImagesKHR(engine->vkDevice, engine->vkSwapchain, &imageCount,
             engine->swapChainImages.data());
 
@@ -559,10 +559,98 @@ static int engine_init_display(struct engine *engine) {
     vkDestroyShaderModule(engine->vkDevice, vertShaderModule, nullptr);
     vkDestroyShaderModule(engine->vkDevice, fragShaderModule, nullptr);
 
+    // create frame buffers
+    engine->swapChainFrameBuffers.resize(engine->swapChainImageViews.size());
+    for(size_t i = 0; i < engine->swapChainFrameBuffers.size(); i++) {
+        VkImageView attachments[] = {
+                engine->swapChainImageViews[i]
+        };
+        VkFramebufferCreateInfo framebufferCreateInfo{
+            .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = 0,
+            .renderPass = engine->renderPass,
+            .attachmentCount = 1,
+            .pAttachments = attachments,
+            .width = surfaceCapabilities.currentExtent.width,
+            .height = surfaceCapabilities.currentExtent.height,
+            .layers = 1
+        };
+        vkCreateFramebuffer(engine->vkDevice, &framebufferCreateInfo, nullptr,
+                &engine->swapChainFrameBuffers[i]);
+    }
+
+    // create command pool
+    VkCommandPoolCreateInfo commandPoolCreateInfo{
+        .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+        .queueFamilyIndex = queueFamilyIndex,
+        .flags = 0,
+        .pNext = nullptr,
+    };
+    vkCreateCommandPool(engine->vkDevice, &commandPoolCreateInfo, nullptr, &engine->commandPool);
+
+    // allocate command buffer
+    engine->commandBuffers.resize(engine->swapChainFrameBuffers.size());
+    VkCommandBufferAllocateInfo commandBufferAllocateInfo{
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+        .pNext = nullptr,
+        .commandPool = engine->commandPool,
+        .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+        .commandBufferCount = static_cast<uint32_t>(engine->commandBuffers.size()),
+    };
+    vkAllocateCommandBuffers(engine->vkDevice, &commandBufferAllocateInfo,
+            engine->commandBuffers.data());
+
+    // record command buffer
+    for(size_t i = 0; i < engine->commandBuffers.size(); i++) {
+        VkCommandBufferBeginInfo commandBufferBeginInfo{
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+            .pNext = nullptr,
+            .flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT,
+            .pInheritanceInfo = nullptr,
+        };
+        vkBeginCommandBuffer(engine->commandBuffers[i], &commandBufferBeginInfo);
+
+        VkClearValue clearColor;
+        clearColor.color.float32[0] = 0.0f;
+        clearColor.color.float32[1] = 0.0f;
+        clearColor.color.float32[2] = 0.0f;
+        clearColor.color.float32[3] = 1.0f;
+        VkRenderPassBeginInfo renderPassBeginInfo{
+            .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+            .pNext = nullptr,
+            .renderPass = engine->renderPass,
+            .framebuffer = engine->swapChainFrameBuffers[i],
+            .renderArea.offset = {0, 0},
+            .renderArea.extent = surfaceCapabilities.currentExtent,
+            .clearValueCount = 1,
+            .pClearValues = &clearColor,
+        };
+        PFN_vkCmdBeginRenderPass vkCmdBeginRenderPass;
+        vkCmdBeginRenderPass = (PFN_vkCmdBeginRenderPass)vkGetInstanceProcAddr(
+                engine->vkInstance, "vkCmdBeginRenderPass");
+        vkCmdBeginRenderPass(engine->commandBuffers[i], &renderPassBeginInfo,
+                VK_SUBPASS_CONTENTS_INLINE);
+
+        vkCmdBindPipeline(engine->commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
+                engine->graphicsPipeline);
+
+        vkCmdDraw(engine->commandBuffers[i], 3, 1, 0, 0);
+
+        vkCmdEndRenderPass(engine->commandBuffers[i]);
+        vkEndCommandBuffer(engine->commandBuffers[i]);
+    }
+
     return 0;
 }
 
 static void engine_term_display(struct engine *engine) {
+    vkDestroyCommandPool(engine->vkDevice, engine->commandPool, nullptr);
+
+    for(auto framebuffer: engine->swapChainFrameBuffers) {
+        vkDestroyFramebuffer(engine->vkDevice, framebuffer, nullptr);
+    }
+
     vkDestroyPipeline(engine->vkDevice, engine->graphicsPipeline, nullptr);
     vkDestroyRenderPass(engine->vkDevice, engine->renderPass, nullptr);
     vkDestroyPipelineLayout(engine->vkDevice, engine->pipelineLayout, nullptr);
