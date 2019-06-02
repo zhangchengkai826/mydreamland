@@ -42,10 +42,12 @@ private:
     VkPhysicalDeviceFeatures physicalDeviceFeatures;
     VkSurfaceCapabilitiesKHR physicalDeviceSurfaceCapabilities;
     uint32_t physicalDeviceGraphicsQueueFamilyIndex = 0;
+    VkSurfaceFormatKHR physicalDeviceSurfaceFormat = {VK_FORMAT_R8G8B8A8_UNORM,
+                                   VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
+    VkPresentModeKHR physicalDeviceSurfacePresentMode = VK_PRESENT_MODE_FIFO_KHR;
     VkDevice vkDevice = VK_NULL_HANDLE;
     VkQueue vkQueue = VK_NULL_HANDLE;
     VkSwapchainKHR vkSwapchain = VK_NULL_HANDLE;
-    VkFormat swapChainImageFormat = VK_FORMAT_UNDEFINED;
     std::vector<VkImage> swapChainImages;
     std::vector<VkImageView> swapChainImageViews;
     VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
@@ -69,8 +71,11 @@ private:
     void createVKInstance();
     void createVKAndroidSurface();
     void selectPhysicalDevice();
+    void updatePhysicalDeviceFeatures();
     void updatePhysicalDeviceSurfaceCapabilities();
     void updatePhysicalDeviceGraphicsQueueFamilyIndex();
+    void selectPhysicalDeviceSurfaceFormat();
+    void selectPhysicalDeviceSurfacePresentMode();
 
     /* engine_shader_helper.cpp */
     std::vector<char> readFile(const char *fileName);
@@ -87,8 +92,8 @@ private:
     void updateAvailableValidationLayerNames();
     void createVKDebugReportCallback();
     void logSelectedPhysicalDeviceProperties();
-    void logSelectedPhysicalDeviceFeatures();
     void logSelectedPhysicalDeviceAvailableExtensions();
+    void checkSelectedPhysicalDeviceGraphicsQueueSurfaceSupport();
 };
 
 extern Engine gEngine;

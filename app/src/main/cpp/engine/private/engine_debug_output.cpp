@@ -109,18 +109,6 @@ void Engine::logSelectedPhysicalDeviceProperties() {
                         VK_VERSION_PATCH(physicalDeviceProperties.apiVersion));
 }
 
-void Engine::logSelectedPhysicalDeviceFeatures() {
-    vkGetPhysicalDeviceFeatures(vkPhysicalDevice, &physicalDeviceFeatures);
-    __android_log_print(ANDROID_LOG_INFO, "main", "Vulkan Selected Physical Device Features:");
-    __android_log_print(ANDROID_LOG_INFO, "main",
-                        "Support Tessellation Shader: %d",
-                        physicalDeviceFeatures.tessellationShader);
-    __android_log_print(ANDROID_LOG_INFO, "main",
-                        "Support Geometry Shader: %d", physicalDeviceFeatures.geometryShader);
-    __android_log_print(ANDROID_LOG_INFO, "main",
-                        "Support Index32: %d", physicalDeviceFeatures.fullDrawIndexUint32);
-}
-
 void Engine::logSelectedPhysicalDeviceAvailableExtensions() {
     uint32_t deviceExtensionCount = 0;
     vkEnumerateDeviceExtensionProperties(vkPhysicalDevice, nullptr, &deviceExtensionCount, nullptr);
@@ -133,4 +121,11 @@ void Engine::logSelectedPhysicalDeviceAvailableExtensions() {
                             "\tExtension Name: %s\t\tVersion: %d", extension.extensionName,
                             extension.specVersion);
     }
+}
+
+void Engine::checkSelectedPhysicalDeviceGraphicsQueueSurfaceSupport() {
+    VkBool32 b_presentSupport = false;
+    vkGetPhysicalDeviceSurfaceSupportKHR(vkPhysicalDevice, physicalDeviceGraphicsQueueFamilyIndex,
+                                         vkSurface, &b_presentSupport);
+    assert(b_presentSupport);
 }

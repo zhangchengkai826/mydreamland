@@ -14,59 +14,14 @@ int Engine::initDisplay() {
     createVKAndroidSurface();
     selectPhysicalDevice();
     logSelectedPhysicalDeviceProperties();
-    logSelectedPhysicalDeviceFeatures();
+    updatePhysicalDeviceFeatures();
     logSelectedPhysicalDeviceAvailableExtensions();
     updatePhysicalDeviceSurfaceCapabilities();
     updatePhysicalDeviceGraphicsQueueFamilyIndex();
+    checkSelectedPhysicalDeviceGraphicsQueueSurfaceSupport();
+    selectPhysicalDeviceSurfaceFormat();
+    selectPhysicalDeviceSurfacePresentMode();
 
-    VkBool32 b_presentSupport = false;
-    vkGetPhysicalDeviceSurfaceSupportKHR(vkPhysicalDevice, physicalDeviceGraphicsQueueFamilyIndex,
-            vkSurface, &b_presentSupport);
-    assert(b_presentSupport);
-
-    uint32_t formatCount;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(vkPhysicalDevice, vkSurface, &formatCount, nullptr);
-    assert(formatCount > 0);
-    std::vector<VkSurfaceFormatKHR> formats(formatCount);
-    vkGetPhysicalDeviceSurfaceFormatsKHR(vkPhysicalDevice, vkSurface, &formatCount,
-                                         formats.data());
-    VkSurfaceFormatKHR surfaceFormatChosen = {VK_FORMAT_R8G8B8A8_UNORM,
-                                              VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
-    bool b_formatSupport = false;
-    __android_log_print(ANDROID_LOG_INFO, "main",
-            "Vulkan Physical Device Supported Formats:\n");
-    for(const auto &format: formats) {
-        if(format.format == surfaceFormatChosen.format && format.colorSpace ==
-                                                          surfaceFormatChosen.colorSpace) {
-            b_formatSupport = true;
-        }
-        if(format.format == VK_FORMAT_UNDEFINED) {
-            b_formatSupport = true;
-        }
-        __android_log_print(ANDROID_LOG_INFO, "main",
-                "\tFormat: %d\tColor Space: %d\n", format.format, format.colorSpace);
-    }
-    assert(b_formatSupport);
-    swapChainImageFormat = surfaceFormatChosen.format;
-
-    uint32_t presentModeCount;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(vkPhysicalDevice, vkSurface, &presentModeCount,
-                                              nullptr);
-    assert(presentModeCount > 0);
-    std::vector<VkPresentModeKHR> presentModes(presentModeCount);
-    vkGetPhysicalDeviceSurfacePresentModesKHR(vkPhysicalDevice, vkSurface, &presentModeCount,
-                                              presentModes.data());
-    VkPresentModeKHR presentModeChosen = VK_PRESENT_MODE_FIFO_KHR;
-    bool b_presentModeSupport = false;
-    __android_log_print(ANDROID_LOG_INFO, "main",
-            "Vulkan Physical Device Supported Present Modes:\n");
-    for(const auto &pm: presentModes) {
-        if(pm == presentModeChosen) {
-            b_presentModeSupport = true;
-        }
-        __android_log_print(ANDROID_LOG_INFO, "main", "\tPresent Mode: %d\n", pm);
-    }
-    assert(b_presentModeSupport);
 
     // Create a logical device from GPU we picked
     float priorities[] = {
@@ -115,8 +70,8 @@ int Engine::initDisplay() {
             .flags = 0,
             .surface = vkSurface,
             .minImageCount = imageCount,
-            .imageFormat = surfaceFormatChosen.format,
-            .imageColorSpace = surfaceFormatChosen.colorSpace,
+            .imageFormat = physicalDeviceSurfaceFormat.format,
+            .imageColorSpace = physicalDeviceSurfaceFormat.colorSpace,
             .imageExtent = physicalDeviceSurfaceCapabilities.currentExtent,
             .imageArrayLayers = 1,
             .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
@@ -125,7 +80,7 @@ int Engine::initDisplay() {
             .pQueueFamilyIndices = nullptr,
             .preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
             .compositeAlpha = VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR,
-            .presentMode = presentModeChosen,
+            .presentMode = physicalDeviceSurfacePresentMode,
             .clipped = VK_TRUE,
             .oldSwapchain = VK_NULL_HANDLE,
     };
@@ -144,7 +99,7 @@ int Engine::initDisplay() {
                 .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
                 .image = swapChainImages[i],
                 .viewType = VK_IMAGE_VIEW_TYPE_2D,
-                .format = swapChainImageFormat,
+                .format = physicalDeviceSurfaceFormat.format,
                 .components.r = VK_COMPONENT_SWIZZLE_IDENTITY,
                 .components.g = VK_COMPONENT_SWIZZLE_IDENTITY,
                 .components.b = VK_COMPONENT_SWIZZLE_IDENTITY,
@@ -293,7 +248,7 @@ int Engine::initDisplay() {
                            &pipelineLayout);
 
     VkAttachmentDescription colorAttachment{
-            .format = swapChainImageFormat,
+            .format = physicalDeviceSurfaceFormat.format,
             .samples = VK_SAMPLE_COUNT_1_BIT,
             .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
             .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
