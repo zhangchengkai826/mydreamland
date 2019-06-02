@@ -5,13 +5,13 @@
 #ifndef MYDREAMLAND_ENGINE_H
 #define MYDREAMLAND_ENGINE_H
 
-#include "../../../../../../../../AppData/Local/Android/Sdk/ndk-bundle/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/include/c++/v1/vector"
+#include <vector>
 
-#include "../../../../../../../../AppData/Local/Android/Sdk/ndk-bundle/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/include/android/log.h"
-#include "../../../../../../../../AppData/Local/Android/Sdk/ndk-bundle/sources/android/native_app_glue/android_native_app_glue.h"
+#include <android/log.h>
+#include <android_native_app_glue.h>
 
-#include "../../../../../../../../AppData/Local/Android/Sdk/ndk-bundle/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/include/vulkan/vulkan.h"
-#include "../../../../../../../../AppData/Local/Android/Sdk/ndk-bundle/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/include/vulkan/vulkan_android.h"
+#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_android.h>
 
 class Engine {
 public:
@@ -63,6 +63,14 @@ private:
     /* engine_shader_helper.cpp */
     std::vector<char> readFile(const char *fileName);
     VkShaderModule createShaderModule(const std::vector<char> &code);
+
+    /* engine_debug_output.cpp */
+    static VKAPI_ATTR VkBool32 VKAPI_CALL debugReportCallback(
+            VkDebugReportFlagsEXT msgFlags,
+            VkDebugReportObjectTypeEXT objType,
+            uint64_t srcObject, size_t location,
+            int32_t msgCode, const char *pLayerPrefix,
+            const char *pMsg, void *pUserData);
 };
 
 extern Engine gEngine;
