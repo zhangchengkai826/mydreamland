@@ -14,26 +14,8 @@ int Engine::initDisplay() {
     createVKAndroidSurface();
     selectPhysicalDevice();
     logSelectedPhysicalDeviceProperties();
-
-    VkPhysicalDeviceFeatures gpuFeatures;
-    vkGetPhysicalDeviceFeatures(vkPhysicalDevice, &gpuFeatures);
-    __android_log_print(ANDROID_LOG_INFO, "main",
-            "Vulkan Physical Device Support Tessellation Shader: %d", gpuFeatures.tessellationShader);
-    __android_log_print(ANDROID_LOG_INFO, "main",
-            "Vulkan Physical Device Support Geometry Shader: %d", gpuFeatures.geometryShader);
-    __android_log_print(ANDROID_LOG_INFO, "main",
-            "Vulkan Physical Device Support Index32: %d", gpuFeatures.fullDrawIndexUint32);
-
-    uint32_t deviceExtensionCount = 0;
-    vkEnumerateDeviceExtensionProperties(vkPhysicalDevice, nullptr, &deviceExtensionCount, nullptr);
-    std::vector<VkExtensionProperties> deviceExtension(deviceExtensionCount);
-    vkEnumerateInstanceExtensionProperties(nullptr, &deviceExtensionCount, deviceExtension.data());
-    __android_log_print(ANDROID_LOG_INFO, "main", "Vulkan Physical Device Available Extensions:\n");
-    for(const auto &extension: deviceExtension) {
-        __android_log_print(ANDROID_LOG_INFO, "main",
-                "\tExtension Name: %s\t\tVersion: %d\n", extension.extensionName,
-             extension.specVersion);
-    }
+    logSelectedPhysicalDeviceFeatures();
+    logSelectedPhysicalDeviceAvailableExtensions();
 
     VkSurfaceCapabilitiesKHR surfaceCapabilities;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vkPhysicalDevice, vkSurface,
@@ -151,7 +133,7 @@ int Engine::initDisplay() {
             .ppEnabledLayerNames = nullptr,
             .enabledExtensionCount = static_cast<uint32_t>(deviceExt.size()),
             .ppEnabledExtensionNames = deviceExt.data(),
-            .pEnabledFeatures = &gpuFeatures,
+            .pEnabledFeatures = &physicalDeviceFeatures,
     };
     if(DEBUG_ON && validationLayerNames.size() > 0) {
         deviceCreateInfo.enabledLayerCount = validationLayerNames.size();

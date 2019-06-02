@@ -39,6 +39,7 @@ private:
     VkDebugReportCallbackEXT vkDebugReportCallbackExt = VK_NULL_HANDLE;
     VkSurfaceKHR vkSurface = VK_NULL_HANDLE;
     VkPhysicalDevice vkPhysicalDevice = VK_NULL_HANDLE;
+    VkPhysicalDeviceFeatures physicalDeviceFeatures;
     VkDevice vkDevice = VK_NULL_HANDLE;
     VkQueue vkQueue = VK_NULL_HANDLE;
     VkSwapchainKHR vkSwapchain = VK_NULL_HANDLE;
@@ -82,6 +83,8 @@ private:
     void updateAvailableValidationLayerNames();
     void createVKDebugReportCallback();
     void logSelectedPhysicalDeviceProperties();
+    void logSelectedPhysicalDeviceFeatures();
+    void logSelectedPhysicalDeviceAvailableExtensions();
 };
 
 extern Engine gEngine;

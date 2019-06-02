@@ -108,3 +108,29 @@ void Engine::logSelectedPhysicalDeviceProperties() {
                         VK_VERSION_MINOR(physicalDeviceProperties.apiVersion),
                         VK_VERSION_PATCH(physicalDeviceProperties.apiVersion));
 }
+
+void Engine::logSelectedPhysicalDeviceFeatures() {
+    vkGetPhysicalDeviceFeatures(vkPhysicalDevice, &physicalDeviceFeatures);
+    __android_log_print(ANDROID_LOG_INFO, "main", "Vulkan Selected Physical Device Features:");
+    __android_log_print(ANDROID_LOG_INFO, "main",
+                        "Support Tessellation Shader: %d",
+                        physicalDeviceFeatures.tessellationShader);
+    __android_log_print(ANDROID_LOG_INFO, "main",
+                        "Support Geometry Shader: %d", physicalDeviceFeatures.geometryShader);
+    __android_log_print(ANDROID_LOG_INFO, "main",
+                        "Support Index32: %d", physicalDeviceFeatures.fullDrawIndexUint32);
+}
+
+void Engine::logSelectedPhysicalDeviceAvailableExtensions() {
+    uint32_t deviceExtensionCount = 0;
+    vkEnumerateDeviceExtensionProperties(vkPhysicalDevice, nullptr, &deviceExtensionCount, nullptr);
+    std::vector<VkExtensionProperties> deviceExtension(deviceExtensionCount);
+    vkEnumerateInstanceExtensionProperties(nullptr, &deviceExtensionCount, deviceExtension.data());
+    __android_log_print(ANDROID_LOG_INFO, "main",
+            "Vulkan Selected Physical Device Available Extensions:");
+    for(const auto &extension: deviceExtension) {
+        __android_log_print(ANDROID_LOG_INFO, "main",
+                            "\tExtension Name: %s\t\tVersion: %d", extension.extensionName,
+                            extension.specVersion);
+    }
+}
