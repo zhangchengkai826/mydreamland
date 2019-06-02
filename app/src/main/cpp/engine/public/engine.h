@@ -6,6 +6,7 @@
 #define MYDREAMLAND_ENGINE_H
 
 #include <vector>
+#include <array>
 
 #include <android/log.h>
 #include <android_native_app_glue.h>
@@ -14,6 +15,35 @@
 #include <vulkan/vulkan_android.h>
 
 #include <glm/glm.hpp>
+
+struct Vertex {
+    glm::vec2 pos;
+    glm::vec3 color;
+
+    static VkVertexInputBindingDescription getBindingDescription() {
+        VkVertexInputBindingDescription bindingDescription{
+            .binding = 0,
+            .stride = sizeof(Vertex),
+            .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
+        };
+        return bindingDescription;
+    }
+    static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions() {
+        std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{{
+            {.binding = 0,
+             .location = 0,
+             .format = VK_FORMAT_R32G32_SFLOAT,
+             .offset = offsetof(Vertex, pos)},
+            {.binding = 0,
+             .location = 1,
+             .format = VK_FORMAT_R32G32B32_SFLOAT,
+             .offset = offsetof(Vertex, color)},
+        }};
+        return attributeDescriptions;
+    }
+};
+
+extern const std::vector<Vertex> vertices;
 
 class Engine {
 public:
