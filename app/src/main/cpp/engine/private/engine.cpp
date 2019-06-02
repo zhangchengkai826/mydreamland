@@ -16,53 +16,12 @@ int Engine::initDisplay() {
     logSelectedPhysicalDeviceProperties();
     logSelectedPhysicalDeviceFeatures();
     logSelectedPhysicalDeviceAvailableExtensions();
-
-    VkSurfaceCapabilitiesKHR surfaceCapabilities;
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vkPhysicalDevice, vkSurface,
-                                              &surfaceCapabilities);
-
-    __android_log_print(ANDROID_LOG_INFO, "main", "Vulkan Surface Capabilities:\n");
-    __android_log_print(ANDROID_LOG_INFO, "main",
-            "\timage count: %u - %u\n", surfaceCapabilities.minImageCount,
-         surfaceCapabilities.maxImageCount);
-    __android_log_print(ANDROID_LOG_INFO, "main",
-            "\tarray layers: %u\n", surfaceCapabilities.maxImageArrayLayers);
-    __android_log_print(ANDROID_LOG_INFO, "main",
-            "\timage size (now): %dx%d\n", surfaceCapabilities.currentExtent.width,
-         surfaceCapabilities.currentExtent.height);
-    __android_log_print(ANDROID_LOG_INFO, "main", "\timage size (extent): %dx%d - %dx%d\n",
-         surfaceCapabilities.minImageExtent.width,
-         surfaceCapabilities.minImageExtent.height,
-         surfaceCapabilities.maxImageExtent.width,
-         surfaceCapabilities.maxImageExtent.height);
-    __android_log_print(ANDROID_LOG_INFO, "main",
-            "\tusage: %x\n", surfaceCapabilities.supportedUsageFlags);
-    __android_log_print(ANDROID_LOG_INFO, "main",
-            "\tcurrent transform: %u\n", surfaceCapabilities.currentTransform);
-    __android_log_print(ANDROID_LOG_INFO, "main",
-            "\tallowed transforms: %x\n", surfaceCapabilities.supportedTransforms);
-    __android_log_print(ANDROID_LOG_INFO, "main",
-            "\tcomposite alpha flags: %u\n", surfaceCapabilities.supportedCompositeAlpha);
-
-    // Find the family index of a graphics queue family
-    uint32_t queueFamilyCount;
-    vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice, &queueFamilyCount, nullptr);
-    assert(queueFamilyCount);
-    std::vector<VkQueueFamilyProperties> queueFamilyProperties(queueFamilyCount);
-    vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice, &queueFamilyCount,
-                                             queueFamilyProperties.data());
-
-    uint32_t queueFamilyIndex;
-    for (queueFamilyIndex = 0; queueFamilyIndex < queueFamilyCount; queueFamilyIndex++) {
-        if (queueFamilyProperties[queueFamilyIndex].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-            break;
-        }
-    }
-    assert(queueFamilyIndex < queueFamilyCount);
+    updatePhysicalDeviceSurfaceCapabilities();
+    updatePhysicalDeviceGraphicsQueueFamilyIndex();
 
     VkBool32 b_presentSupport = false;
-    vkGetPhysicalDeviceSurfaceSupportKHR(vkPhysicalDevice, queueFamilyIndex, vkSurface,
-                                         &b_presentSupport);
+    vkGetPhysicalDeviceSurfaceSupportKHR(vkPhysicalDevice, physicalDeviceGraphicsQueueFamilyIndex,
+            vkSurface, &b_presentSupport);
     assert(b_presentSupport);
 
     uint32_t formatCount;
@@ -118,7 +77,7 @@ int Engine::initDisplay() {
             .pNext = nullptr,
             .flags = 0,
             .queueCount = 1,
-            .queueFamilyIndex = queueFamilyIndex,
+            .queueFamilyIndex = physicalDeviceGraphicsQueueFamilyIndex,
             .pQueuePriorities = priorities,
     };
 
@@ -142,12 +101,12 @@ int Engine::initDisplay() {
     vkCreateDevice(vkPhysicalDevice, &deviceCreateInfo, nullptr, &vkDevice);
 
     // get queue from logical device
-    vkGetDeviceQueue(vkDevice, queueFamilyIndex, 0, &vkQueue);
+    vkGetDeviceQueue(vkDevice, physicalDeviceGraphicsQueueFamilyIndex, 0, &vkQueue);
 
     // create swap chain
-    assert(surfaceCapabilities.minImageCount > 1);
-    uint32_t imageCount = surfaceCapabilities.minImageCount;
-    if(imageCount + 1 <= surfaceCapabilities.maxImageCount) {
+    assert(physicalDeviceSurfaceCapabilities.minImageCount > 1);
+    uint32_t imageCount = physicalDeviceSurfaceCapabilities.minImageCount;
+    if(imageCount + 1 <= physicalDeviceSurfaceCapabilities.maxImageCount) {
         imageCount += 1;
     }
     VkSwapchainCreateInfoKHR swapchainCreateInfo{
@@ -158,7 +117,7 @@ int Engine::initDisplay() {
             .minImageCount = imageCount,
             .imageFormat = surfaceFormatChosen.format,
             .imageColorSpace = surfaceFormatChosen.colorSpace,
-            .imageExtent = surfaceCapabilities.currentExtent,
+            .imageExtent = physicalDeviceSurfaceCapabilities.currentExtent,
             .imageArrayLayers = 1,
             .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
             .imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
@@ -248,14 +207,14 @@ int Engine::initDisplay() {
     VkViewport viewport{
             .x = 0,
             .y = 0,
-            .width = static_cast<float>(surfaceCapabilities.currentExtent.width),
-            .height = static_cast<float>(surfaceCapabilities.currentExtent.height),
+            .width = static_cast<float>(physicalDeviceSurfaceCapabilities.currentExtent.width),
+            .height = static_cast<float>(physicalDeviceSurfaceCapabilities.currentExtent.height),
             .minDepth = 0.0f,
             .maxDepth = 1.0f,
     };
     VkRect2D scissor{
             .offset = {0, 0},
-            .extent = surfaceCapabilities.currentExtent,
+            .extent = physicalDeviceSurfaceCapabilities.currentExtent,
     };
     VkPipelineViewportStateCreateInfo viewportStateCreateInfo{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
@@ -355,7 +314,8 @@ int Engine::initDisplay() {
             .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
             .srcAccessMask = 0,
             .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-            .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+            .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+                    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
 
     };
     VkSubpassDescription subpassDescription{
@@ -423,8 +383,8 @@ int Engine::initDisplay() {
                 .renderPass = renderPass,
                 .attachmentCount = 1,
                 .pAttachments = attachments,
-                .width = surfaceCapabilities.currentExtent.width,
-                .height = surfaceCapabilities.currentExtent.height,
+                .width = physicalDeviceSurfaceCapabilities.currentExtent.width,
+                .height = physicalDeviceSurfaceCapabilities.currentExtent.height,
                 .layers = 1
         };
         vkCreateFramebuffer(vkDevice, &framebufferCreateInfo, nullptr,
@@ -434,7 +394,7 @@ int Engine::initDisplay() {
     // create command pool
     VkCommandPoolCreateInfo commandPoolCreateInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-            .queueFamilyIndex = queueFamilyIndex,
+            .queueFamilyIndex = physicalDeviceGraphicsQueueFamilyIndex,
             .flags = 0,
             .pNext = nullptr,
     };
@@ -473,7 +433,7 @@ int Engine::initDisplay() {
                 .renderPass = renderPass,
                 .framebuffer = swapChainFrameBuffers[i],
                 .renderArea.offset = {0, 0},
-                .renderArea.extent = surfaceCapabilities.currentExtent,
+                .renderArea.extent = physicalDeviceSurfaceCapabilities.currentExtent,
                 .clearValueCount = 1,
                 .pClearValues = &clearColor,
         };

@@ -40,6 +40,8 @@ private:
     VkSurfaceKHR vkSurface = VK_NULL_HANDLE;
     VkPhysicalDevice vkPhysicalDevice = VK_NULL_HANDLE;
     VkPhysicalDeviceFeatures physicalDeviceFeatures;
+    VkSurfaceCapabilitiesKHR physicalDeviceSurfaceCapabilities;
+    uint32_t physicalDeviceGraphicsQueueFamilyIndex = 0;
     VkDevice vkDevice = VK_NULL_HANDLE;
     VkQueue vkQueue = VK_NULL_HANDLE;
     VkSwapchainKHR vkSwapchain = VK_NULL_HANDLE;
@@ -67,6 +69,8 @@ private:
     void createVKInstance();
     void createVKAndroidSurface();
     void selectPhysicalDevice();
+    void updatePhysicalDeviceSurfaceCapabilities();
+    void updatePhysicalDeviceGraphicsQueueFamilyIndex();
 
     /* engine_shader_helper.cpp */
     std::vector<char> readFile(const char *fileName);

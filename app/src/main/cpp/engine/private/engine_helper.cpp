@@ -57,3 +57,55 @@ void Engine::selectPhysicalDevice() {
     vkEnumeratePhysicalDevices(vkInstance, &physicalDeviceCount, physicalDevices);
     vkPhysicalDevice = physicalDevices[0];  // Pick up the first physical device
 }
+
+void Engine::updatePhysicalDeviceSurfaceCapabilities() {
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vkPhysicalDevice, vkSurface,
+                                              &physicalDeviceSurfaceCapabilities);
+
+    __android_log_print(ANDROID_LOG_INFO, "main", "Vulkan physicalDeviceSurface Capabilities:\n");
+    __android_log_print(ANDROID_LOG_INFO, "main",
+                        "\timage count: %u - %u\n", physicalDeviceSurfaceCapabilities.minImageCount,
+                        physicalDeviceSurfaceCapabilities.maxImageCount);
+    __android_log_print(ANDROID_LOG_INFO, "main",
+                        "\tarray layers: %u\n",
+                        physicalDeviceSurfaceCapabilities.maxImageArrayLayers);
+    __android_log_print(ANDROID_LOG_INFO, "main",
+                        "\timage size (now): %dx%d\n",
+                        physicalDeviceSurfaceCapabilities.currentExtent.width,
+                        physicalDeviceSurfaceCapabilities.currentExtent.height);
+    __android_log_print(ANDROID_LOG_INFO, "main", "\timage size (extent): %dx%d - %dx%d\n",
+                        physicalDeviceSurfaceCapabilities.minImageExtent.width,
+                        physicalDeviceSurfaceCapabilities.minImageExtent.height,
+                        physicalDeviceSurfaceCapabilities.maxImageExtent.width,
+                        physicalDeviceSurfaceCapabilities.maxImageExtent.height);
+    __android_log_print(ANDROID_LOG_INFO, "main",
+                        "\tusage: %x\n", physicalDeviceSurfaceCapabilities.supportedUsageFlags);
+    __android_log_print(ANDROID_LOG_INFO, "main",
+                        "\tcurrent transform: %u\n",
+                        physicalDeviceSurfaceCapabilities.currentTransform);
+    __android_log_print(ANDROID_LOG_INFO, "main",
+                        "\tallowed transforms: %x\n",
+                        physicalDeviceSurfaceCapabilities.supportedTransforms);
+    __android_log_print(ANDROID_LOG_INFO, "main",
+                        "\tcomposite alpha flags: %u\n",
+                        physicalDeviceSurfaceCapabilities.supportedCompositeAlpha);
+}
+
+void Engine::updatePhysicalDeviceGraphicsQueueFamilyIndex() {
+    uint32_t queueFamilyCount;
+    vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice, &queueFamilyCount, nullptr);
+    assert(queueFamilyCount);
+    std::vector<VkQueueFamilyProperties> queueFamilyProperties(queueFamilyCount);
+    vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice, &queueFamilyCount,
+                                             queueFamilyProperties.data());
+
+    for (physicalDeviceGraphicsQueueFamilyIndex = 0;
+    physicalDeviceGraphicsQueueFamilyIndex < queueFamilyCount;
+    physicalDeviceGraphicsQueueFamilyIndex++) {
+        if (queueFamilyProperties[physicalDeviceGraphicsQueueFamilyIndex].queueFlags
+        & VK_QUEUE_GRAPHICS_BIT) {
+            break;
+        }
+    }
+    assert(physicalDeviceGraphicsQueueFamilyIndex < queueFamilyCount);
+}
