@@ -8,51 +8,15 @@ Engine gEngine;
 
 int Engine::initDisplay() {
     printAvailableInstanceExtensions();
-    checkAvailableValidationLayers();
+    updateAvailableValidationLayerNames();
     createVKInstance();
-
-    // create Vulkan Debug Report Callback
-    if(DEBUG_ON &&validationLayerNames.size() > 0) {
-        VkDebugReportCallbackCreateInfoEXT debugReportCallbackCreateInfo{
-                .sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT,
-                .pNext = nullptr,
-                .flags = VK_DEBUG_REPORT_ERROR_BIT_EXT |
-                         VK_DEBUG_REPORT_WARNING_BIT_EXT |
-                         VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT |
-                         VK_DEBUG_REPORT_INFORMATION_BIT_EXT |
-                         VK_DEBUG_REPORT_DEBUG_BIT_EXT,
-                .pfnCallback = debugReportCallback,
-                .pUserData = nullptr
-        };
-        PFN_vkCreateDebugReportCallbackEXT vkCreateDebugReportCallbackExt;
-        vkCreateDebugReportCallbackExt = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(
-                vkInstance, "vkCreateDebugReportCallbackEXT");
-        vkCreateDebugReportCallbackExt(vkInstance, &debugReportCallbackCreateInfo, nullptr,
-                                       &vkDebugReportCallbackExt);
-    }
-
-    // if we create a surface, we need the surface extension
-    VkAndroidSurfaceCreateInfoKHR surfaceCreateInfoKhr{
-            .sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR,
-            .pNext = nullptr,
-            .flags = 0,
-            .window = app->window};
-    vkCreateAndroidSurfaceKHR(vkInstance, &surfaceCreateInfoKhr, nullptr,
-                              &vkSurface);
-
-    // Find one GPU to use:
-    // on Android, every GPU device is equal -- supporting graphics/compute/present
-    // for this sample, we use the very first GPU device found on the system
-    uint32_t gpuCount = 0;
-    vkEnumeratePhysicalDevices(vkInstance, &gpuCount, nullptr);
-    assert(gpuCount > 0);
-    VkPhysicalDevice tmpGpus[gpuCount];
-    vkEnumeratePhysicalDevices(vkInstance, &gpuCount, tmpGpus);
-    vkGpu = tmpGpus[0];  // Pick up the first GPU Device
+    createVKDebugReportCallback();
+    createVKAndroidSurface();
+    selectPhysicalDevice();
 
     // check for Vulkan info on this GPU device
     VkPhysicalDeviceProperties gpuProperties;
-    vkGetPhysicalDeviceProperties(vkGpu, &gpuProperties);
+    vkGetPhysicalDeviceProperties(vkPhysicalDevice, &gpuProperties);
     __android_log_print(ANDROID_LOG_INFO, "main", "Vulkan Physical Device Name: %s",
             gpuProperties.deviceName);
     __android_log_print(ANDROID_LOG_INFO, "main", "Vulkan Physical Device Id: %d",
@@ -70,7 +34,7 @@ int Engine::initDisplay() {
          VK_VERSION_PATCH(gpuProperties.apiVersion));
 
     VkPhysicalDeviceFeatures gpuFeatures;
-    vkGetPhysicalDeviceFeatures(vkGpu, &gpuFeatures);
+    vkGetPhysicalDeviceFeatures(vkPhysicalDevice, &gpuFeatures);
     __android_log_print(ANDROID_LOG_INFO, "main",
             "Vulkan Physical Device Support Tessellation Shader: %d", gpuFeatures.tessellationShader);
     __android_log_print(ANDROID_LOG_INFO, "main",
@@ -79,7 +43,7 @@ int Engine::initDisplay() {
             "Vulkan Physical Device Support Index32: %d", gpuFeatures.fullDrawIndexUint32);
 
     uint32_t deviceExtensionCount = 0;
-    vkEnumerateDeviceExtensionProperties(vkGpu, nullptr, &deviceExtensionCount, nullptr);
+    vkEnumerateDeviceExtensionProperties(vkPhysicalDevice, nullptr, &deviceExtensionCount, nullptr);
     std::vector<VkExtensionProperties> deviceExtension(deviceExtensionCount);
     vkEnumerateInstanceExtensionProperties(nullptr, &deviceExtensionCount, deviceExtension.data());
     __android_log_print(ANDROID_LOG_INFO, "main", "Vulkan Physical Device Available Extensions:\n");
@@ -90,7 +54,7 @@ int Engine::initDisplay() {
     }
 
     VkSurfaceCapabilitiesKHR surfaceCapabilities;
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vkGpu, vkSurface,
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vkPhysicalDevice, vkSurface,
                                               &surfaceCapabilities);
 
     __android_log_print(ANDROID_LOG_INFO, "main", "Vulkan Surface Capabilities:\n");
@@ -118,10 +82,10 @@ int Engine::initDisplay() {
 
     // Find the family index of a graphics queue family
     uint32_t queueFamilyCount;
-    vkGetPhysicalDeviceQueueFamilyProperties(vkGpu, &queueFamilyCount, nullptr);
+    vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice, &queueFamilyCount, nullptr);
     assert(queueFamilyCount);
     std::vector<VkQueueFamilyProperties> queueFamilyProperties(queueFamilyCount);
-    vkGetPhysicalDeviceQueueFamilyProperties(vkGpu, &queueFamilyCount,
+    vkGetPhysicalDeviceQueueFamilyProperties(vkPhysicalDevice, &queueFamilyCount,
                                              queueFamilyProperties.data());
 
     uint32_t queueFamilyIndex;
@@ -133,15 +97,15 @@ int Engine::initDisplay() {
     assert(queueFamilyIndex < queueFamilyCount);
 
     VkBool32 b_presentSupport = false;
-    vkGetPhysicalDeviceSurfaceSupportKHR(vkGpu, queueFamilyIndex, vkSurface,
+    vkGetPhysicalDeviceSurfaceSupportKHR(vkPhysicalDevice, queueFamilyIndex, vkSurface,
                                          &b_presentSupport);
     assert(b_presentSupport);
 
     uint32_t formatCount;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(vkGpu, vkSurface, &formatCount, nullptr);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(vkPhysicalDevice, vkSurface, &formatCount, nullptr);
     assert(formatCount > 0);
     std::vector<VkSurfaceFormatKHR> formats(formatCount);
-    vkGetPhysicalDeviceSurfaceFormatsKHR(vkGpu, vkSurface, &formatCount,
+    vkGetPhysicalDeviceSurfaceFormatsKHR(vkPhysicalDevice, vkSurface, &formatCount,
                                          formats.data());
     VkSurfaceFormatKHR surfaceFormatChosen = {VK_FORMAT_R8G8B8A8_UNORM,
                                               VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
@@ -163,11 +127,11 @@ int Engine::initDisplay() {
     swapChainImageFormat = surfaceFormatChosen.format;
 
     uint32_t presentModeCount;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(vkGpu, vkSurface, &presentModeCount,
+    vkGetPhysicalDeviceSurfacePresentModesKHR(vkPhysicalDevice, vkSurface, &presentModeCount,
                                               nullptr);
     assert(presentModeCount > 0);
     std::vector<VkPresentModeKHR> presentModes(presentModeCount);
-    vkGetPhysicalDeviceSurfacePresentModesKHR(vkGpu, vkSurface, &presentModeCount,
+    vkGetPhysicalDeviceSurfacePresentModesKHR(vkPhysicalDevice, vkSurface, &presentModeCount,
                                               presentModes.data());
     VkPresentModeKHR presentModeChosen = VK_PRESENT_MODE_FIFO_KHR;
     bool b_presentModeSupport = false;
@@ -211,7 +175,7 @@ int Engine::initDisplay() {
         deviceCreateInfo.enabledLayerCount = validationLayerNames.size();
         deviceCreateInfo.ppEnabledLayerNames = validationLayerNames.data();
     }
-    vkCreateDevice(vkGpu, &deviceCreateInfo, nullptr, &vkDevice);
+    vkCreateDevice(vkPhysicalDevice, &deviceCreateInfo, nullptr, &vkDevice);
 
     // get queue from logical device
     vkGetDeviceQueue(vkDevice, queueFamilyIndex, 0, &vkQueue);

@@ -37,7 +37,7 @@ private:
     std::vector<const char *> validationLayerNames;
     VkDebugReportCallbackEXT vkDebugReportCallbackExt = VK_NULL_HANDLE;
     VkSurfaceKHR vkSurface = VK_NULL_HANDLE;
-    VkPhysicalDevice vkGpu = VK_NULL_HANDLE;
+    VkPhysicalDevice vkPhysicalDevice = VK_NULL_HANDLE;
     VkDevice vkDevice = VK_NULL_HANDLE;
     VkQueue vkQueue = VK_NULL_HANDLE;
     VkSwapchainKHR vkSwapchain = VK_NULL_HANDLE;
@@ -62,8 +62,10 @@ private:
     void termDisplay();
 
     /* engine_helper.cpp */
-    void checkAvailableValidationLayers();
+    void updateAvailableValidationLayerNames();
     void createVKInstance();
+    void createVKAndroidSurface();
+    void selectPhysicalDevice();
 
     /* engine_shader_helper.cpp */
     std::vector<char> readFile(const char *fileName);
@@ -77,6 +79,7 @@ private:
             int32_t msgCode, const char *pLayerPrefix,
             const char *pMsg, void *pUserData);
     void printAvailableInstanceExtensions();
+    void createVKDebugReportCallback();
 };
 
 extern Engine gEngine;

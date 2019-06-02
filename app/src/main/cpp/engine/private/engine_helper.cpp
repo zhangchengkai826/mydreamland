@@ -4,7 +4,7 @@
 
 #include <engine.h>
 
-void Engine::checkAvailableValidationLayers() {
+void Engine::updateAvailableValidationLayerNames() {
     uint32_t layerCount = 0;
     vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
     std::vector<VkLayerProperties> layers(layerCount);
@@ -51,4 +51,24 @@ void Engine::createVKInstance() {
         instanceCreateInfo.ppEnabledLayerNames = validationLayerNames.data();
     }
     vkCreateInstance(&instanceCreateInfo, nullptr, &vkInstance);
+}
+
+void Engine::createVKAndroidSurface() {
+    VkAndroidSurfaceCreateInfoKHR surfaceCreateInfoKhr{
+            .sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR,
+            .pNext = nullptr,
+            .flags = 0,
+            .window = app->window};
+    vkCreateAndroidSurfaceKHR(vkInstance, &surfaceCreateInfoKhr, nullptr,
+                              &vkSurface);
+}
+
+void Engine::selectPhysicalDevice() {
+    // on Android, every GPU (physical device) is equal -- supporting graphics/compute/present
+    uint32_t physicalDeviceCount = 0;
+    vkEnumeratePhysicalDevices(vkInstance, &physicalDeviceCount, nullptr);
+    assert(physicalDeviceCount > 0);
+    VkPhysicalDevice physicalDevices[physicalDeviceCount];
+    vkEnumeratePhysicalDevices(vkInstance, &physicalDeviceCount, physicalDevices);
+    vkPhysicalDevice = physicalDevices[0];  // Pick up the first physical device
 }
