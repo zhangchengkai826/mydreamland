@@ -70,16 +70,24 @@ private:
     /* engine_helper.cpp */
     void createVKInstance();
     void createVKAndroidSurface();
+
     void selectPhysicalDevice();
     void updatePhysicalDeviceFeatures();
     void updatePhysicalDeviceSurfaceCapabilities();
     void updatePhysicalDeviceGraphicsQueueFamilyIndex();
     void selectPhysicalDeviceSurfaceFormat();
     void selectPhysicalDeviceSurfacePresentMode();
+
     void createLogicalDevice();
     void createSwapChain();
+
     void createRenderPass();
     void createGraphicsPipeline();
+    void createFrameBuffers();
+
+    void createCmdPool();
+    void allocCmdBuffers();
+    void recordCmdBuffers();
 
     /* engine_shader_helper.cpp */
     std::vector<char> readFile(const char *fileName);

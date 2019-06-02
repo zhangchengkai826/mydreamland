@@ -460,3 +460,89 @@ void Engine::createGraphicsPipeline() {
     vkDestroyShaderModule(vkDevice, vertShaderModule, nullptr);
     vkDestroyShaderModule(vkDevice, fragShaderModule, nullptr);
 }
+
+void Engine::createFrameBuffers() {
+    swapChainFrameBuffers.resize(swapChainImageViews.size());
+    for(size_t i = 0; i < swapChainFrameBuffers.size(); i++) {
+        VkImageView attachments[] = {
+                swapChainImageViews[i]
+        };
+        VkFramebufferCreateInfo framebufferCreateInfo{
+                .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+                .pNext = nullptr,
+                .flags = 0,
+                .renderPass = renderPass,
+                .attachmentCount = 1,
+                .pAttachments = attachments,
+                .width = physicalDeviceSurfaceCapabilities.currentExtent.width,
+                .height = physicalDeviceSurfaceCapabilities.currentExtent.height,
+                .layers = 1
+        };
+        vkCreateFramebuffer(vkDevice, &framebufferCreateInfo, nullptr,
+                            &swapChainFrameBuffers[i]);
+    }
+}
+
+void Engine::createCmdPool() {
+    VkCommandPoolCreateInfo commandPoolCreateInfo{
+            .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+            .queueFamilyIndex = physicalDeviceGraphicsQueueFamilyIndex,
+            .flags = 0,
+            .pNext = nullptr,
+    };
+    vkCreateCommandPool(vkDevice, &commandPoolCreateInfo, nullptr, &commandPool);
+}
+
+void Engine::allocCmdBuffers() {
+    commandBuffers.resize(swapChainFrameBuffers.size());
+    VkCommandBufferAllocateInfo commandBufferAllocateInfo{
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+            .pNext = nullptr,
+            .commandPool = commandPool,
+            .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+            .commandBufferCount = static_cast<uint32_t>(commandBuffers.size()),
+    };
+    vkAllocateCommandBuffers(vkDevice, &commandBufferAllocateInfo,
+                             commandBuffers.data());
+}
+
+void Engine::recordCmdBuffers() {
+    for(size_t i = 0; i < commandBuffers.size(); i++) {
+        VkCommandBufferBeginInfo commandBufferBeginInfo{
+                .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+                .pNext = nullptr,
+                .flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT,
+                .pInheritanceInfo = nullptr,
+        };
+        vkBeginCommandBuffer(commandBuffers[i], &commandBufferBeginInfo);
+
+        VkClearValue clearColor;
+        clearColor.color.float32[0] = 0.0f;
+        clearColor.color.float32[1] = 0.0f;
+        clearColor.color.float32[2] = 0.0f;
+        clearColor.color.float32[3] = 1.0f;
+        VkRenderPassBeginInfo renderPassBeginInfo{
+                .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+                .pNext = nullptr,
+                .renderPass = renderPass,
+                .framebuffer = swapChainFrameBuffers[i],
+                .renderArea.offset = {0, 0},
+                .renderArea.extent = physicalDeviceSurfaceCapabilities.currentExtent,
+                .clearValueCount = 1,
+                .pClearValues = &clearColor,
+        };
+        PFN_vkCmdBeginRenderPass vkCmdBeginRenderPass;
+        vkCmdBeginRenderPass = (PFN_vkCmdBeginRenderPass)vkGetInstanceProcAddr(
+                vkInstance, "vkCmdBeginRenderPass");
+        vkCmdBeginRenderPass(commandBuffers[i], &renderPassBeginInfo,
+                             VK_SUBPASS_CONTENTS_INLINE);
+
+        vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
+                          graphicsPipeline);
+
+        vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
+
+        vkCmdEndRenderPass(commandBuffers[i]);
+        vkEndCommandBuffer(commandBuffers[i]);
+    }
+}
