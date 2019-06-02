@@ -13,6 +13,8 @@
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_android.h>
 
+#include <glm/glm.hpp>
+
 class Engine {
 public:
     struct SavedState {

@@ -30,6 +30,9 @@ target_include_directories(main PRIVATE
 target_include_directories(main PRIVATE
         engine/public)
 
+target_include_directories(main PRIVATE
+        include)
+
 add_library(native_app_glue STATIC
         ${ANDROID_NDK}/sources/android/native_app_glue/android_native_app_glue.c)
 
@@ -45,6 +48,9 @@ target_include_directories(engine PRIVATE
 
 target_include_directories(engine PRIVATE
         engine/public)
+
+target_include_directories(engine PRIVATE
+        include)
 
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because CMake includes system libraries in the search path by
