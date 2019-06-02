@@ -4,21 +4,6 @@
 
 #include <engine.h>
 
-void Engine::updateAvailableValidationLayerNames() {
-    uint32_t layerCount = 0;
-    vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-    std::vector<VkLayerProperties> layers(layerCount);
-    vkEnumerateInstanceLayerProperties(&layerCount, layers.data());
-    __android_log_print(ANDROID_LOG_INFO, "main", "Vulkan Available Validation Layers:");
-    for(const auto &layer: layers) {
-        __android_log_print(ANDROID_LOG_INFO, "main",
-                            "\tLayer Name: %s\t\tSpec Version: %d\t\tImpl Version: %d\n\t\tDesc: %s",
-                            layer.layerName, layer.specVersion, layer.implementationVersion,
-                            layer.description);
-        validationLayerNames.push_back(static_cast<const char *>(layer.layerName));
-    }
-}
-
 void Engine::createVKInstance() {
     VkApplicationInfo appInfo = {
             .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
@@ -47,7 +32,7 @@ void Engine::createVKInstance() {
             .ppEnabledLayerNames = nullptr,
     };
     if(DEBUG_ON && validationLayerNames.size() > 0) {
-        instanceCreateInfo.enabledLayerCount = validationLayerNames.size();
+        instanceCreateInfo.enabledLayerCount = static_cast<uint32_t>(validationLayerNames.size());
         instanceCreateInfo.ppEnabledLayerNames = validationLayerNames.data();
     }
     vkCreateInstance(&instanceCreateInfo, nullptr, &vkInstance);

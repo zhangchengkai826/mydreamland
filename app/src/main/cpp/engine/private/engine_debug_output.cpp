@@ -40,7 +40,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL Engine::debugReportCallback(
     return VK_FALSE;
 }
 
-void Engine::printAvailableInstanceExtensions() {
+void Engine::logAvailableInstanceExtensions() {
     uint32_t extensionCount = 0;
     vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
     std::vector<VkExtensionProperties> extensions(extensionCount);
@@ -49,6 +49,21 @@ void Engine::printAvailableInstanceExtensions() {
     for(const auto &extension: extensions) {
         __android_log_print(ANDROID_LOG_INFO, "main", "\tExtension Name: %s\t\tVersion: %d",
                             extension.extensionName,extension.specVersion);
+    }
+}
+
+void Engine::updateAvailableValidationLayerNames() {
+    uint32_t layerCount = 0;
+    vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+    validationLayerProperties.resize(layerCount);
+    vkEnumerateInstanceLayerProperties(&layerCount, validationLayerProperties.data());
+    __android_log_print(ANDROID_LOG_INFO, "main", "Vulkan Available Validation Layers:");
+    for(const auto &layerProperty: validationLayerProperties) {
+        __android_log_print(ANDROID_LOG_INFO, "main",
+                            "\tLayer Name: %s\t\tSpec Version: %d\t\tImpl Version: %d\n\tDesc: %s",
+                            layerProperty.layerName, layerProperty.specVersion,
+                            layerProperty.implementationVersion, layerProperty.description);
+        validationLayerNames.push_back(static_cast<const char *>(layerProperty.layerName));
     }
 }
 
@@ -71,4 +86,25 @@ void Engine::createVKDebugReportCallback() {
         vkCreateDebugReportCallbackExt(vkInstance, &debugReportCallbackCreateInfo, nullptr,
                                        &vkDebugReportCallbackExt);
     }
+}
+
+void Engine::logSelectedPhysicalDeviceProperties() {
+    VkPhysicalDeviceProperties physicalDeviceProperties;
+    vkGetPhysicalDeviceProperties(vkPhysicalDevice, &physicalDeviceProperties);
+    __android_log_print(ANDROID_LOG_INFO, "main", "Vulkan Selected Physical Device Properties:");
+    __android_log_print(ANDROID_LOG_INFO, "main", "\tName: %s",
+                        physicalDeviceProperties.deviceName);
+    __android_log_print(ANDROID_LOG_INFO, "main", "\tId: %d",
+                        physicalDeviceProperties.deviceID);
+    __android_log_print(ANDROID_LOG_INFO, "main", "\tType: %d",
+                        physicalDeviceProperties.deviceType);
+    __android_log_print(ANDROID_LOG_INFO, "main", "\tVendor Id: %d",
+                        physicalDeviceProperties.vendorID);
+    __android_log_print(ANDROID_LOG_INFO, "main",
+                        "\tInfo: apiVersion: %x \t\t driverVersion: %x",
+                        physicalDeviceProperties.apiVersion, physicalDeviceProperties.driverVersion);
+    __android_log_print(ANDROID_LOG_INFO, "main", "API Version Supported: %d.%d.%d",
+                        VK_VERSION_MAJOR(physicalDeviceProperties.apiVersion),
+                        VK_VERSION_MINOR(physicalDeviceProperties.apiVersion),
+                        VK_VERSION_PATCH(physicalDeviceProperties.apiVersion));
 }

@@ -7,31 +7,13 @@
 Engine gEngine;
 
 int Engine::initDisplay() {
-    printAvailableInstanceExtensions();
+    logAvailableInstanceExtensions();
     updateAvailableValidationLayerNames();
     createVKInstance();
     createVKDebugReportCallback();
     createVKAndroidSurface();
     selectPhysicalDevice();
-
-    // check for Vulkan info on this GPU device
-    VkPhysicalDeviceProperties gpuProperties;
-    vkGetPhysicalDeviceProperties(vkPhysicalDevice, &gpuProperties);
-    __android_log_print(ANDROID_LOG_INFO, "main", "Vulkan Physical Device Name: %s",
-            gpuProperties.deviceName);
-    __android_log_print(ANDROID_LOG_INFO, "main", "Vulkan Physical Device Id: %d",
-            gpuProperties.deviceID);
-    __android_log_print(ANDROID_LOG_INFO, "main", "Vulkan Physical Device Type: %d",
-            gpuProperties.deviceType);
-    __android_log_print(ANDROID_LOG_INFO, "main", "Vulkan Physical Device Vendor Id: %d",
-            gpuProperties.vendorID);
-    __android_log_print(ANDROID_LOG_INFO, "main",
-            "Vulkan Physical Device Info: apiVersion: %x \n\t driverVersion: %x",
-         gpuProperties.apiVersion, gpuProperties.driverVersion);
-    __android_log_print(ANDROID_LOG_INFO, "main", "API Version Supported: %d.%d.%d",
-         VK_VERSION_MAJOR(gpuProperties.apiVersion),
-         VK_VERSION_MINOR(gpuProperties.apiVersion),
-         VK_VERSION_PATCH(gpuProperties.apiVersion));
+    logSelectedPhysicalDeviceProperties();
 
     VkPhysicalDeviceFeatures gpuFeatures;
     vkGetPhysicalDeviceFeatures(vkPhysicalDevice, &gpuFeatures);

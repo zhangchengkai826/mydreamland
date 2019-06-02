@@ -34,6 +34,7 @@ private:
     constexpr static bool DEBUG_ON = true;
 
     VkInstance vkInstance = VK_NULL_HANDLE;
+    std::vector<VkLayerProperties> validationLayerProperties;
     std::vector<const char *> validationLayerNames;
     VkDebugReportCallbackEXT vkDebugReportCallbackExt = VK_NULL_HANDLE;
     VkSurfaceKHR vkSurface = VK_NULL_HANDLE;
@@ -62,7 +63,6 @@ private:
     void termDisplay();
 
     /* engine_helper.cpp */
-    void updateAvailableValidationLayerNames();
     void createVKInstance();
     void createVKAndroidSurface();
     void selectPhysicalDevice();
@@ -78,8 +78,10 @@ private:
             uint64_t srcObject, size_t location,
             int32_t msgCode, const char *pLayerPrefix,
             const char *pMsg, void *pUserData);
-    void printAvailableInstanceExtensions();
+    void logAvailableInstanceExtensions();
+    void updateAvailableValidationLayerNames();
     void createVKDebugReportCallback();
+    void logSelectedPhysicalDeviceProperties();
 };
 
 extern Engine gEngine;
