@@ -6,32 +6,24 @@
 
 Engine gEngine;
 
-int Engine::initDisplay() {
-    // print available instance extensions
-    uint32_t extensionCount = 0;
-    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-    std::vector<VkExtensionProperties> extensions(extensionCount);
-    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
-    __android_log_print(ANDROID_LOG_INFO, "main", "Vulkan Available Extensions:");
-    for(const auto &extension: extensions) {
-        __android_log_print(ANDROID_LOG_INFO, "main", "\tExtension Name: %s\t\tVersion: %d",
-                extension.extensionName,extension.specVersion);
-    }
-
-    // print available layers
+void Engine::checkAvailableValidationLayers() {
     uint32_t layerCount = 0;
     vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
     std::vector<VkLayerProperties> layers(layerCount);
-    std::vector<const char *> layerNames;
     vkEnumerateInstanceLayerProperties(&layerCount, layers.data());
-    __android_log_print(ANDROID_LOG_INFO, "main", "Vulkan Available Layers:");
+    __android_log_print(ANDROID_LOG_INFO, "main", "Vulkan Available Validation Layers:");
     for(const auto &layer: layers) {
         __android_log_print(ANDROID_LOG_INFO, "main",
-                "\tLayer Name: %s\t\tSpec Version: %d\t\tImpl Version: %d\n\t\tDesc: %s",
-                layer.layerName, layer.specVersion, layer.implementationVersion,
-                layer.description);
-        layerNames.push_back(static_cast<const char *>(layer.layerName));
+                            "\tLayer Name: %s\t\tSpec Version: %d\t\tImpl Version: %d\n\t\tDesc: %s",
+                            layer.layerName, layer.specVersion, layer.implementationVersion,
+                            layer.description);
+        validationLayerNames.push_back(static_cast<const char *>(layer.layerName));
     }
+}
+
+int Engine::initDisplay() {
+    printAvailableInstanceExtensions();
+    checkAvailableValidationLayers();
 
     VkApplicationInfo appInfo = {
             .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
@@ -47,7 +39,7 @@ int Engine::initDisplay() {
     std::vector<const char *> instanceExt, deviceExt;
     instanceExt.push_back("VK_KHR_surface");
     instanceExt.push_back("VK_KHR_android_surface");
-    if(DEBUG_ON && layerCount > 0) {
+    if(DEBUG_ON && validationLayerNames.size() > 0) {
         instanceExt.push_back("VK_EXT_debug_report");
     }
     deviceExt.push_back("VK_KHR_swapchain");
@@ -62,14 +54,14 @@ int Engine::initDisplay() {
             .enabledLayerCount = 0,
             .ppEnabledLayerNames = nullptr,
     };
-    if(DEBUG_ON && layerCount > 0) {
-        instanceCreateInfo.enabledLayerCount = layerCount;
-        instanceCreateInfo.ppEnabledLayerNames = layerNames.data();
+    if(DEBUG_ON && validationLayerNames.size() > 0) {
+        instanceCreateInfo.enabledLayerCount = validationLayerNames.size();
+        instanceCreateInfo.ppEnabledLayerNames = validationLayerNames.data();
     }
     vkCreateInstance(&instanceCreateInfo, nullptr, &vkInstance);
 
     // create Vulkan Debug Report Callback
-    if(DEBUG_ON &&layerCount > 0) {
+    if(DEBUG_ON &&validationLayerNames.size() > 0) {
         VkDebugReportCallbackCreateInfoEXT debugReportCallbackCreateInfo{
                 .sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT,
                 .pNext = nullptr,
@@ -261,9 +253,9 @@ int Engine::initDisplay() {
             .ppEnabledExtensionNames = deviceExt.data(),
             .pEnabledFeatures = &gpuFeatures,
     };
-    if(DEBUG_ON && layerCount > 0) {
-        deviceCreateInfo.enabledLayerCount = layerCount;
-        deviceCreateInfo.ppEnabledLayerNames = layerNames.data();
+    if(DEBUG_ON && validationLayerNames.size() > 0) {
+        deviceCreateInfo.enabledLayerCount = validationLayerNames.size();
+        deviceCreateInfo.ppEnabledLayerNames = validationLayerNames.data();
     }
     vkCreateDevice(vkGpu, &deviceCreateInfo, nullptr, &vkDevice);
 

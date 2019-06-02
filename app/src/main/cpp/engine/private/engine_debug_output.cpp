@@ -39,3 +39,16 @@ VKAPI_ATTR VkBool32 VKAPI_CALL Engine::debugReportCallback(
     // they see the same behavior with and without validation layers enabled.
     return VK_FALSE;
 }
+
+void Engine::printAvailableInstanceExtensions() {
+    uint32_t extensionCount = 0;
+    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+    std::vector<VkExtensionProperties> extensions(extensionCount);
+    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
+    __android_log_print(ANDROID_LOG_INFO, "main", "Vulkan Available Instance Extensions:");
+    for(const auto &extension: extensions) {
+        __android_log_print(ANDROID_LOG_INFO, "main", "\tExtension Name: %s\t\tVersion: %d",
+                            extension.extensionName,extension.specVersion);
+    }
+}
+

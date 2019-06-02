@@ -34,6 +34,7 @@ private:
     constexpr static bool DEBUG_ON = true;
 
     VkInstance vkInstance = VK_NULL_HANDLE;
+    std::vector<const char *> validationLayerNames;
     VkDebugReportCallbackEXT vkDebugReportCallbackExt = VK_NULL_HANDLE;
     VkSurfaceKHR vkSurface = VK_NULL_HANDLE;
     VkPhysicalDevice vkGpu = VK_NULL_HANDLE;
@@ -60,6 +61,8 @@ private:
     int initDisplay();
     void termDisplay();
 
+    void checkAvailableValidationLayers();
+
     /* engine_shader_helper.cpp */
     std::vector<char> readFile(const char *fileName);
     VkShaderModule createShaderModule(const std::vector<char> &code);
@@ -71,6 +74,7 @@ private:
             uint64_t srcObject, size_t location,
             int32_t msgCode, const char *pLayerPrefix,
             const char *pMsg, void *pUserData);
+    void printAvailableInstanceExtensions();
 };
 
 extern Engine gEngine;
