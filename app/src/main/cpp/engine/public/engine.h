@@ -46,11 +46,11 @@ private:
                                    VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
     VkPresentModeKHR physicalDeviceSurfacePresentMode = VK_PRESENT_MODE_FIFO_KHR;
     VkDevice vkDevice = VK_NULL_HANDLE;
-    VkQueue vkQueue = VK_NULL_HANDLE;
+    VkQueue graphicsQueue = VK_NULL_HANDLE;
     VkSwapchainKHR vkSwapchain = VK_NULL_HANDLE;
     std::vector<VkImage> swapChainImages;
     std::vector<VkImageView> swapChainImageViews;
-    VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
+    VkPipelineLayout graphicsPipelineLayout = VK_NULL_HANDLE;
     VkRenderPass renderPass = VK_NULL_HANDLE;
     VkPipeline graphicsPipeline = VK_NULL_HANDLE;
     std::vector<VkFramebuffer> swapChainFrameBuffers;
@@ -76,10 +76,15 @@ private:
     void updatePhysicalDeviceGraphicsQueueFamilyIndex();
     void selectPhysicalDeviceSurfaceFormat();
     void selectPhysicalDeviceSurfacePresentMode();
+    void createLogicalDevice();
+    void createSwapChain();
+    void createRenderPass();
+    void createGraphicsPipeline();
 
     /* engine_shader_helper.cpp */
     std::vector<char> readFile(const char *fileName);
     VkShaderModule createShaderModule(const std::vector<char> &code);
+    void createGraphicsPipelineLayout();
 
     /* engine_debug_output.cpp */
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugReportCallback(
