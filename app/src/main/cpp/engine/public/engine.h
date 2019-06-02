@@ -61,7 +61,9 @@ private:
     int initDisplay();
     void termDisplay();
 
+    /* engine_helper.cpp */
     void checkAvailableValidationLayers();
+    void createVKInstance();
 
     /* engine_shader_helper.cpp */
     std::vector<char> readFile(const char *fileName);

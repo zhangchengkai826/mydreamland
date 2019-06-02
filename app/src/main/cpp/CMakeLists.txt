@@ -36,6 +36,7 @@ add_library(native_app_glue STATIC
 add_library(engine STATIC
 
         engine/private/engine.cpp
+        engine/private/engine_helper.cpp
         engine/private/engine_shader_helper.cpp
         engine/private/engine_debug_output.cpp)
 
