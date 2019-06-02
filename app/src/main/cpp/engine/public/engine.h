@@ -89,6 +89,8 @@ private:
     void allocCmdBuffers();
     void recordCmdBuffers();
 
+    void createSyncObjs();
+
     /* engine_shader_helper.cpp */
     std::vector<char> readFile(const char *fileName);
     VkShaderModule createShaderModule(const std::vector<char> &code);

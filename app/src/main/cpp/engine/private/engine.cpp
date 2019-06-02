@@ -36,27 +36,7 @@ int Engine::initDisplay() {
     allocCmdBuffers();
     recordCmdBuffers();
 
-    // create sync objects
-    imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
-    VkSemaphoreCreateInfo semaphoreCreateInfo{
-            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = 0,
-    };
-    VkFenceCreateInfo fenceCreateInfo{
-            .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = VK_FENCE_CREATE_SIGNALED_BIT,
-    };
-    for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        vkCreateSemaphore(vkDevice, &semaphoreCreateInfo, nullptr,
-                          &imageAvailableSemaphores[i]);
-        vkCreateSemaphore(vkDevice, &semaphoreCreateInfo, nullptr,
-                          &renderFinishedSemaphores[i]);
-        vkCreateFence(vkDevice, &fenceCreateInfo, nullptr, &inFlightFences[i]);
-    }
+    createSyncObjs();
 
     return 0;
 }
@@ -72,7 +52,7 @@ void Engine::drawFrame() {
                           imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
 
     VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
-    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT};
     VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
     VkSubmitInfo submitInfo{
             .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
