@@ -331,7 +331,7 @@ void Engine::createGraphicsPipeline() {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
             .pNext = nullptr,
             .flags = 0,
-            .depthClampEnable = VK_TRUE,
+            .depthClampEnable = VK_FALSE,
             .rasterizerDiscardEnable = VK_FALSE,
             .polygonMode = VK_POLYGON_MODE_FILL,
             .lineWidth = 1.0f,
@@ -380,8 +380,6 @@ void Engine::createGraphicsPipeline() {
             .blendConstants[2] = 0.0f,
             .blendConstants[3] = 0.0f,
     };
-
-    createGraphicsPipelineLayout();
 
     VkGraphicsPipelineCreateInfo pipelineCreateInfo{
             .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,

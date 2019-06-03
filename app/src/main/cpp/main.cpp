@@ -4,7 +4,7 @@
 
 #include <engine.h>
 
-
+// this function may be called multiple times in the app's lifecycle
 void android_main(android_app *app)
 {
     app->userData = &gEngine;

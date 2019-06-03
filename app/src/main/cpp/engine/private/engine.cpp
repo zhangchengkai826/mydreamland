@@ -26,9 +26,23 @@ void Engine::init() {
     createLogicalDevice();
     vkGetDeviceQueue(vkDevice, physicalDeviceGraphicsQueueFamilyIndex, 0, &graphicsQueue);
     createRenderPass();
+    createGraphicsPipelineLayout();
+    createCmdPool();
+    createVertexBuffer();
+    createSyncObjs();
 }
 
 void Engine::destroy() {
+    vkDeviceWaitIdle(vkDevice);
+    for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        vkDestroyFence(vkDevice, inFlightFences[i], nullptr);
+        vkDestroySemaphore(vkDevice, renderFinishedSemaphores[i], nullptr);
+        vkDestroySemaphore(vkDevice, imageAvailableSemaphores[i], nullptr);
+    }
+    vkDestroyBuffer(vkDevice, vertexBuffer, nullptr);
+    vkFreeMemory(vkDevice, vertexBufferMemory, nullptr);
+    vkDestroyCommandPool(vkDevice, commandPool, nullptr);
+    vkDestroyPipelineLayout(vkDevice, graphicsPipelineLayout, nullptr);
     vkDestroyRenderPass(vkDevice, renderPass, nullptr);
     vkDestroyDevice(vkDevice, nullptr);
     if(DEBUG_ON && validationLayerNames.size() > 0) {
@@ -45,17 +59,10 @@ int Engine::initDisplay() {
     updatePhysicalDeviceSurfaceCapabilities();
     checkPhysicalDeviceSurfaceFormatSupport();
     createSwapChain();
-
     createGraphicsPipeline();
     createFrameBuffers();
-
-    createCmdPool();
-    createVertexBuffer();
     allocCmdBuffers();
     recordCmdBuffers();
-
-    createSyncObjs();
-
     return 0;
 }
 
@@ -102,24 +109,10 @@ void Engine::drawFrame() {
 
 void Engine::termDisplay() {
     vkDeviceWaitIdle(vkDevice);
-
-    for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        vkDestroyFence(vkDevice, inFlightFences[i], nullptr);
-        vkDestroySemaphore(vkDevice, renderFinishedSemaphores[i], nullptr);
-        vkDestroySemaphore(vkDevice, imageAvailableSemaphores[i], nullptr);
-    }
-
-    vkDestroyBuffer(vkDevice, vertexBuffer, nullptr);
-    vkFreeMemory(vkDevice, vertexBufferMemory, nullptr);
-    vkDestroyCommandPool(vkDevice, commandPool, nullptr);
-
     for(auto framebuffer: swapChainFrameBuffers) {
         vkDestroyFramebuffer(vkDevice, framebuffer, nullptr);
     }
-
     vkDestroyPipeline(vkDevice, graphicsPipeline, nullptr);
-    vkDestroyPipelineLayout(vkDevice, graphicsPipelineLayout, nullptr);
-
     for(auto imageView: swapChainImageViews) {
         vkDestroyImageView(vkDevice, imageView, nullptr);
     }
