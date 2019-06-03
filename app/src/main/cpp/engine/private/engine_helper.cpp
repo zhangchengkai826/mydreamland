@@ -123,50 +123,6 @@ void Engine::updatePhysicalDeviceGraphicsQueueFamilyIndex() {
     assert(physicalDeviceGraphicsQueueFamilyIndex < queueFamilyCount);
 }
 
-void Engine::selectPhysicalDeviceSurfaceFormat() {
-    uint32_t formatCount;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(vkPhysicalDevice, vkSurface, &formatCount, nullptr);
-    assert(formatCount > 0);
-    std::vector<VkSurfaceFormatKHR> formats(formatCount);
-    vkGetPhysicalDeviceSurfaceFormatsKHR(vkPhysicalDevice, vkSurface, &formatCount,
-                                         formats.data());
-    bool b_formatSupport = false;
-    __android_log_print(ANDROID_LOG_INFO, "main",
-                        "Vulkan Selected Physical Device Surface Supported Formats:");
-    for(const auto &format: formats) {
-        if(format.format == physicalDeviceSurfaceFormat.format && format.colorSpace ==
-        physicalDeviceSurfaceFormat.colorSpace) {
-            b_formatSupport = true;
-        }
-        if(format.format == VK_FORMAT_UNDEFINED) {
-            b_formatSupport = true;
-        }
-        __android_log_print(ANDROID_LOG_INFO, "main",
-                            "\tFormat: %d\tColor Space: %d", format.format, format.colorSpace);
-    }
-    assert(b_formatSupport);
-}
-
-void Engine::selectPhysicalDeviceSurfacePresentMode() {
-    uint32_t presentModeCount;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(vkPhysicalDevice, vkSurface, &presentModeCount,
-                                              nullptr);
-    assert(presentModeCount > 0);
-    std::vector<VkPresentModeKHR> presentModes(presentModeCount);
-    vkGetPhysicalDeviceSurfacePresentModesKHR(vkPhysicalDevice, vkSurface, &presentModeCount,
-                                              presentModes.data());
-    bool b_presentModeSupport = false;
-    __android_log_print(ANDROID_LOG_INFO, "main",
-                        "Vulkan Selected Physical Device Surface Supported Present Modes:");
-    for(const auto &pm: presentModes) {
-        if(pm == physicalDeviceSurfacePresentMode) {
-            b_presentModeSupport = true;
-        }
-        __android_log_print(ANDROID_LOG_INFO, "main", "\tPresent Mode: %d", pm);
-    }
-    assert(b_presentModeSupport);
-}
-
 void Engine::createLogicalDevice() {
     float priorities[] = {
             1.0f,

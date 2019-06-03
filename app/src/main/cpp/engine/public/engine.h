@@ -112,8 +112,6 @@ private:
     void updatePhysicalDeviceFeatures();
     void updatePhysicalDeviceSurfaceCapabilities();
     void updatePhysicalDeviceGraphicsQueueFamilyIndex();
-    void selectPhysicalDeviceSurfaceFormat();
-    void selectPhysicalDeviceSurfacePresentMode();
 
     void createLogicalDevice();
     void createSwapChain();
@@ -148,9 +146,11 @@ private:
     void logAvailableInstanceExtensions();
     void updateAvailableValidationLayerNames();
     void createVKDebugReportCallback();
-    void logSelectedPhysicalDeviceProperties();
-    void logSelectedPhysicalDeviceAvailableExtensions();
-    void checkSelectedPhysicalDeviceGraphicsQueueSurfaceSupport();
+    void logPhysicalDeviceProperties();
+    void logPhysicalDeviceAvailableExtensions();
+    void checkPhysicalDeviceGraphicsQueueSurfaceSupport();
+    void checkPhysicalDeviceSurfaceFormatSupport();
+    void checkPhysicalDeviceSurfacePresentModeSupport();
 };
 
 extern Engine gEngine;

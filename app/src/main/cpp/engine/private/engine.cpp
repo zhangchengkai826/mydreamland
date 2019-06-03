@@ -20,9 +20,17 @@ void Engine::init() {
     if(DEBUG_ON && validationLayerNames.size() > 0) {
         createVKDebugReportCallback();
     }
+    selectPhysicalDevice();
+    updatePhysicalDeviceFeatures();
+    updatePhysicalDeviceGraphicsQueueFamilyIndex();
+    createLogicalDevice();
+    vkGetDeviceQueue(vkDevice, physicalDeviceGraphicsQueueFamilyIndex, 0, &graphicsQueue);
+    createRenderPass();
 }
 
 void Engine::destroy() {
+    vkDestroyRenderPass(vkDevice, renderPass, nullptr);
+    vkDestroyDevice(vkDevice, nullptr);
     if(DEBUG_ON && validationLayerNames.size() > 0) {
         PFN_vkDestroyDebugReportCallbackEXT vkDestroyDebugReportCallbackEXT;
         vkDestroyDebugReportCallbackEXT = (PFN_vkDestroyDebugReportCallbackEXT)
@@ -34,22 +42,10 @@ void Engine::destroy() {
 
 int Engine::initDisplay() {
     createVKAndroidSurface();
-
-    selectPhysicalDevice();
-    logSelectedPhysicalDeviceProperties();
-    updatePhysicalDeviceFeatures();
-    logSelectedPhysicalDeviceAvailableExtensions();
     updatePhysicalDeviceSurfaceCapabilities();
-    updatePhysicalDeviceGraphicsQueueFamilyIndex();
-    checkSelectedPhysicalDeviceGraphicsQueueSurfaceSupport();
-    selectPhysicalDeviceSurfaceFormat();
-    selectPhysicalDeviceSurfacePresentMode();
-
-    createLogicalDevice();
-    vkGetDeviceQueue(vkDevice, physicalDeviceGraphicsQueueFamilyIndex, 0, &graphicsQueue);
+    checkPhysicalDeviceSurfaceFormatSupport();
     createSwapChain();
 
-    createRenderPass();
     createGraphicsPipeline();
     createFrameBuffers();
 
@@ -122,14 +118,12 @@ void Engine::termDisplay() {
     }
 
     vkDestroyPipeline(vkDevice, graphicsPipeline, nullptr);
-    vkDestroyRenderPass(vkDevice, renderPass, nullptr);
     vkDestroyPipelineLayout(vkDevice, graphicsPipelineLayout, nullptr);
 
     for(auto imageView: swapChainImageViews) {
         vkDestroyImageView(vkDevice, imageView, nullptr);
     }
     vkDestroySwapchainKHR(vkDevice, vkSwapchain, nullptr);
-    vkDestroyDevice(vkDevice, nullptr);
     vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
 }
 
