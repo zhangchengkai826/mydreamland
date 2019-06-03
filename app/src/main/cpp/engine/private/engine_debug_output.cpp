@@ -68,24 +68,22 @@ void Engine::updateAvailableValidationLayerNames() {
 }
 
 void Engine::createVKDebugReportCallback() {
-    if(DEBUG_ON &&validationLayerNames.size() > 0) {
-        VkDebugReportCallbackCreateInfoEXT debugReportCallbackCreateInfo{
-                .sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT,
-                .pNext = nullptr,
-                .flags = VK_DEBUG_REPORT_ERROR_BIT_EXT |
-                         VK_DEBUG_REPORT_WARNING_BIT_EXT |
-                         VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT |
-                         VK_DEBUG_REPORT_INFORMATION_BIT_EXT |
-                         VK_DEBUG_REPORT_DEBUG_BIT_EXT,
-                .pfnCallback = debugReportCallback,
-                .pUserData = nullptr
-        };
-        PFN_vkCreateDebugReportCallbackEXT vkCreateDebugReportCallbackExt;
-        vkCreateDebugReportCallbackExt = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(
-                vkInstance, "vkCreateDebugReportCallbackEXT");
-        vkCreateDebugReportCallbackExt(vkInstance, &debugReportCallbackCreateInfo, nullptr,
-                                       &vkDebugReportCallbackExt);
-    }
+    VkDebugReportCallbackCreateInfoEXT debugReportCallbackCreateInfo{
+            .sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT,
+            .pNext = nullptr,
+            .flags = VK_DEBUG_REPORT_ERROR_BIT_EXT |
+                     VK_DEBUG_REPORT_WARNING_BIT_EXT |
+                     VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT |
+                     VK_DEBUG_REPORT_INFORMATION_BIT_EXT |
+                     VK_DEBUG_REPORT_DEBUG_BIT_EXT,
+            .pfnCallback = debugReportCallback,
+            .pUserData = nullptr
+    };
+    PFN_vkCreateDebugReportCallbackEXT vkCreateDebugReportCallbackExt;
+    vkCreateDebugReportCallbackExt = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(
+            vkInstance, "vkCreateDebugReportCallbackEXT");
+    vkCreateDebugReportCallbackExt(vkInstance, &debugReportCallbackCreateInfo, nullptr,
+                                   &vkDebugReportCallbackExt);
 }
 
 void Engine::logSelectedPhysicalDeviceProperties() {

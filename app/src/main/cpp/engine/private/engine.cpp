@@ -13,11 +13,13 @@ const std::vector<Vertex> vertices = {
 Engine gEngine;
 
 void Engine::init() {
-    logAvailableInstanceExtensions();
-    updateAvailableValidationLayerNames();
-
+    if(DEBUG_ON) {
+        updateAvailableValidationLayerNames();
+    }
     createVKInstance();
-    createVKDebugReportCallback();
+    if(DEBUG_ON && validationLayerNames.size() > 0) {
+        createVKDebugReportCallback();
+    }
 }
 
 void Engine::destroy() {
