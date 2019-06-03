@@ -10,9 +10,10 @@ const std::vector<Vertex> vertices = {
     {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
 };
 
-Engine gEngine;
+Engine::Engine() {
+    __android_log_print(ANDROID_LOG_INFO, "main", "Engine constructing started!");
 
-void Engine::init() {
+
     if(DEBUG_ON) {
         updateAvailableValidationLayerNames();
     }
@@ -32,7 +33,7 @@ void Engine::init() {
     createSyncObjs();
 }
 
-void Engine::destroy() {
+Engine::~Engine() {
     vkDeviceWaitIdle(vkDevice);
     for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         vkDestroyFence(vkDevice, inFlightFences[i], nullptr);
@@ -52,6 +53,8 @@ void Engine::destroy() {
         vkDestroyDebugReportCallbackEXT(vkInstance, vkDebugReportCallbackExt, nullptr);
     }
     vkDestroyInstance(vkInstance, nullptr);
+
+    __android_log_print(ANDROID_LOG_INFO, "main", "Engine destructing finished!");
 }
 
 int Engine::initDisplay() {
@@ -121,7 +124,7 @@ void Engine::termDisplay() {
 }
 
 void Engine::cmdHandler(struct android_app *app, int32_t cmd) {
-    gEngine.cmdHandlerInternal(app, cmd);
+    reinterpret_cast<Engine *>(app->userData)->cmdHandlerInternal(app, cmd);
 }
 
 void Engine::cmdHandlerInternal(struct android_app *app, int32_t cmd) {
@@ -152,7 +155,7 @@ void Engine::cmdHandlerInternal(struct android_app *app, int32_t cmd) {
 }
 
 int32_t Engine::inputHandler(struct android_app *app, AInputEvent *event) {
-    return gEngine.inputHandlerInternal(app, event);
+    return reinterpret_cast<Engine *>(app->userData)->inputHandlerInternal(app, event);
 }
 
 int32_t Engine::inputHandlerInternal(struct android_app *app, AInputEvent *event) {

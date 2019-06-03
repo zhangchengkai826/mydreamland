@@ -59,8 +59,8 @@ public:
     static void cmdHandler(struct android_app *app, int32_t cmd);
     static int32_t inputHandler(struct android_app *app, AInputEvent *event);
 
-    void init();
-    void destroy();
+    Engine();
+    virtual ~Engine();
 
     void drawFrame();
 
@@ -152,7 +152,5 @@ private:
     void checkPhysicalDeviceSurfaceFormatSupport();
     void checkPhysicalDeviceSurfacePresentModeSupport();
 };
-
-extern Engine gEngine;
 
 #endif //MYDREAMLAND_ENGINE_H

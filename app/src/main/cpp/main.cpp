@@ -7,36 +7,35 @@
 // this function may be called multiple times in the app's lifecycle
 void android_main(android_app *app)
 {
-    app->userData = &gEngine;
+    Engine engine;
+
+    app->userData = &engine;
     app->onAppCmd = Engine::cmdHandler;
     app->onInputEvent = Engine::inputHandler;
-    gEngine.app = app;
+    engine.app = app;
 
     if(app->savedState != nullptr) {
-        gEngine.state = *reinterpret_cast<Engine::SavedState *>(app->savedState);
+        engine.state = *reinterpret_cast<Engine::SavedState *>(app->savedState);
     }
-
-    gEngine.init();
 
     while(true) {
         int events;
         struct android_poll_source *source;
 
-        while(ALooper_pollAll(gEngine.animating ? 0 : -1, nullptr, &events,
+        while(ALooper_pollAll(engine.animating ? 0 : -1, nullptr, &events,
                                        (void **)&source) >= 0) {
             if(source != nullptr) {
                 source->process(app, source);
             }
 
             if(app->destroyRequested != 0) {
-                gEngine.destroy();
                 return;
             }
         }
 
-        if(gEngine.animating) {
-            gEngine.drawFrame();
-            gEngine.animating = false;
+        if(engine.animating) {
+            engine.drawFrame();
+            engine.animating = false;
         }
     }
 }
