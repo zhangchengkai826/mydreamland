@@ -39,6 +39,7 @@ int Engine::initDisplay() {
     createFrameBuffers();
 
     createCmdPool();
+    createVertexBuffer();
     allocCmdBuffers();
     recordCmdBuffers();
 
@@ -97,6 +98,8 @@ void Engine::termDisplay() {
         vkDestroySemaphore(vkDevice, imageAvailableSemaphores[i], nullptr);
     }
 
+    vkDestroyBuffer(vkDevice, vertexBuffer, nullptr);
+    vkFreeMemory(vkDevice, vertexBufferMemory, nullptr);
     vkDestroyCommandPool(vkDevice, commandPool, nullptr);
 
     for(auto framebuffer: swapChainFrameBuffers) {

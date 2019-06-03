@@ -129,3 +129,4 @@ void Engine::checkSelectedPhysicalDeviceGraphicsQueueSurfaceSupport() {
                                          vkSurface, &b_presentSupport);
     assert(b_presentSupport);
 }
+

@@ -533,7 +533,11 @@ void Engine::recordCmdBuffers() {
         vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
                           graphicsPipeline);
 
-        vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
+        VkBuffer vertexBuffers[] = {vertexBuffer};
+        VkDeviceSize offsets[] = {0};
+        vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
+
+        vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(vertices.size()), 1, 0, 0);
 
         vkCmdEndRenderPass(commandBuffers[i]);
         vkEndCommandBuffer(commandBuffers[i]);
@@ -561,4 +565,37 @@ void Engine::createSyncObjs() {
                           &renderFinishedSemaphores[i]);
         vkCreateFence(vkDevice, &fenceCreateInfo, nullptr, &inFlightFences[i]);
     }
+}
+
+void Engine::createVertexBuffer() {
+    VkBufferCreateInfo vertexBufCreateInfo{
+        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+        .size = sizeof(Vertex) * vertices.size(),
+        .usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .queueFamilyIndexCount = 0,
+        .pQueueFamilyIndices = nullptr,
+    };
+    vkCreateBuffer(vkDevice, &vertexBufCreateInfo, nullptr, &vertexBuffer);
+
+    VkMemoryRequirements memoryRequirements;
+    vkGetBufferMemoryRequirements(vkDevice, vertexBuffer, &memoryRequirements);
+
+    VkMemoryAllocateInfo allocateInfo{
+        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+        .pNext = nullptr,
+        .allocationSize = memoryRequirements.size,
+        .memoryTypeIndex = findMemoryTypeIndex(memoryRequirements.memoryTypeBits,
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT),
+    };
+    vkAllocateMemory(vkDevice, &allocateInfo, nullptr, &vertexBufferMemory);
+
+    vkBindBufferMemory(vkDevice, vertexBuffer, vertexBufferMemory, 0);
+
+    void *data;
+    vkMapMemory(vkDevice, vertexBufferMemory, 0, vertexBufCreateInfo.size, 0, &data);
+    memcpy(data, vertices.data(), static_cast<size_t>(vertexBufCreateInfo.size));
+    vkUnmapMemory(vkDevice, vertexBufferMemory);
 }

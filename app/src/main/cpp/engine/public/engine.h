@@ -87,6 +87,8 @@ private:
     VkPipeline graphicsPipeline = VK_NULL_HANDLE;
     std::vector<VkFramebuffer> swapChainFrameBuffers;
     VkCommandPool commandPool = VK_NULL_HANDLE;
+    VkBuffer vertexBuffer;
+    VkDeviceMemory vertexBufferMemory;
     std::vector<VkCommandBuffer> commandBuffers;
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> renderFinishedSemaphores;
@@ -118,6 +120,7 @@ private:
     void createFrameBuffers();
 
     void createCmdPool();
+    void createVertexBuffer();
     void allocCmdBuffers();
     void recordCmdBuffers();
 
@@ -127,6 +130,10 @@ private:
     std::vector<char> readFile(const char *fileName);
     VkShaderModule createShaderModule(const std::vector<char> &code);
     void createGraphicsPipelineLayout();
+
+    /* engine_buffer_helper.cpp */
+    uint32_t findMemoryTypeIndex(uint32_t targetMemoryTypeBits,
+                                 VkMemoryPropertyFlags targetMemoryPropertyFlags);
 
     /* engine_debug_output.cpp */
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugReportCallback(
