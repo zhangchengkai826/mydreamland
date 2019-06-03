@@ -12,12 +12,25 @@ const std::vector<Vertex> vertices = {
 
 Engine gEngine;
 
-int Engine::initDisplay() {
+void Engine::init() {
     logAvailableInstanceExtensions();
     updateAvailableValidationLayerNames();
 
     createVKInstance();
     createVKDebugReportCallback();
+}
+
+void Engine::destroy() {
+    if(DEBUG_ON && validationLayerNames.size() > 0) {
+        PFN_vkDestroyDebugReportCallbackEXT vkDestroyDebugReportCallbackEXT;
+        vkDestroyDebugReportCallbackEXT = (PFN_vkDestroyDebugReportCallbackEXT)
+                vkGetInstanceProcAddr(vkInstance, "vkDestroyDebugReportCallbackEXT");
+        vkDestroyDebugReportCallbackEXT(vkInstance, vkDebugReportCallbackExt, nullptr);
+    }
+    vkDestroyInstance(vkInstance, nullptr);
+}
+
+int Engine::initDisplay() {
     createVKAndroidSurface();
 
     selectPhysicalDevice();
@@ -116,13 +129,6 @@ void Engine::termDisplay() {
     vkDestroySwapchainKHR(vkDevice, vkSwapchain, nullptr);
     vkDestroyDevice(vkDevice, nullptr);
     vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
-
-    PFN_vkDestroyDebugReportCallbackEXT vkDestroyDebugReportCallbackEXT;
-    vkDestroyDebugReportCallbackEXT = (PFN_vkDestroyDebugReportCallbackEXT)
-            vkGetInstanceProcAddr(vkInstance, "vkDestroyDebugReportCallbackEXT");
-    vkDestroyDebugReportCallbackEXT(vkInstance, vkDebugReportCallbackExt, nullptr);
-
-    vkDestroyInstance(vkInstance, nullptr);
 }
 
 void Engine::cmdHandler(struct android_app *app, int32_t cmd) {

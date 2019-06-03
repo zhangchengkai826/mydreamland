@@ -59,6 +59,9 @@ public:
     static void cmdHandler(struct android_app *app, int32_t cmd);
     static int32_t inputHandler(struct android_app *app, AInputEvent *event);
 
+    void init();
+    void destroy();
+
     void drawFrame();
 
 private:
@@ -87,8 +90,8 @@ private:
     VkPipeline graphicsPipeline = VK_NULL_HANDLE;
     std::vector<VkFramebuffer> swapChainFrameBuffers;
     VkCommandPool commandPool = VK_NULL_HANDLE;
-    VkBuffer vertexBuffer;
-    VkDeviceMemory vertexBufferMemory;
+    VkBuffer vertexBuffer = VK_NULL_HANDLE;
+    VkDeviceMemory vertexBufferMemory = VK_NULL_HANDLE;
     std::vector<VkCommandBuffer> commandBuffers;
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> renderFinishedSemaphores;

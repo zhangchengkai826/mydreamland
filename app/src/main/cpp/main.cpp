@@ -16,6 +16,8 @@ void android_main(android_app *app)
         gEngine.state = *reinterpret_cast<Engine::SavedState *>(app->savedState);
     }
 
+    gEngine.init();
+
     while(true) {
         int events;
         struct android_poll_source *source;
@@ -27,6 +29,7 @@ void android_main(android_app *app)
             }
 
             if(app->destroyRequested != 0) {
+                gEngine.destroy();
                 return;
             }
         }
