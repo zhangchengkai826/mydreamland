@@ -10,10 +10,7 @@ const std::vector<Vertex> vertices = {
     {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
 };
 
-Engine::Engine() {
-    __android_log_print(ANDROID_LOG_INFO, "main", "Engine constructing started!");
-
-
+void Engine::init() {
     if(DEBUG_ON) {
         updateAvailableValidationLayerNames();
     }
@@ -33,7 +30,8 @@ Engine::Engine() {
     createSyncObjs();
 }
 
-Engine::~Engine() {
+void Engine::destroy() {
+    this->activity = nullptr;
     vkDeviceWaitIdle(vkDevice);
     for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         vkDestroyFence(vkDevice, inFlightFences[i], nullptr);
@@ -53,11 +51,9 @@ Engine::~Engine() {
         vkDestroyDebugReportCallbackEXT(vkInstance, vkDebugReportCallbackExt, nullptr);
     }
     vkDestroyInstance(vkInstance, nullptr);
-
-    __android_log_print(ANDROID_LOG_INFO, "main", "Engine destructing finished!");
 }
 
-int Engine::initDisplay() {
+void Engine::initDisplay() {
     createVKAndroidSurface();
     updatePhysicalDeviceSurfaceCapabilities();
     checkPhysicalDeviceSurfaceFormatSupport();
@@ -66,7 +62,20 @@ int Engine::initDisplay() {
     createFrameBuffers();
     allocCmdBuffers();
     recordCmdBuffers();
-    return 0;
+}
+
+void Engine::destroyDisplay() {
+    this->window = nullptr;
+    vkDeviceWaitIdle(vkDevice);
+    for(auto framebuffer: swapChainFrameBuffers) {
+        vkDestroyFramebuffer(vkDevice, framebuffer, nullptr);
+    }
+    vkDestroyPipeline(vkDevice, graphicsPipeline, nullptr);
+    for(auto imageView: swapChainImageViews) {
+        vkDestroyImageView(vkDevice, imageView, nullptr);
+    }
+    vkDestroySwapchainKHR(vkDevice, vkSwapchain, nullptr);
+    vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
 }
 
 void Engine::drawFrame() {
@@ -108,66 +117,5 @@ void Engine::drawFrame() {
     vkQueuePresentKHR(graphicsQueue, &presentInfo);
 
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
-}
-
-void Engine::termDisplay() {
-    vkDeviceWaitIdle(vkDevice);
-    for(auto framebuffer: swapChainFrameBuffers) {
-        vkDestroyFramebuffer(vkDevice, framebuffer, nullptr);
-    }
-    vkDestroyPipeline(vkDevice, graphicsPipeline, nullptr);
-    for(auto imageView: swapChainImageViews) {
-        vkDestroyImageView(vkDevice, imageView, nullptr);
-    }
-    vkDestroySwapchainKHR(vkDevice, vkSwapchain, nullptr);
-    vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
-}
-
-void Engine::cmdHandler(struct android_app *app, int32_t cmd) {
-    reinterpret_cast<Engine *>(app->userData)->cmdHandlerInternal(app, cmd);
-}
-
-void Engine::cmdHandlerInternal(struct android_app *app, int32_t cmd) {
-    auto engine = reinterpret_cast<Engine *>(app->userData);
-    switch (cmd) {
-        case APP_CMD_SAVE_STATE:
-            // The system has asked us to save our current state.  Do so.
-            app->savedState = malloc(sizeof(struct SavedState));
-            *((struct SavedState*)app->savedState) = engine->state;
-            app->savedStateSize = sizeof(struct SavedState);
-            break;
-        case APP_CMD_INIT_WINDOW:
-            // The window is being shown, get it ready.
-            initDisplay();
-            break;
-        case APP_CMD_TERM_WINDOW:
-            // The window is being hidden or closed, clean it up.
-            termDisplay();
-            break;
-        case APP_CMD_GAINED_FOCUS:
-            break;
-        case APP_CMD_LOST_FOCUS:
-            engine->animating = false;
-            break;
-        default:
-            break;
-    }
-}
-
-int32_t Engine::inputHandler(struct android_app *app, AInputEvent *event) {
-    return reinterpret_cast<Engine *>(app->userData)->inputHandlerInternal(app, event);
-}
-
-int32_t Engine::inputHandlerInternal(struct android_app *app, AInputEvent *event) {
-    auto engine = reinterpret_cast<Engine *>(app->userData);
-    if(AInputEvent_getType(event) == AINPUT_EVENT_TYPE_MOTION) {
-        engine->animating = true;
-        engine->state.x = (int32_t)AMotionEvent_getX(event, 0);
-        engine->state.y = (int32_t)AMotionEvent_getY(event, 0);
-        __android_log_print(ANDROID_LOG_INFO, "main", "x: %d, y: %d",
-                engine->state.x, engine->state.y);
-        return 1;
-    }
-    return 0;
 }
 

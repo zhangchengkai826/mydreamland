@@ -5,11 +5,14 @@
 #ifndef MYDREAMLAND_ENGINE_H
 #define MYDREAMLAND_ENGINE_H
 
+#include <pthread.h>
+
 #include <vector>
 #include <array>
+#include <queue>
 
+#include <android/native_activity.h>
 #include <android/log.h>
-#include <android_native_app_glue.h>
 
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_android.h>
@@ -47,20 +50,16 @@ extern const std::vector<Vertex> vertices;
 
 class Engine {
 public:
-    struct SavedState {
-        int32_t x = 0;
-        int32_t y = 0;
-    };
+    ANativeActivity *activity = nullptr;
+    ANativeWindow *window = nullptr;
+    bool bDisplayInited = false;
 
-    struct android_app *app = nullptr;
-    struct SavedState state;
     bool animating = false;
 
-    static void cmdHandler(struct android_app *app, int32_t cmd);
-    static int32_t inputHandler(struct android_app *app, AInputEvent *event);
-
-    Engine();
-    virtual ~Engine();
+    void init();
+    void destroy();
+    void initDisplay();
+    void destroyDisplay();
 
     void drawFrame();
 
@@ -97,12 +96,6 @@ private:
     std::vector<VkSemaphore> renderFinishedSemaphores;
     std::vector<VkFence> inFlightFences;
     int currentFrame = 0;
-
-    /* engine.cpp */
-    void cmdHandlerInternal(struct android_app *app, int32_t cmd);
-    int32_t inputHandlerInternal(struct android_app *app, AInputEvent *event);
-    int initDisplay();
-    void termDisplay();
 
     /* engine_helper.cpp */
     void createVKInstance();

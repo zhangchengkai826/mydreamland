@@ -43,7 +43,7 @@ void Engine::createVKAndroidSurface() {
             .sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR,
             .pNext = nullptr,
             .flags = 0,
-            .window = app->window};
+            .window = window};
     vkCreateAndroidSurfaceKHR(vkInstance, &surfaceCreateInfoKhr, nullptr,
                               &vkSurface);
 }

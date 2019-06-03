@@ -25,16 +25,10 @@ add_library( # Sets the name of the library.
              main.cpp)
 
 target_include_directories(main PRIVATE
-        ${ANDROID_NDK}/sources/android/native_app_glue)
-
-target_include_directories(main PRIVATE
         engine/public)
 
 target_include_directories(main PRIVATE
         include)
-
-add_library(native_app_glue STATIC
-        ${ANDROID_NDK}/sources/android/native_app_glue/android_native_app_glue.c)
 
 add_library(engine STATIC
 
@@ -43,9 +37,6 @@ add_library(engine STATIC
         engine/private/engine_shader_helper.cpp
         engine/private/engine_debug_output.cpp
         engine/private/engine_buffer_helper.cpp)
-
-target_include_directories(engine PRIVATE
-        ${ANDROID_NDK}/sources/android/native_app_glue)
 
 target_include_directories(engine PRIVATE
         engine/public)
@@ -77,6 +68,5 @@ target_link_libraries( # Specifies the target library.
                        # included in the NDK.
         android
         vulkan
-        native_app_glue
         engine
         ${log-lib} )

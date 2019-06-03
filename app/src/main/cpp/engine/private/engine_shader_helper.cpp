@@ -5,7 +5,7 @@
 #include "engine.h"
 
 std::vector<char> Engine::readFile(const char *fileName) {
-    AAsset* shaderFile = AAssetManager_open(app->activity->assetManager,
+    AAsset* shaderFile = AAssetManager_open(activity->assetManager,
                                             fileName, AASSET_MODE_BUFFER);
     size_t shaderFileLen = AAsset_getLength(shaderFile);
     std::vector<char> content(shaderFileLen);
