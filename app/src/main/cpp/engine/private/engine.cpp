@@ -5,10 +5,12 @@
 #include "engine.h"
 
 const std::vector<Vertex> vertices = {
-    {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-    {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-    {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+    {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+    {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}},
 };
+const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0};
 
 void Engine::init() {
     if(DEBUG_ON) {
@@ -27,6 +29,7 @@ void Engine::init() {
     createGraphicsPipelineLayout();
     createCmdPool();
     createVertexBuffer();
+    createIndexBuffer();
     createSyncObjs();
 }
 
@@ -38,6 +41,8 @@ void Engine::destroy() {
         vkDestroySemaphore(vkDevice, renderFinishedSemaphores[i], nullptr);
         vkDestroySemaphore(vkDevice, imageAvailableSemaphores[i], nullptr);
     }
+    vkDestroyBuffer(vkDevice, indexBuffer, nullptr);
+    vkFreeMemory(vkDevice, indexBufferMemory, nullptr);
     vkDestroyBuffer(vkDevice, vertexBuffer, nullptr);
     vkFreeMemory(vkDevice, vertexBufferMemory, nullptr);
     vkDestroyCommandPool(vkDevice, commandPool, nullptr);

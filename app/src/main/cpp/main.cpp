@@ -88,11 +88,11 @@ static void *renderLoop(void *arg) {
 static void ANativeActivity_onStart(ANativeActivity *activity) {
     __android_log_print(ANDROID_LOG_INFO, "main", "### ANativeActivity_onStart ###");
 
-    /* thread safe */
+    /* global initialize, only main threads exists */
+
     engine.activity = activity;
     engine.init();
     engine.bDisplayInited = false;
-    /* thread safe */
 
     pthread_mutex_init(&engineMutex, nullptr);
     pthread_mutex_init(&renderLoopShouldExit, nullptr);
@@ -101,6 +101,9 @@ static void ANativeActivity_onStart(ANativeActivity *activity) {
     pthread_mutex_lock(&renderLoopShouldExit);
     pthread_mutex_lock(&physicalLoopShouldExit);
     bRenderLoopThreadRunning = true;
+
+    /* global initialize end */
+
     pthread_create(&renderLoopTID, nullptr, renderLoop, nullptr);
     pthread_create(&physicalLoopTID, nullptr, physicalLoop, nullptr);
 }
@@ -113,16 +116,19 @@ static void ANativeActivity_onStop(ANativeActivity *activity) {
     pthread_mutex_unlock(&physicalLoopShouldExit);
     pthread_join(renderLoopTID, nullptr);
     pthread_join(physicalLoopTID, nullptr);
+
+    /* global destroy, only main thread exists */
+
     bRenderLoopThreadRunning = false;
 
     pthread_mutex_destroy(&renderLoopShouldExit);
     pthread_mutex_destroy(&physicalLoopShouldExit);
     pthread_mutex_destroy(&engineMutex);
 
-    /* thread safe */
     engine.destroy();
     engine.activity = nullptr;
-    /* thread safe */
+
+    /* global destroy end */
 }
 
 static void ANativeActivity_onNativeWindowCreated(ANativeActivity *activity,

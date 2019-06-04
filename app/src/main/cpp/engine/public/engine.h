@@ -47,6 +47,7 @@ struct Vertex {
 };
 
 extern const std::vector<Vertex> vertices;
+extern const std::vector<uint16_t> indices;
 
 class Engine {
 public:
@@ -92,6 +93,8 @@ private:
     VkCommandPool commandPool = VK_NULL_HANDLE;
     VkBuffer vertexBuffer = VK_NULL_HANDLE;
     VkDeviceMemory vertexBufferMemory = VK_NULL_HANDLE;
+    VkBuffer indexBuffer = VK_NULL_HANDLE;
+    VkDeviceMemory indexBufferMemory = VK_NULL_HANDLE;
     std::vector<VkCommandBuffer> commandBuffers;
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> renderFinishedSemaphores;
@@ -116,6 +119,7 @@ private:
 
     void createCmdPool();
     void createVertexBuffer();
+    void createIndexBuffer();
     void allocCmdBuffers();
     void recordCmdBuffers();
 
