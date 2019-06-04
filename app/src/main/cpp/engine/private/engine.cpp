@@ -40,6 +40,7 @@ void Engine::init() {
     createDescriptorSets();
     createTextureImage();
     createTextureImageView();
+    createTextureSampler();
 
     createSyncObjs();
 }
@@ -53,6 +54,7 @@ void Engine::destroy() {
         vkDestroySemaphore(vkDevice, imageAvailableSemaphores[i], nullptr);
     }
 
+    vkDestroySampler(vkDevice, textureSampler, nullptr);
     vkDestroyImageView(vkDevice, textureImageView, nullptr);
     vkDestroyImage(vkDevice, textureImage, nullptr);
     vkFreeMemory(vkDevice, textureImageMemory, nullptr);
