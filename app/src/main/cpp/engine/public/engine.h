@@ -129,6 +129,8 @@ private:
     /* engine_buffer_helper.cpp */
     uint32_t findMemoryTypeIndex(uint32_t targetMemoryTypeBits,
                                  VkMemoryPropertyFlags targetMemoryPropertyFlags);
+    void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
+            VkMemoryPropertyFlags propertyFlags, VkBuffer &buffer, VkDeviceMemory &bufferMemory);
 
     /* engine_debug_output.cpp */
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugReportCallback(

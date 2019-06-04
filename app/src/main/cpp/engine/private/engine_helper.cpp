@@ -522,34 +522,13 @@ void Engine::createSyncObjs() {
 }
 
 void Engine::createVertexBuffer() {
-    VkBufferCreateInfo vertexBufCreateInfo{
-        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-        .pNext = nullptr,
-        .flags = 0,
-        .size = sizeof(Vertex) * vertices.size(),
-        .usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-        .queueFamilyIndexCount = 0,
-        .pQueueFamilyIndices = nullptr,
-    };
-    vkCreateBuffer(vkDevice, &vertexBufCreateInfo, nullptr, &vertexBuffer);
-
-    VkMemoryRequirements memoryRequirements;
-    vkGetBufferMemoryRequirements(vkDevice, vertexBuffer, &memoryRequirements);
-
-    VkMemoryAllocateInfo allocateInfo{
-        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-        .pNext = nullptr,
-        .allocationSize = memoryRequirements.size,
-        .memoryTypeIndex = findMemoryTypeIndex(memoryRequirements.memoryTypeBits,
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT),
-    };
-    vkAllocateMemory(vkDevice, &allocateInfo, nullptr, &vertexBufferMemory);
-
-    vkBindBufferMemory(vkDevice, vertexBuffer, vertexBufferMemory, 0);
+    VkDeviceSize bufferSize = sizeof(Vertex) * vertices.size();
+    createBuffer(bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            vertexBuffer, vertexBufferMemory);
 
     void *data;
-    vkMapMemory(vkDevice, vertexBufferMemory, 0, vertexBufCreateInfo.size, 0, &data);
-    memcpy(data, vertices.data(), static_cast<size_t>(vertexBufCreateInfo.size));
+    vkMapMemory(vkDevice, vertexBufferMemory, 0, bufferSize, 0, &data);
+    memcpy(data, vertices.data(), static_cast<size_t>(bufferSize));
     vkUnmapMemory(vkDevice, vertexBufferMemory);
 }
