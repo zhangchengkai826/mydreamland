@@ -53,8 +53,9 @@ public:
     ANativeActivity *activity = nullptr;
     ANativeWindow *window = nullptr;
     bool bDisplayInited = false;
+    int fpsFrameCounter = 0;
 
-    bool animating = false;
+    bool animating = true;
 
     void init();
     void destroy();
