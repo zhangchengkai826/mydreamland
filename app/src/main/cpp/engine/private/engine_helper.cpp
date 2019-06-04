@@ -616,7 +616,7 @@ void Engine::updateUniformBuffer(uint32_t imageIndex) {
                 static_cast<float>(physicalDeviceSurfaceCapabilities.currentExtent.height),
                 0.1f, 10.0f),
     };
-    ubo.view[1][1] *= -1;
+    ubo.proj[1][1] *= -1;
 
     void *data;
     vkMapMemory(vkDevice, uniformBuffersMemory[imageIndex], 0, sizeof(UniformBuffer), 0, &data);
@@ -639,6 +639,26 @@ void Engine::createDescriptorPool() {
     };
 
     vkCreateDescriptorPool(vkDevice, &createInfo, nullptr, &descriptorPool);
+}
+
+void Engine::createDescriptorSetLayout() {
+    VkDescriptorSetLayoutBinding binding{
+            .binding = 0,
+            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .descriptorCount = 1,
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+            .pImmutableSamplers = nullptr,
+    };
+
+    VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo{
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = 0,
+            .bindingCount = 1,
+            .pBindings = &binding,
+    };
+    vkCreateDescriptorSetLayout(vkDevice, &descriptorSetLayoutCreateInfo, nullptr,
+                                &descriptorSetLayout);
 }
 
 void Engine::createDescriptorSets() {

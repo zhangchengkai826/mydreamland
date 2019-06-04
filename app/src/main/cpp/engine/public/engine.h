@@ -140,6 +140,7 @@ private:
     void createSwapChain();
 
     void createRenderPass();
+    void createDescriptorSetLayout();
     void createGraphicsPipelineLayout();
     void createGraphicsPipeline();
     void createFrameBuffers();
@@ -155,7 +156,6 @@ private:
     void createIndexBuffer();
     void createUniformBuffers();
 
-
     void createSyncObjs();
 
     void updateUniformBuffer(uint32_t imageIndex);
@@ -163,7 +163,6 @@ private:
     /* engine_shader_helper.cpp */
     std::vector<char> readFile(const char *fileName);
     VkShaderModule createShaderModule(const std::vector<char> &code);
-    void createDescriptorSetLayout();
 
     /* engine_buffer_helper.cpp */
     uint32_t findOptimalMemoryTypeIndexSupportSpecifiedPropertyFlags(uint32_t targetMemoryypeBits,
