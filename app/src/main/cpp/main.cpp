@@ -41,8 +41,6 @@ static void *physicalLoop(void *arg) {
 
 static void *renderLoop(void *arg) {
     while(true) {
-        pthread_mutex_lock(&engineMutex);
-
         if(pthread_mutex_trylock(&renderLoopShouldExit) == 0) {
             // lock succeed
             pthread_mutex_unlock(&renderLoopShouldExit);
@@ -50,20 +48,21 @@ static void *renderLoop(void *arg) {
                 engine.destroyDisplay();
                 engine.bDisplayInited = false;
             }
-            pthread_mutex_unlock(&engineMutex);
             break;
         };
 
-        if(!engine.bDisplayInited && engine.window) {
+        ANativeWindow *window;
+        pthread_mutex_lock(&engineMutex);
+        window = engine.window;
+        pthread_mutex_unlock(&engineMutex);
+
+        if(!engine.bDisplayInited && window) {
             engine.initDisplay();
             engine.bDisplayInited = true;
-        }
-        if(engine.bDisplayInited && !engine.window) {
+        } else if(engine.bDisplayInited && !window) {
             engine.destroyDisplay();
             engine.bDisplayInited = false;
         }
-
-        pthread_mutex_unlock(&engineMutex);
 
         // do main tasks here
         __android_log_print(ANDROID_LOG_INFO, "main",
@@ -89,9 +88,11 @@ static void *renderLoop(void *arg) {
 static void ANativeActivity_onStart(ANativeActivity *activity) {
     __android_log_print(ANDROID_LOG_INFO, "main", "### ANativeActivity_onStart ###");
 
+    /* thread safe */
     engine.activity = activity;
     engine.init();
     engine.bDisplayInited = false;
+    /* thread safe */
 
     pthread_mutex_init(&engineMutex, nullptr);
     pthread_mutex_init(&renderLoopShouldExit, nullptr);
@@ -118,8 +119,10 @@ static void ANativeActivity_onStop(ANativeActivity *activity) {
     pthread_mutex_destroy(&physicalLoopShouldExit);
     pthread_mutex_destroy(&engineMutex);
 
+    /* thread safe */
     engine.destroy();
     engine.activity = nullptr;
+    /* thread safe */
 }
 
 static void ANativeActivity_onNativeWindowCreated(ANativeActivity *activity,
@@ -128,6 +131,8 @@ static void ANativeActivity_onNativeWindowCreated(ANativeActivity *activity,
             "### ANativeActivity_onNativeWindowCreated ###");
 
     if(bRenderLoopThreadRunning) {
+        /* engineMutex is initialized before bRenderLoopThreadRunning is set to true */
+        /* bRenderLoopThreadRunning is set to true before renderLoop starts */
         pthread_mutex_lock(&engineMutex);
         engine.window = window;
         pthread_mutex_unlock(&engineMutex);
@@ -142,6 +147,8 @@ static void ANativeActivity_onNativeWindowDestroyed(ANativeActivity *activity,
             "### ANativeActivity_onNativeWindowDestroyed ###");
 
     if(bRenderLoopThreadRunning) {
+        /* bRenderLoopThreadRunning is set to false before engineMutex is destroyed */
+        /* renderLoop stops before bRenderLoopThreadRunning is set to false */
         pthread_mutex_lock(&engineMutex);
         engine.window = nullptr;
         pthread_mutex_unlock(&engineMutex);
