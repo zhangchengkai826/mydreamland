@@ -39,6 +39,7 @@ void Engine::init() {
     createUniformBuffers();
     createDescriptorSets();
     createTextureImage();
+    createTextureImageView();
 
     createSyncObjs();
 }
@@ -52,6 +53,7 @@ void Engine::destroy() {
         vkDestroySemaphore(vkDevice, imageAvailableSemaphores[i], nullptr);
     }
 
+    vkDestroyImageView(vkDevice, textureImageView, nullptr);
     vkDestroyImage(vkDevice, textureImage, nullptr);
     vkFreeMemory(vkDevice, textureImageMemory, nullptr);
     for(size_t i = 0; i < NUM_IMAGES_IN_SWAPCHAIN; i++) {

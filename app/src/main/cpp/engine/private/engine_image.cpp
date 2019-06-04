@@ -147,3 +147,29 @@ void Engine::copyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, V
     vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             1, &bufferImageCopy);
 }
+
+void Engine::createTextureImageView() {
+    textureImageView = createImageView(textureImage, VK_FORMAT_R8G8B8A8_UNORM);
+}
+
+VkImageView Engine::createImageView(VkImage image, VkFormat format) {
+    VkImageViewCreateInfo imgViewCreateInfo {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+            .image = image,
+            .viewType = VK_IMAGE_VIEW_TYPE_2D,
+            .format = format,
+            .components.r = VK_COMPONENT_SWIZZLE_IDENTITY,
+            .components.g = VK_COMPONENT_SWIZZLE_IDENTITY,
+            .components.b = VK_COMPONENT_SWIZZLE_IDENTITY,
+            .components.a = VK_COMPONENT_SWIZZLE_IDENTITY,
+            .subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .subresourceRange.baseMipLevel = 0,
+            .subresourceRange.levelCount = 1,
+            .subresourceRange.baseArrayLayer = 0,
+            .subresourceRange.layerCount = 1,
+    };
+    VkImageView imageView;
+    vkCreateImageView(vkDevice, &imgViewCreateInfo, nullptr,
+                      &imageView);
+    return imageView;
+}

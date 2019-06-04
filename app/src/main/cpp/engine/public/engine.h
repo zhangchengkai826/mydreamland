@@ -123,8 +123,9 @@ private:
     VkDeviceMemory indexBufferMemory = VK_NULL_HANDLE;
     std::vector<VkBuffer> uniformBuffers;
     std::vector<VkDeviceMemory> uniformBuffersMemory;
-    VkImage textureImage;
-    VkDeviceMemory textureImageMemory;
+    VkImage textureImage = VK_NULL_HANDLE;
+    VkDeviceMemory textureImageMemory = VK_NULL_HANDLE;
+    VkImageView textureImageView = VK_NULL_HANDLE;
 
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> renderFinishedSemaphores;
@@ -169,14 +170,17 @@ private:
     void updateUniformBuffer(uint32_t imageIndex);
 
     /* engine_image.cpp */
+    void createTextureImage();
+    void createTextureImageView();
+
     void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling,
             VkImageUsageFlags usage, VkMemoryPropertyFlags propertyFlags, VkImage &image,
             VkDeviceMemory &imageMemory);
-    void createTextureImage();
     void transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format,
             VkImageLayout oldLayout, VkImageLayout newLayout);
     void copyBufferToImage(VkCommandBuffer commandBuffer,
             VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+    VkImageView createImageView(VkImage image, VkFormat format);
 
     /* engine_shader_helper.cpp */
     std::vector<char> readFile(const char *fileName);
