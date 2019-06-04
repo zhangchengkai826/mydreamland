@@ -338,7 +338,7 @@ void Engine::createGraphicsPipeline() {
             .polygonMode = VK_POLYGON_MODE_FILL,
             .lineWidth = 1.0f,
             .cullMode = VK_CULL_MODE_BACK_BIT,
-            .frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
+            .frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE, //
             .depthBiasEnable = VK_FALSE,
             .depthBiasConstantFactor = 0.0f,
             .depthBiasClamp = 0.0f,
@@ -616,6 +616,12 @@ void Engine::updateUniformBuffer(uint32_t imageIndex) {
                 static_cast<float>(physicalDeviceSurfaceCapabilities.currentExtent.height),
                 0.1f, 10.0f),
     };
+
+    /* Vulkan NDC y-axis points downwards, while OpenGL's pointing upwards
+     *
+     * projection matrix determines handedness, so Vulkan is right-handedness instead of OpenGL's
+     * left-handedness
+     */
     ubo.proj[1][1] *= -1;
 
     void *data;
