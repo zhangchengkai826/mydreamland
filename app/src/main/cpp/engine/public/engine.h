@@ -173,9 +173,10 @@ private:
             VkImageUsageFlags usage, VkMemoryPropertyFlags propertyFlags, VkImage &image,
             VkDeviceMemory &imageMemory);
     void createTextureImage();
-    void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout,
-            VkImageLayout newLayout);
-    void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+    void transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format,
+            VkImageLayout oldLayout, VkImageLayout newLayout);
+    void copyBufferToImage(VkCommandBuffer commandBuffer,
+            VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
     /* engine_shader_helper.cpp */
     std::vector<char> readFile(const char *fileName);
