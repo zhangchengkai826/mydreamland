@@ -128,9 +128,10 @@ private:
 
     /* engine_buffer_helper.cpp */
     uint32_t findOptimalMemoryTypeIndexSupportSpecifiedPropertyFlags(uint32_t targetMemoryTypeBits,
-                                                                     VkMemoryPropertyFlags targetMemoryPropertyFlags);
+            VkMemoryPropertyFlags targetMemoryPropertyFlags);
     void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
             VkMemoryPropertyFlags propertyFlags, VkBuffer &buffer, VkDeviceMemory &bufferMemory);
+    void copyBuffer(VkBuffer srcBuffer, VkBuffer destBuffer, VkDeviceSize size);
 
     /* engine_debug_output.cpp */
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugReportCallback(
