@@ -127,8 +127,8 @@ private:
     void createGraphicsPipelineLayout();
 
     /* engine_buffer_helper.cpp */
-    uint32_t findMemoryTypeIndex(uint32_t targetMemoryTypeBits,
-                                 VkMemoryPropertyFlags targetMemoryPropertyFlags);
+    uint32_t findOptimalMemoryTypeIndexSupportSpecifiedPropertyFlags(uint32_t targetMemoryTypeBits,
+                                                                     VkMemoryPropertyFlags targetMemoryPropertyFlags);
     void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
             VkMemoryPropertyFlags propertyFlags, VkBuffer &buffer, VkDeviceMemory &bufferMemory);
 

@@ -523,12 +523,18 @@ void Engine::createSyncObjs() {
 
 void Engine::createVertexBuffer() {
     VkDeviceSize bufferSize = sizeof(Vertex) * vertices.size();
-    createBuffer(bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+    createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            vertexBuffer, vertexBufferMemory);
+            stagingBuffer, stagingBufferMemory);
 
     void *data;
-    vkMapMemory(vkDevice, vertexBufferMemory, 0, bufferSize, 0, &data);
+    vkMapMemory(vkDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
     memcpy(data, vertices.data(), static_cast<size_t>(bufferSize));
-    vkUnmapMemory(vkDevice, vertexBufferMemory);
+    vkUnmapMemory(vkDevice, stagingBufferMemory);
+
+    createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, vertexBufferMemory);
 }

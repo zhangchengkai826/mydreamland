@@ -4,8 +4,9 @@
 
 #include <engine.h>
 
-uint32_t Engine::findMemoryTypeIndex(uint32_t targetMemoryTypeBits,
-                                     VkMemoryPropertyFlags targetMemoryPropertyFlags) {
+uint32_t Engine::findOptimalMemoryTypeIndexSupportSpecifiedPropertyFlags(
+        uint32_t targetMemoryTypeBits,
+        VkMemoryPropertyFlags targetMemoryPropertyFlags) {
     VkPhysicalDeviceMemoryProperties memoryProperties;
     vkGetPhysicalDeviceMemoryProperties(vkPhysicalDevice, &memoryProperties);
     for(uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++) {
@@ -15,7 +16,7 @@ uint32_t Engine::findMemoryTypeIndex(uint32_t targetMemoryTypeBits,
             return i;
         }
     }
-    throw "Engine::findMemoryTypeIndex failed!";
+    throw "Engine::findOptimalMemoryTypeIndexSupportSpecifiedPropertyFlags failed!";
 }
 
 void Engine::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
@@ -40,8 +41,9 @@ void Engine::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
             .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
             .pNext = nullptr,
             .allocationSize = memoryRequirements.size,
-            .memoryTypeIndex = findMemoryTypeIndex(memoryRequirements.memoryTypeBits,
-                                                   propertyFlags),
+            .memoryTypeIndex = findOptimalMemoryTypeIndexSupportSpecifiedPropertyFlags(
+                    memoryRequirements.memoryTypeBits,
+                    propertyFlags),
     };
     vkAllocateMemory(vkDevice, &allocateInfo, nullptr, &bufferMemory);
 
