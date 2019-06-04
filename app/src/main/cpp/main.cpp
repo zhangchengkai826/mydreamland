@@ -6,22 +6,22 @@
 
 static Engine engine;
 
-static pthread_t renderLoopTID, physicalLoopTID;
-static pthread_mutex_t renderLoopShouldExit, physicalLoopShouldExit;
+static pthread_t renderLoopTID, physicsLoopTID;
+static pthread_mutex_t renderLoopShouldExit, physicsLoopShouldExit;
 static pthread_mutex_t engineMutex;
 static bool bRenderLoopThreadRunning = false;
 
-static void *physicalLoop(void *arg) {
+static void *physicsLoop(void *arg) {
     while(true) {
-        if(pthread_mutex_trylock(&physicalLoopShouldExit) == 0) {
+        if(pthread_mutex_trylock(&physicsLoopShouldExit) == 0) {
             // lock succeed
-            pthread_mutex_unlock(&physicalLoopShouldExit);
+            pthread_mutex_unlock(&physicsLoopShouldExit);
             break;
         };
 
         // do main tasks here
         __android_log_print(ANDROID_LOG_INFO, "main",
-                            "### physicalLoop ###");
+                            "### physicsLoop ###");
         timespec tm{
                 .tv_sec = 1,
                 .tv_nsec = 0,
@@ -96,16 +96,16 @@ static void ANativeActivity_onStart(ANativeActivity *activity) {
 
     pthread_mutex_init(&engineMutex, nullptr);
     pthread_mutex_init(&renderLoopShouldExit, nullptr);
-    pthread_mutex_init(&physicalLoopShouldExit, nullptr);
+    pthread_mutex_init(&physicsLoopShouldExit, nullptr);
 
     pthread_mutex_lock(&renderLoopShouldExit);
-    pthread_mutex_lock(&physicalLoopShouldExit);
+    pthread_mutex_lock(&physicsLoopShouldExit);
     bRenderLoopThreadRunning = true;
 
     /* global initialize end */
 
     pthread_create(&renderLoopTID, nullptr, renderLoop, nullptr);
-    pthread_create(&physicalLoopTID, nullptr, physicalLoop, nullptr);
+    pthread_create(&physicsLoopTID, nullptr, physicsLoop, nullptr);
 }
 
 // make sure all resources are freed, all threads are joined
@@ -113,16 +113,16 @@ static void ANativeActivity_onStop(ANativeActivity *activity) {
     __android_log_print(ANDROID_LOG_INFO, "main", "### ANativeActivity_onStop ###");
 
     pthread_mutex_unlock(&renderLoopShouldExit);
-    pthread_mutex_unlock(&physicalLoopShouldExit);
+    pthread_mutex_unlock(&physicsLoopShouldExit);
     pthread_join(renderLoopTID, nullptr);
-    pthread_join(physicalLoopTID, nullptr);
+    pthread_join(physicsLoopTID, nullptr);
 
     /* global destroy, only main thread exists */
 
     bRenderLoopThreadRunning = false;
 
     pthread_mutex_destroy(&renderLoopShouldExit);
-    pthread_mutex_destroy(&physicalLoopShouldExit);
+    pthread_mutex_destroy(&physicsLoopShouldExit);
     pthread_mutex_destroy(&engineMutex);
 
     engine.destroy();

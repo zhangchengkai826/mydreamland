@@ -11,6 +11,7 @@
 #include <array>
 #include <queue>
 #include <chrono>
+#include <exception>
 
 #include <android/native_activity.h>
 #include <android/log.h>
@@ -18,9 +19,10 @@
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_android.h>
 
-#define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+
+#include <stb_image.h>
 
 struct Vertex {
     glm::vec2 pos;
@@ -121,6 +123,8 @@ private:
     VkDeviceMemory indexBufferMemory = VK_NULL_HANDLE;
     std::vector<VkBuffer> uniformBuffers;
     std::vector<VkDeviceMemory> uniformBuffersMemory;
+    VkImage textureImage;
+    VkDeviceMemory textureImageMemory;
 
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> renderFinishedSemaphores;
@@ -158,7 +162,20 @@ private:
 
     void createSyncObjs();
 
+    VkCommandBuffer beginSingleTimeCommands();
+    void endSingleTimeCommands(VkCommandBuffer commandBuffer);
+
+    /* engine_physics.cpp */
     void updateUniformBuffer(uint32_t imageIndex);
+
+    /* engine_image.cpp */
+    void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling,
+            VkImageUsageFlags usage, VkMemoryPropertyFlags propertyFlags, VkImage &image,
+            VkDeviceMemory &imageMemory);
+    void createTextureImage();
+    void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout,
+            VkImageLayout newLayout);
+    void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
     /* engine_shader_helper.cpp */
     std::vector<char> readFile(const char *fileName);

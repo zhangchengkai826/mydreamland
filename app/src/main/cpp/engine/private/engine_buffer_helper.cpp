@@ -16,7 +16,8 @@ uint32_t Engine::findOptimalMemoryTypeIndexSupportSpecifiedPropertyFlags(
             return i;
         }
     }
-    throw "Engine::findOptimalMemoryTypeIndexSupportSpecifiedPropertyFlags failed!";
+    throw std::runtime_error(
+            "Engine::findOptimalMemoryTypeIndexSupportSpecifiedPropertyFlags failed!");
 }
 
 void Engine::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
@@ -51,23 +52,7 @@ void Engine::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
 }
 
 void Engine::copyBuffer(VkBuffer srcBuffer, VkBuffer destBuffer, VkDeviceSize size) {
-    VkCommandBufferAllocateInfo allocateInfo{
-        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-        .pNext = nullptr,
-        .commandPool = commandPool,
-        .commandBufferCount = 1,
-        .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-    };
-    VkCommandBuffer commandBuffer;
-    vkAllocateCommandBuffers(vkDevice, &allocateInfo, &commandBuffer);
-
-    VkCommandBufferBeginInfo beginInfo{
-        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-        .pNext = nullptr,
-        .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
-        .pInheritanceInfo = nullptr,
-    };
-    vkBeginCommandBuffer(commandBuffer, &beginInfo);
+    VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
     VkBufferCopy bufferCopy{
         .srcOffset = 0,
@@ -76,20 +61,5 @@ void Engine::copyBuffer(VkBuffer srcBuffer, VkBuffer destBuffer, VkDeviceSize si
     };
     vkCmdCopyBuffer(commandBuffer, srcBuffer, destBuffer, 1, &bufferCopy);
 
-    vkEndCommandBuffer(commandBuffer);
-
-    VkSubmitInfo submitInfo{
-        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-        .commandBufferCount = 1,
-        .pCommandBuffers = &commandBuffer,
-        .pNext = nullptr,
-        .pWaitSemaphores = nullptr,
-        .waitSemaphoreCount = 0,
-        .pSignalSemaphores = nullptr,
-        .signalSemaphoreCount = 0,
-        .pWaitDstStageMask = nullptr,
-    };
-    vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(graphicsQueue);
-    vkFreeCommandBuffers(vkDevice, commandPool, 1, &commandBuffer);
+    endSingleTimeCommands(commandBuffer);
 }
