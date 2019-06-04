@@ -68,7 +68,7 @@ static void *renderLoop(void *arg) {
         __android_log_print(ANDROID_LOG_INFO, "main",
                             "### renderLoop ###");
 
-        if(engine.bDisplayInited && engine.animating) {
+        if(engine.bDisplayInited && engine.bAnimating) {
             engine.drawFrame();
 
             pthread_mutex_lock(&engineMutex);
@@ -168,7 +168,7 @@ static void ANativeActivity_onResume(ANativeActivity* activity) {
                         "### ANativeActivity_onResume ###");
 
     pthread_mutex_lock(&engineMutex);
-    engine.animating = true;
+    engine.bAnimating = true;
     pthread_mutex_unlock(&engineMutex);
 }
 
@@ -177,7 +177,7 @@ static void ANativeActivity_onPause(ANativeActivity* activity) {
                         "### ANativeActivity_onPause ###");
 
     pthread_mutex_lock(&engineMutex);
-    engine.animating = false;
+    engine.bAnimating = false;
     pthread_mutex_unlock(&engineMutex);
 }
 

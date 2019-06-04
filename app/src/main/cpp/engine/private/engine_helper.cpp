@@ -161,12 +161,14 @@ void Engine::createSwapChain() {
     if(imageCount + 1 <= physicalDeviceSurfaceCapabilities.maxImageCount) {
         imageCount += 1;
     }
+    assert(imageCount == NUM_IMAGES_IN_SWAPCHAIN);
+
     VkSwapchainCreateInfoKHR swapchainCreateInfo{
             .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
             .pNext = nullptr,
             .flags = 0,
             .surface = vkSurface,
-            .minImageCount = imageCount,
+            .minImageCount = NUM_IMAGES_IN_SWAPCHAIN,
             .imageFormat = physicalDeviceSurfaceFormat.format,
             .imageColorSpace = physicalDeviceSurfaceFormat.colorSpace,
             .imageExtent = physicalDeviceSurfaceCapabilities.currentExtent,
@@ -185,12 +187,12 @@ void Engine::createSwapChain() {
 
     // retrieve swap chain images
     vkGetSwapchainImagesKHR(vkDevice, vkSwapchain, &imageCount, nullptr);
-    swapChainImages.resize(imageCount);
+    swapChainImages.resize(NUM_IMAGES_IN_SWAPCHAIN);
     vkGetSwapchainImagesKHR(vkDevice, vkSwapchain, &imageCount,
                             swapChainImages.data());
 
     // create swap chain image views
-    swapChainImageViews.resize(swapChainImages.size());
+    swapChainImageViews.resize(NUM_IMAGES_IN_SWAPCHAIN);
     for(int i = 0; i < swapChainImageViews.size(); i++) {
         VkImageViewCreateInfo imgViewCreateInfo {
                 .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
@@ -336,7 +338,7 @@ void Engine::createGraphicsPipeline() {
             .polygonMode = VK_POLYGON_MODE_FILL,
             .lineWidth = 1.0f,
             .cullMode = VK_CULL_MODE_BACK_BIT,
-            .frontFace = VK_FRONT_FACE_CLOCKWISE,
+            .frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
             .depthBiasEnable = VK_FALSE,
             .depthBiasConstantFactor = 0.0f,
             .depthBiasClamp = 0.0f,
@@ -409,7 +411,7 @@ void Engine::createGraphicsPipeline() {
 }
 
 void Engine::createFrameBuffers() {
-    swapChainFrameBuffers.resize(swapChainImageViews.size());
+    swapChainFrameBuffers.resize(NUM_IMAGES_IN_SWAPCHAIN);
     for(size_t i = 0; i < swapChainFrameBuffers.size(); i++) {
         VkImageView attachments[] = {
                 swapChainImageViews[i]
@@ -441,7 +443,7 @@ void Engine::createCmdPool() {
 }
 
 void Engine::allocCmdBuffers() {
-    commandBuffers.resize(swapChainFrameBuffers.size());
+    commandBuffers.resize(NUM_IMAGES_IN_SWAPCHAIN);
     VkCommandBufferAllocateInfo commandBufferAllocateInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
             .pNext = nullptr,
@@ -492,6 +494,9 @@ void Engine::recordCmdBuffers() {
         vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
 
         vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+
+        vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
+                graphicsPipelineLayout, 0, 1, &descriptorSets[i], 0, nullptr);
 
         vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
@@ -567,4 +572,105 @@ void Engine::createIndexBuffer() {
 
     vkDestroyBuffer(vkDevice, stagingBuffer, nullptr);
     vkFreeMemory(vkDevice, stagingBufferMemory, nullptr);
+}
+
+
+void Engine::createGraphicsPipelineLayout() {
+    VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = 0,
+            .setLayoutCount = 1,
+            .pSetLayouts = &descriptorSetLayout,
+            .pushConstantRangeCount = 0,
+            .pPushConstantRanges = nullptr,
+    };
+    vkCreatePipelineLayout(vkDevice, &pipelineLayoutCreateInfo, nullptr,
+                           &graphicsPipelineLayout);
+}
+
+void Engine::createUniformBuffers() {
+    VkDeviceSize bufferSize = sizeof(UniformBuffer);
+    uniformBuffers.resize(NUM_IMAGES_IN_SWAPCHAIN);
+    uniformBuffersMemory.resize(NUM_IMAGES_IN_SWAPCHAIN);
+    for(size_t i = 0; i < NUM_IMAGES_IN_SWAPCHAIN; i++) {
+        createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                uniformBuffers[i], uniformBuffersMemory[i]);
+    }
+}
+
+void Engine::updateUniformBuffer(uint32_t imageIndex) {
+    static auto startTime = std::chrono::high_resolution_clock::now();
+    auto currentTime = std::chrono::high_resolution_clock::now();
+    float time = std::chrono::duration<float,
+        std::chrono::seconds::period>(currentTime - startTime).count();
+
+    UniformBuffer ubo{
+        .model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f),
+                glm::vec3(0.0f, 0.0f, 1.0f)),
+        .view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f),
+                glm::vec3(0.0f, 0.0f, 1.0f)),
+        .proj = glm::perspective(glm::radians(45.0f),
+                physicalDeviceSurfaceCapabilities.currentExtent.width /
+                static_cast<float>(physicalDeviceSurfaceCapabilities.currentExtent.height),
+                0.1f, 10.0f),
+    };
+    ubo.view[1][1] *= -1;
+
+    void *data;
+    vkMapMemory(vkDevice, uniformBuffersMemory[imageIndex], 0, sizeof(UniformBuffer), 0, &data);
+    memcpy(data, &ubo, sizeof(UniformBuffer));
+    vkUnmapMemory(vkDevice, uniformBuffersMemory[imageIndex]);
+}
+
+void Engine::createDescriptorPool() {
+    VkDescriptorPoolSize poolSize{
+        .descriptorCount = NUM_IMAGES_IN_SWAPCHAIN,
+        .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+    };
+    VkDescriptorPoolCreateInfo createInfo{
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+        .poolSizeCount = 1,
+        .pPoolSizes = &poolSize,
+        .maxSets = static_cast<uint32_t>(NUM_IMAGES_IN_SWAPCHAIN),
+    };
+
+    vkCreateDescriptorPool(vkDevice, &createInfo, nullptr, &descriptorPool);
+}
+
+void Engine::createDescriptorSets() {
+    std::vector<VkDescriptorSetLayout> layouts(NUM_IMAGES_IN_SWAPCHAIN, descriptorSetLayout);
+    VkDescriptorSetAllocateInfo allocateInfo{
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+        .pNext = nullptr,
+        .descriptorPool = descriptorPool,
+        .descriptorSetCount = 3,
+        .pSetLayouts = layouts.data(),
+    };
+    descriptorSets.resize(NUM_IMAGES_IN_SWAPCHAIN);
+    vkAllocateDescriptorSets(vkDevice, &allocateInfo, descriptorSets.data());
+
+    for(size_t i = 0; i < NUM_IMAGES_IN_SWAPCHAIN; i++) {
+        VkDescriptorBufferInfo bufferInfo{
+            .buffer = uniformBuffers[i],
+            .offset = 0,
+            .range = sizeof(UniformBuffer),
+        };
+        VkWriteDescriptorSet writeDescriptorSet{
+            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+            .pNext = nullptr,
+            .dstSet = descriptorSets[i],
+            .dstBinding = 0,
+            .dstArrayElement = 0,
+            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .descriptorCount = 1,
+            .pBufferInfo = &bufferInfo,
+            .pImageInfo = nullptr,
+            .pTexelBufferView = nullptr,
+        };
+        vkUpdateDescriptorSets(vkDevice, 1, &writeDescriptorSet, 0, nullptr);
+    }
 }

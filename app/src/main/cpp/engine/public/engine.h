@@ -10,6 +10,7 @@
 #include <vector>
 #include <array>
 #include <queue>
+#include <chrono>
 
 #include <android/native_activity.h>
 #include <android/log.h>
@@ -17,7 +18,9 @@
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_android.h>
 
+#define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 struct Vertex {
     glm::vec2 pos;
@@ -46,6 +49,12 @@ struct Vertex {
     }
 };
 
+struct UniformBuffer {
+    glm::mat4 model;
+    glm::mat4 view;
+    glm::mat4 proj;
+};
+
 extern const std::vector<Vertex> vertices;
 extern const std::vector<uint16_t> indices;
 
@@ -53,10 +62,11 @@ class Engine {
 public:
     ANativeActivity *activity = nullptr;
     ANativeWindow *window = nullptr;
-    bool bDisplayInited = false;
-    int fpsFrameCounter = 0;
 
-    bool animating = true;
+    bool bDisplayInited = false;
+    bool bAnimating = true;
+
+    int fpsFrameCounter = 0;
 
     void init();
     void destroy();
@@ -66,6 +76,7 @@ public:
     void drawFrame();
 
 private:
+    constexpr static int NUM_IMAGES_IN_SWAPCHAIN = 3;
     constexpr static int MAX_FRAMES_IN_FLIGHT = 2;
     constexpr static bool DEBUG_ON = true;
 
@@ -73,6 +84,7 @@ private:
     std::vector<VkLayerProperties> validationLayerProperties;
     std::vector<const char *> validationLayerNames;
     VkDebugReportCallbackEXT vkDebugReportCallbackExt = VK_NULL_HANDLE;
+
     VkSurfaceKHR vkSurface = VK_NULL_HANDLE;
     VkPhysicalDevice vkPhysicalDevice = VK_NULL_HANDLE;
     VkPhysicalDeviceFeatures physicalDeviceFeatures;
@@ -81,21 +93,35 @@ private:
     VkSurfaceFormatKHR physicalDeviceSurfaceFormat = {VK_FORMAT_R8G8B8A8_UNORM,
                                    VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
     VkPresentModeKHR physicalDeviceSurfacePresentMode = VK_PRESENT_MODE_FIFO_KHR;
+
     VkDevice vkDevice = VK_NULL_HANDLE;
     VkQueue graphicsQueue = VK_NULL_HANDLE;
+
     VkSwapchainKHR vkSwapchain = VK_NULL_HANDLE;
     std::vector<VkImage> swapChainImages;
     std::vector<VkImageView> swapChainImageViews;
-    VkPipelineLayout graphicsPipelineLayout = VK_NULL_HANDLE;
+
     VkRenderPass renderPass = VK_NULL_HANDLE;
+
+    VkDescriptorSetLayout descriptorSetLayout = VK_NULL_HANDLE;
+    VkPipelineLayout graphicsPipelineLayout = VK_NULL_HANDLE;
     VkPipeline graphicsPipeline = VK_NULL_HANDLE;
+
     std::vector<VkFramebuffer> swapChainFrameBuffers;
+
     VkCommandPool commandPool = VK_NULL_HANDLE;
+    std::vector<VkCommandBuffer> commandBuffers;
+
+    VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
+    std::vector<VkDescriptorSet> descriptorSets;
+
     VkBuffer vertexBuffer = VK_NULL_HANDLE;
     VkDeviceMemory vertexBufferMemory = VK_NULL_HANDLE;
     VkBuffer indexBuffer = VK_NULL_HANDLE;
     VkDeviceMemory indexBufferMemory = VK_NULL_HANDLE;
-    std::vector<VkCommandBuffer> commandBuffers;
+    std::vector<VkBuffer> uniformBuffers;
+    std::vector<VkDeviceMemory> uniformBuffersMemory;
+
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> renderFinishedSemaphores;
     std::vector<VkFence> inFlightFences;
@@ -114,24 +140,33 @@ private:
     void createSwapChain();
 
     void createRenderPass();
+    void createGraphicsPipelineLayout();
     void createGraphicsPipeline();
     void createFrameBuffers();
 
     void createCmdPool();
-    void createVertexBuffer();
-    void createIndexBuffer();
     void allocCmdBuffers();
     void recordCmdBuffers();
 
+    void createDescriptorPool();
+    void createDescriptorSets();
+
+    void createVertexBuffer();
+    void createIndexBuffer();
+    void createUniformBuffers();
+
+
     void createSyncObjs();
+
+    void updateUniformBuffer(uint32_t imageIndex);
 
     /* engine_shader_helper.cpp */
     std::vector<char> readFile(const char *fileName);
     VkShaderModule createShaderModule(const std::vector<char> &code);
-    void createGraphicsPipelineLayout();
+    void createDescriptorSetLayout();
 
     /* engine_buffer_helper.cpp */
-    uint32_t findOptimalMemoryTypeIndexSupportSpecifiedPropertyFlags(uint32_t targetMemoryTypeBits,
+    uint32_t findOptimalMemoryTypeIndexSupportSpecifiedPropertyFlags(uint32_t targetMemoryypeBits,
             VkMemoryPropertyFlags targetMemoryPropertyFlags);
     void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
             VkMemoryPropertyFlags propertyFlags, VkBuffer &buffer, VkDeviceMemory &bufferMemory);

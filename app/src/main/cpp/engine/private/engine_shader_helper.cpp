@@ -25,17 +25,23 @@ VkShaderModule Engine::createShaderModule(const std::vector<char> &code) {
     return shaderModule;
 }
 
-void Engine::createGraphicsPipelineLayout() {
-    VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+void Engine::createDescriptorSetLayout() {
+    VkDescriptorSetLayoutBinding binding{
+            .binding = 0,
+            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .descriptorCount = 1,
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+            .pImmutableSamplers = nullptr,
+    };
+
+    VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo{
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
             .pNext = nullptr,
             .flags = 0,
-            .setLayoutCount = 0,
-            .pSetLayouts = nullptr,
-            .pushConstantRangeCount = 0,
-            .pPushConstantRanges = nullptr,
+            .bindingCount = 1,
+            .pBindings = &binding,
     };
-    vkCreatePipelineLayout(vkDevice, &pipelineLayoutCreateInfo, nullptr,
-            &graphicsPipelineLayout);
+    vkCreateDescriptorSetLayout(vkDevice, &descriptorSetLayoutCreateInfo, nullptr,
+                                &descriptorSetLayout);
 }
 

@@ -25,29 +25,49 @@ void Engine::init() {
     updatePhysicalDeviceGraphicsQueueFamilyIndex();
     createLogicalDevice();
     vkGetDeviceQueue(vkDevice, physicalDeviceGraphicsQueueFamilyIndex, 0, &graphicsQueue);
+
     createRenderPass();
+
+    createDescriptorSetLayout();
     createGraphicsPipelineLayout();
+
     createCmdPool();
+    createDescriptorPool();
+
     createVertexBuffer();
     createIndexBuffer();
+    createUniformBuffers();
+    createDescriptorSets();
+
     createSyncObjs();
 }
 
 void Engine::destroy() {
-    this->activity = nullptr;
     vkDeviceWaitIdle(vkDevice);
+
     for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         vkDestroyFence(vkDevice, inFlightFences[i], nullptr);
         vkDestroySemaphore(vkDevice, renderFinishedSemaphores[i], nullptr);
         vkDestroySemaphore(vkDevice, imageAvailableSemaphores[i], nullptr);
     }
+
+    for(size_t i = 0; i < NUM_IMAGES_IN_SWAPCHAIN; i++) {
+        vkDestroyBuffer(vkDevice, uniformBuffers[i], nullptr);
+        vkFreeMemory(vkDevice, uniformBuffersMemory[i], nullptr);
+    }
     vkDestroyBuffer(vkDevice, indexBuffer, nullptr);
     vkFreeMemory(vkDevice, indexBufferMemory, nullptr);
     vkDestroyBuffer(vkDevice, vertexBuffer, nullptr);
     vkFreeMemory(vkDevice, vertexBufferMemory, nullptr);
+
+    vkDestroyDescriptorPool(vkDevice, descriptorPool, nullptr);
     vkDestroyCommandPool(vkDevice, commandPool, nullptr);
+
     vkDestroyPipelineLayout(vkDevice, graphicsPipelineLayout, nullptr);
+    vkDestroyDescriptorSetLayout(vkDevice, descriptorSetLayout, nullptr);
+
     vkDestroyRenderPass(vkDevice, renderPass, nullptr);
+
     vkDestroyDevice(vkDevice, nullptr);
     if(DEBUG_ON && validationLayerNames.size() > 0) {
         PFN_vkDestroyDebugReportCallbackEXT vkDestroyDebugReportCallbackEXT;
@@ -62,24 +82,31 @@ void Engine::initDisplay() {
     createVKAndroidSurface();
     updatePhysicalDeviceSurfaceCapabilities();
     checkPhysicalDeviceSurfaceFormatSupport();
+
     createSwapChain();
+
     createGraphicsPipeline();
+
     createFrameBuffers();
+
     allocCmdBuffers();
     recordCmdBuffers();
 }
 
 void Engine::destroyDisplay() {
-    this->window = nullptr;
     vkDeviceWaitIdle(vkDevice);
+
     for(auto framebuffer: swapChainFrameBuffers) {
         vkDestroyFramebuffer(vkDevice, framebuffer, nullptr);
     }
+
     vkDestroyPipeline(vkDevice, graphicsPipeline, nullptr);
+
     for(auto imageView: swapChainImageViews) {
         vkDestroyImageView(vkDevice, imageView, nullptr);
     }
     vkDestroySwapchainKHR(vkDevice, vkSwapchain, nullptr);
+
     vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
 }
 
@@ -92,6 +119,8 @@ void Engine::drawFrame() {
     vkAcquireNextImageKHR(vkDevice, vkSwapchain,
                           std::numeric_limits<uint64_t>::max(),
                           imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+
+    updateUniformBuffer(imageIndex);
 
     VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
     VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT};
