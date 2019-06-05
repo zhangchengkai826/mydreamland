@@ -195,7 +195,8 @@ void Engine::createSwapChain() {
     swapChainImageViews.resize(NUM_IMAGES_IN_SWAPCHAIN);
     for(int i = 0; i < swapChainImageViews.size(); i++) {
         swapChainImageViews[i] = createImageView(swapChainImages[i],
-                physicalDeviceSurfaceFormat.format, VK_IMAGE_ASPECT_COLOR_BIT);
+                                                 physicalDeviceSurfaceFormat.format,
+                                                 VK_IMAGE_ASPECT_COLOR_BIT, 1);
     }
 }
 
