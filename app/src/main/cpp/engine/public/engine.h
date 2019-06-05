@@ -25,36 +25,20 @@
 
 #include <stb_image.h>
 
-struct Vertex {
+class Vertex {
+public:
     glm::vec3 pos;
     glm::vec3 color;
     glm::vec2 texCoord;
 
-    static VkVertexInputBindingDescription getBindingDescription() {
-        VkVertexInputBindingDescription bindingDescription{
-            .binding = 0,
-            .stride = sizeof(Vertex),
-            .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
-        };
-        return bindingDescription;
-    }
-    static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions() {
-        std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{{
-            {.binding = 0,
-             .location = 0,
-             .format = VK_FORMAT_R32G32B32_SFLOAT,
-             .offset = offsetof(Vertex, pos)},
-            {.binding = 0,
-             .location = 1,
-             .format = VK_FORMAT_R32G32B32_SFLOAT,
-             .offset = offsetof(Vertex, color)},
-            {.binding = 0,
-             .location = 2,
-             .format = VK_FORMAT_R32G32_SFLOAT,
-             .offset = offsetof(Vertex, texCoord)},
-        }};
-        return attributeDescriptions;
-    }
+    static VkVertexInputBindingDescription getBindingDescription();
+    static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions();
+};
+
+class Geometry {
+public:
+    std::vector<Vertex> vertices;
+    std::vector<uint16_t> indices;
 };
 
 struct UniformBuffer {
