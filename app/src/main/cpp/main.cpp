@@ -200,9 +200,12 @@ void ANativeActivity_onCreate(ANativeActivity *activity, void *savedState,
             jmethod_ClassLoader_loadClass, strClassName));
     activity->env->DeleteLocalRef(strClassName);
     jmethodID jmethod_Util_static_checkPermission = activity->env->GetStaticMethodID(jclass_Util,
-            "checkPermission", "(Landroid/app/NativeActivity;)V");
-    activity->env->CallStaticVoidMethod(jclass_Util, jmethod_Util_static_checkPermission,
-            activity->clazz);
+            "checkPermission", "(Landroid/app/NativeActivity;)Z");
+    jboolean bPermissionGranted = activity->env->CallStaticBooleanMethod(jclass_Util,
+            jmethod_Util_static_checkPermission, activity->clazz);
+    if(!bPermissionGranted) {
+        return;
+    }
 
     activity->callbacks->onStart = ANativeActivity_onStart;
     activity->callbacks->onStop = ANativeActivity_onStop;
