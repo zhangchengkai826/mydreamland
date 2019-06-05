@@ -516,7 +516,7 @@ void Engine::recordCmdBuffers() {
         vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
                 graphicsPipelineLayout, 0, 1, &descriptorSets[i], 0, nullptr);
 
-        vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+        vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(geometry.indices.size()), 1, 0, 0, 0);
 
         vkCmdEndRenderPass(commandBuffers[i]);
         vkEndCommandBuffer(commandBuffers[i]);
@@ -544,7 +544,7 @@ void Engine::createSyncObjs() {
 }
 
 void Engine::createVertexBuffer() {
-    VkDeviceSize bufferSize = sizeof(Vertex) * vertices.size();
+    VkDeviceSize bufferSize = sizeof(Vertex) * geometry.vertices.size();
 
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
@@ -554,7 +554,7 @@ void Engine::createVertexBuffer() {
 
     void *data;
     vkMapMemory(vkDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
-    memcpy(data, vertices.data(), static_cast<size_t>(bufferSize));
+    memcpy(data, geometry.vertices.data(), static_cast<size_t>(bufferSize));
     vkUnmapMemory(vkDevice, stagingBufferMemory);
 
     createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
@@ -567,7 +567,7 @@ void Engine::createVertexBuffer() {
 }
 
 void Engine::createIndexBuffer() {
-    VkDeviceSize bufferSize = sizeof(uint16_t) * indices.size();
+    VkDeviceSize bufferSize = sizeof(uint16_t) * geometry.indices.size();
 
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
@@ -577,7 +577,7 @@ void Engine::createIndexBuffer() {
 
     void *data;
     vkMapMemory(vkDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
-    memcpy(data, indices.data(), static_cast<size_t>(bufferSize));
+    memcpy(data, geometry.indices.data(), static_cast<size_t>(bufferSize));
     vkUnmapMemory(vkDevice, stagingBufferMemory);
 
     createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
@@ -756,4 +756,8 @@ void Engine::endSingleTimeCommands(VkCommandBuffer commandBuffer) {
     vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
     vkQueueWaitIdle(graphicsQueue);
     vkFreeCommandBuffers(vkDevice, commandPool, 1, &commandBuffer);
+}
+
+void Engine::loadGeometry() {
+    geometry.loadFromFile("/storage/emulated/0/Documents/mydreamland/geometry/vertices.dat");
 }

@@ -54,9 +54,6 @@ struct UniformBuffer {
     alignas(16) glm::mat4 proj;
 };
 
-extern const std::vector<Vertex> vertices;
-extern const std::vector<uint16_t> indices;
-
 class Engine {
 public:
     ANativeActivity *activity = nullptr;
@@ -160,6 +157,7 @@ private:
     void createDescriptorPool();
     void createDescriptorSets();
 
+    void loadGeometry();
     void createVertexBuffer();
     void createIndexBuffer();
     void createUniformBuffers();
