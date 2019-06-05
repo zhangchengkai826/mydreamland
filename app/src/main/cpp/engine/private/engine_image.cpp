@@ -79,11 +79,11 @@ void Engine::createTextureImage() {
 
     VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
-    transitionImageLayout(commandBuffer, textureImage, VK_FORMAT_R8G8B8A8_UNORM,
+    transitionImageLayout(commandBuffer, textureImage, VK_IMAGE_ASPECT_COLOR_BIT,
             VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     copyBufferToImage(commandBuffer, stagingBuffer, textureImage, static_cast<uint32_t>(texWidth),
             static_cast<uint32_t>(texHeight));
-    transitionImageLayout(commandBuffer, textureImage, VK_FORMAT_R8G8B8A8_UNORM,
+    transitionImageLayout(commandBuffer, textureImage, VK_IMAGE_ASPECT_COLOR_BIT,
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     endSingleTimeCommands(commandBuffer);
@@ -92,8 +92,8 @@ void Engine::createTextureImage() {
     vkFreeMemory(vkDevice, stagingBufferMemory, nullptr);
 }
 
-void Engine::transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageLayout oldLayout,
-                                   VkImageLayout newLayout) {
+void Engine::transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image,
+        VkImageAspectFlags aspectFlags, VkImageLayout oldLayout, VkImageLayout newLayout) {
     VkImageMemoryBarrier barrier{
         .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
         .oldLayout = oldLayout,
@@ -102,7 +102,7 @@ void Engine::transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image,
         .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
         .pNext = nullptr,
         .image = image,
-        .subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+        .subresourceRange.aspectMask = aspectFlags,
         .subresourceRange.layerCount = 1,
         .subresourceRange.baseArrayLayer = 0,
         .subresourceRange.levelCount = 1,
@@ -124,6 +124,13 @@ void Engine::transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image,
         barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
         srcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
         dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    }  else if(oldLayout == VK_IMAGE_LAYOUT_UNDEFINED &&
+        newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+        barrier.srcAccessMask = 0;
+        barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        dstStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
     } else {
         throw std::runtime_error("Engine::transitionImageLayout: unsupported layout transition!");
     }
@@ -149,10 +156,11 @@ void Engine::copyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, V
 }
 
 void Engine::createTextureImageView() {
-    textureImageView = createImageView(textureImage, VK_FORMAT_R8G8B8A8_UNORM);
+    textureImageView = createImageView(textureImage, VK_FORMAT_R8G8B8A8_UNORM, 0);
 }
 
-VkImageView Engine::createImageView(VkImage image, VkFormat format) {
+VkImageView
+Engine::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) {
     VkImageViewCreateInfo imgViewCreateInfo {
             .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
             .image = image,
@@ -162,7 +170,7 @@ VkImageView Engine::createImageView(VkImage image, VkFormat format) {
             .components.g = VK_COMPONENT_SWIZZLE_IDENTITY,
             .components.b = VK_COMPONENT_SWIZZLE_IDENTITY,
             .components.a = VK_COMPONENT_SWIZZLE_IDENTITY,
-            .subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .subresourceRange.aspectMask = aspectFlags,
             .subresourceRange.baseMipLevel = 0,
             .subresourceRange.levelCount = 1,
             .subresourceRange.baseArrayLayer = 0,
@@ -196,4 +204,20 @@ void Engine::createTextureSampler() {
         .maxLod = 0.0f,
     };
     vkCreateSampler(vkDevice, &createInfo, nullptr, &textureSampler);
+}
+
+void Engine::createDepthStencilResources() {
+    createImage(physicalDeviceSurfaceCapabilities.currentExtent.width,
+            physicalDeviceSurfaceCapabilities.currentExtent.height,
+            VK_FORMAT_D24_UNORM_S8_UINT, VK_IMAGE_TILING_OPTIMAL,
+            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+            depthStencilImage, depthStencilImageMemory);
+    depthStencilImageView = createImageView(depthStencilImage, VK_FORMAT_D24_UNORM_S8_UINT,
+            VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+
+    VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+    transitionImageLayout(commandBuffer, depthStencilImage,
+            VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
+            VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    endSingleTimeCommands(commandBuffer);
 }

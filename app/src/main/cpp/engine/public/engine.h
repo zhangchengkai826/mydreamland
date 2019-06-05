@@ -19,13 +19,14 @@
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_android.h>
 
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <stb_image.h>
 
 struct Vertex {
-    glm::vec2 pos;
+    glm::vec3 pos;
     glm::vec3 color;
     glm::vec2 texCoord;
 
@@ -41,7 +42,7 @@ struct Vertex {
         std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{{
             {.binding = 0,
              .location = 0,
-             .format = VK_FORMAT_R32G32_SFLOAT,
+             .format = VK_FORMAT_R32G32B32_SFLOAT,
              .offset = offsetof(Vertex, pos)},
             {.binding = 0,
              .location = 1,
@@ -133,6 +134,10 @@ private:
     VkImageView textureImageView = VK_NULL_HANDLE;
     VkSampler textureSampler = VK_NULL_HANDLE;
 
+    VkImage depthStencilImage;
+    VkDeviceMemory depthStencilImageMemory;
+    VkImageView depthStencilImageView;
+
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> renderFinishedSemaphores;
     std::vector<VkFence> inFlightFences;
@@ -179,15 +184,16 @@ private:
     void createTextureImage();
     void createTextureImageView();
     void createTextureSampler();
+    void createDepthStencilResources();
 
     void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling,
             VkImageUsageFlags usage, VkMemoryPropertyFlags propertyFlags, VkImage &image,
             VkDeviceMemory &imageMemory);
-    void transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format,
-            VkImageLayout oldLayout, VkImageLayout newLayout);
+    void transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image,
+            VkImageAspectFlags aspectFlags, VkImageLayout oldLayout, VkImageLayout newLayout);
     void copyBufferToImage(VkCommandBuffer commandBuffer,
             VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
-    VkImageView createImageView(VkImage image, VkFormat format);
+    VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 
     /* engine_shader_helper.cpp */
     std::vector<char> readFile(const char *fileName);

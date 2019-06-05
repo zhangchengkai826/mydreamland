@@ -195,7 +195,7 @@ void Engine::createSwapChain() {
     swapChainImageViews.resize(NUM_IMAGES_IN_SWAPCHAIN);
     for(int i = 0; i < swapChainImageViews.size(); i++) {
         swapChainImageViews[i] = createImageView(swapChainImages[i],
-                physicalDeviceSurfaceFormat.format);
+                physicalDeviceSurfaceFormat.format, VK_IMAGE_ASPECT_COLOR_BIT);
     }
 }
 
@@ -211,10 +211,25 @@ void Engine::createRenderPass() {
             .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
             .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
     };
+    VkAttachmentDescription depthStencilAttachmentDescription{
+            .format = VK_FORMAT_D24_UNORM_S8_UINT,
+            .samples = VK_SAMPLE_COUNT_1_BIT,
+            .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+            .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+            .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+            .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+            .flags = 0,
+            .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+    };
 
     VkAttachmentReference colorAttachmentRef{
             .attachment = 0,
             .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+    };
+    VkAttachmentReference depthStencilAttachmentRef{
+            .attachment = 1,
+            .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
     };
 
     VkSubpassDescription subpassDescription{
@@ -223,19 +238,21 @@ void Engine::createRenderPass() {
             .pColorAttachments = &colorAttachmentRef,
             .inputAttachmentCount = 0,
             .pInputAttachments = nullptr,
-            .pDepthStencilAttachment = nullptr,
+            .pDepthStencilAttachment = &depthStencilAttachmentRef,
             .preserveAttachmentCount = 0,
             .pPreserveAttachments = nullptr,
             .pResolveAttachments = nullptr,
             .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
     };
 
+    std::array<VkAttachmentDescription, 2> attachments = {colorAttachmentDescription,
+                                                          depthStencilAttachmentDescription};
     VkRenderPassCreateInfo renderPassCreateInfo{
             .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
             .pNext = nullptr,
             .flags = 0,
-            .attachmentCount = 1,
-            .pAttachments = &colorAttachmentDescription,
+            .attachmentCount = 2,
+            .pAttachments = attachments.data(),
             .subpassCount = 1,
             .pSubpasses = &subpassDescription,
             .dependencyCount = 0,
@@ -342,6 +359,21 @@ void Engine::createGraphicsPipeline() {
             .alphaToOneEnable = VK_FALSE,
     };
 
+    VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo{
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = 0,
+            .depthTestEnable = VK_TRUE,
+            .depthWriteEnable = VK_TRUE,
+            .depthCompareOp = VK_COMPARE_OP_LESS,
+            .depthBoundsTestEnable = VK_FALSE,
+            .minDepthBounds = 0.0f,
+            .maxDepthBounds = 1.0f,
+            .stencilTestEnable = VK_FALSE,
+            .front = {},
+            .back = {},
+    };
+
     VkPipelineColorBlendAttachmentState colorBlendAttachmentState{
             .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
                               VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
@@ -379,7 +411,7 @@ void Engine::createGraphicsPipeline() {
             .pViewportState = &viewportStateCreateInfo,
             .pRasterizationState = &rasterizationStateCreateInfo,
             .pMultisampleState = &multisampleStateCreateInfo,
-            .pDepthStencilState = nullptr,
+            .pDepthStencilState = &depthStencilStateCreateInfo,
             .pColorBlendState = &colorBlendStateCreateInfo,
             .pDynamicState = nullptr,
             .layout = graphicsPipelineLayout,
@@ -398,16 +430,17 @@ void Engine::createGraphicsPipeline() {
 void Engine::createFrameBuffers() {
     swapChainFrameBuffers.resize(NUM_IMAGES_IN_SWAPCHAIN);
     for(size_t i = 0; i < swapChainFrameBuffers.size(); i++) {
-        VkImageView attachments[] = {
-                swapChainImageViews[i]
+        std::array<VkImageView, 2> attachments = {
+                swapChainImageViews[i],
+                depthStencilImageView
         };
         VkFramebufferCreateInfo framebufferCreateInfo{
                 .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
                 .pNext = nullptr,
                 .flags = 0,
                 .renderPass = renderPass,
-                .attachmentCount = 1,
-                .pAttachments = attachments,
+                .attachmentCount = static_cast<uint32_t>(attachments.size()),
+                .pAttachments = attachments.data(),
                 .width = physicalDeviceSurfaceCapabilities.currentExtent.width,
                 .height = physicalDeviceSurfaceCapabilities.currentExtent.height,
                 .layers = 1
@@ -450,11 +483,10 @@ void Engine::recordCmdBuffers() {
         };
         vkBeginCommandBuffer(commandBuffers[i], &commandBufferBeginInfo);
 
-        VkClearValue clearColor;
-        clearColor.color.float32[0] = 0.0f;
-        clearColor.color.float32[1] = 0.0f;
-        clearColor.color.float32[2] = 0.0f;
-        clearColor.color.float32[3] = 1.0f;
+        std::array<VkClearValue, 2> clearValues{{
+            {.color = {.float32 = {0.0f, 0.0f, 0.0f, 1.0f}}},
+            {.depthStencil = {.depth = 1.0f, .stencil = 0}},
+        }};
         VkRenderPassBeginInfo renderPassBeginInfo{
                 .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
                 .pNext = nullptr,
@@ -462,8 +494,8 @@ void Engine::recordCmdBuffers() {
                 .framebuffer = swapChainFrameBuffers[i],
                 .renderArea.offset = {0, 0},
                 .renderArea.extent = physicalDeviceSurfaceCapabilities.currentExtent,
-                .clearValueCount = 1,
-                .pClearValues = &clearColor,
+                .clearValueCount = static_cast<uint32_t>(clearValues.size()),
+                .pClearValues = clearValues.data(),
         };
         PFN_vkCmdBeginRenderPass vkCmdBeginRenderPass;
         vkCmdBeginRenderPass = (PFN_vkCmdBeginRenderPass)vkGetInstanceProcAddr(

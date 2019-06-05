@@ -5,12 +5,17 @@
 #include "engine.h"
 
 const std::vector<Vertex> vertices = {
-    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-    {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-    {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+    {{-0.5f, -0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+    {{0.5f, -0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+    {{0.5f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+    {{-0.5f, 0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+
+    {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+    {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+    {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+    {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
 };
-const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0};
+const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4};
 
 void Engine::init() {
     if(DEBUG_ON) {
@@ -92,6 +97,7 @@ void Engine::initDisplay() {
     checkPhysicalDeviceSurfaceFormatSupport();
 
     createSwapChain();
+    createDepthStencilResources();
 
     createGraphicsPipeline();
 
@@ -109,6 +115,10 @@ void Engine::destroyDisplay() {
     }
 
     vkDestroyPipeline(vkDevice, graphicsPipeline, nullptr);
+
+    vkDestroyImageView(vkDevice, depthStencilImageView, nullptr);
+    vkDestroyImage(vkDevice, depthStencilImage, nullptr);
+    vkFreeMemory(vkDevice, depthStencilImageMemory, nullptr);
 
     for(auto imageView: swapChainImageViews) {
         vkDestroyImageView(vkDevice, imageView, nullptr);
