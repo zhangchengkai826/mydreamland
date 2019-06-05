@@ -32,3 +32,40 @@ std::array<VkVertexInputAttributeDescription, 3> Vertex::getAttributeDescription
 
     return attributeDescriptions;
 }
+
+std::ifstream& operator>>(std::ifstream &f, glm::vec2 &v) {
+    f >> v[0] >> v[1];
+    return f;
+}
+
+std::ifstream& operator>>(std::ifstream &f, glm::vec3 &v) {
+    f >> v[0] >> v[1] >> v[2];
+    return f;
+}
+
+std::ifstream& operator>>(std::ifstream &f, Vertex &v) {
+    f >> v.pos >> v.color >> v.texCoord;
+    return f;
+}
+
+void Geometry::loadFromFile(const char *filename) {
+    std::ifstream f(filename);
+    std::string ignore;
+    int n;
+
+    f >> ignore >> n;
+    for(int i =0; i < n; i++) {
+        Vertex vertex;
+        f >> vertex;
+        vertices.push_back(vertex);
+    }
+
+    f >> ignore >> n;
+    for(int i = 0; i < n; i++) {
+        uint16_t indice;
+        f >> indice;
+        indices.push_back(indice);
+    }
+
+    f.close();
+}

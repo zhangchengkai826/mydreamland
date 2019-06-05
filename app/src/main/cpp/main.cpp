@@ -187,6 +187,23 @@ void ANativeActivity_onCreate(ANativeActivity *activity, void *savedState,
     __android_log_print(ANDROID_LOG_INFO, "main",
                         "### ANativeActivity_onCreate ###");
 
+    jclass jclass_NativeActivity = activity->env->GetObjectClass(activity->clazz);
+    jmethodID jmethod_NativeActivity_getClassLoader = activity->env->GetMethodID(
+            jclass_NativeActivity, "getClassLoader", "()Ljava/lang/ClassLoader;");
+    jobject jclass_ClassLoader_obj = activity->env->CallObjectMethod(activity->clazz,
+            jmethod_NativeActivity_getClassLoader);
+    jclass jclass_ClassLoader = activity->env->FindClass("java/lang/ClassLoader");
+    jmethodID jmethod_ClassLoader_loadClass = activity->env->GetMethodID(jclass_ClassLoader,
+            "loadClass", "(Ljava/lang/String;)Ljava/lang/Class;");
+    jstring strClassName = activity->env->NewStringUTF("com.mydreamland.www.Util");
+    auto jclass_Util = static_cast<jclass>(activity->env->CallObjectMethod(jclass_ClassLoader_obj,
+            jmethod_ClassLoader_loadClass, strClassName));
+    activity->env->DeleteLocalRef(strClassName);
+    jmethodID jmethod_Util_static_checkPermission = activity->env->GetStaticMethodID(jclass_Util,
+            "checkPermission", "(Landroid/app/NativeActivity;)V");
+    activity->env->CallStaticVoidMethod(jclass_Util, jmethod_Util_static_checkPermission,
+            activity->clazz);
+
     activity->callbacks->onStart = ANativeActivity_onStart;
     activity->callbacks->onStop = ANativeActivity_onStop;
     activity->callbacks->onNativeWindowCreated = ANativeActivity_onNativeWindowCreated;

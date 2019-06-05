@@ -12,6 +12,8 @@
 #include <queue>
 #include <chrono>
 #include <exception>
+#include <fstream>
+#include <string>
 
 #include <android/native_activity.h>
 #include <android/log.h>
@@ -25,6 +27,9 @@
 
 #include <stb_image.h>
 
+std::ifstream &operator>>(std::ifstream &f, glm::vec3 &v);
+std::ifstream &operator>>(std::ifstream &f, glm::vec2 &v);
+
 class Vertex {
 public:
     glm::vec3 pos;
@@ -34,11 +39,13 @@ public:
     static VkVertexInputBindingDescription getBindingDescription();
     static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions();
 };
+std::ifstream &operator>>(std::ifstream &f, Vertex &v);
 
 class Geometry {
 public:
     std::vector<Vertex> vertices;
     std::vector<uint16_t> indices;
+    void loadFromFile(const char *filename);
 };
 
 struct UniformBuffer {
@@ -121,6 +128,8 @@ private:
     VkImage depthStencilImage;
     VkDeviceMemory depthStencilImageMemory;
     VkImageView depthStencilImageView;
+
+    Geometry geometry;
 
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkFence> inFlightFences;

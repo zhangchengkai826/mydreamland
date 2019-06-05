@@ -9,7 +9,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.NoActionBar"
-        android:hasCode="false">
+        android:hasCode="true">
         <activity android:name="android.app.NativeActivity" android:screenOrientation="landscape">
             <meta-data android:name="android.app.lib_name" android:value="main" />
             <intent-filter>
@@ -20,4 +20,5 @@
         </activity>
     </application>
 
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 </manifest>
