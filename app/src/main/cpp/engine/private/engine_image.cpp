@@ -156,7 +156,8 @@ void Engine::copyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, V
 }
 
 void Engine::createTextureImageView() {
-    textureImageView = createImageView(textureImage, VK_FORMAT_R8G8B8A8_UNORM, 0);
+    textureImageView = createImageView(textureImage, VK_FORMAT_R8G8B8A8_UNORM,
+            VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
 VkImageView

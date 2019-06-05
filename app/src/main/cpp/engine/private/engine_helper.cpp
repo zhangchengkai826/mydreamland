@@ -524,7 +524,6 @@ void Engine::recordCmdBuffers() {
 
 void Engine::createSyncObjs() {
     imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
     inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
     VkSemaphoreCreateInfo semaphoreCreateInfo{
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
@@ -539,8 +538,6 @@ void Engine::createSyncObjs() {
     for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         vkCreateSemaphore(vkDevice, &semaphoreCreateInfo, nullptr,
                           &imageAvailableSemaphores[i]);
-        vkCreateSemaphore(vkDevice, &semaphoreCreateInfo, nullptr,
-                          &renderFinishedSemaphores[i]);
         vkCreateFence(vkDevice, &fenceCreateInfo, nullptr, &inFlightFences[i]);
     }
 }

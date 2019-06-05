@@ -139,7 +139,6 @@ private:
     VkImageView depthStencilImageView;
 
     std::vector<VkSemaphore> imageAvailableSemaphores;
-    std::vector<VkSemaphore> renderFinishedSemaphores;
     std::vector<VkFence> inFlightFences;
     int currentFrame = 0;
 

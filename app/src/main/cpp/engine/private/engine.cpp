@@ -56,7 +56,6 @@ void Engine::destroy() {
 
     for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         vkDestroyFence(vkDevice, inFlightFences[i], nullptr);
-        vkDestroySemaphore(vkDevice, renderFinishedSemaphores[i], nullptr);
         vkDestroySemaphore(vkDevice, imageAvailableSemaphores[i], nullptr);
     }
 
@@ -142,7 +141,6 @@ void Engine::drawFrame() {
 
     VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
     VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT};
-    VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
     VkSubmitInfo submitInfo{
             .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
             .pNext = nullptr,
@@ -151,16 +149,16 @@ void Engine::drawFrame() {
             .pWaitDstStageMask = waitStages,
             .commandBufferCount = 1,
             .pCommandBuffers = &commandBuffers[imageIndex],
-            .signalSemaphoreCount = 1,
-            .pSignalSemaphores = signalSemaphores,
+            .signalSemaphoreCount = 0,
+            .pSignalSemaphores = nullptr,
     };
     vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]);
 
     VkPresentInfoKHR presentInfo{
             .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
             .pNext = nullptr,
-            .waitSemaphoreCount = 1,
-            .pWaitSemaphores = signalSemaphores,
+            .waitSemaphoreCount = 0,
+            .pWaitSemaphores = nullptr,
             .swapchainCount = 1,
             .pSwapchains = &vkSwapchain,
             .pImageIndices = &imageIndex,
