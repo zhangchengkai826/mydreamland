@@ -683,8 +683,8 @@ void Engine::createDescriptorSets() {
         };
         VkDescriptorImageInfo imageInfo{
             .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            .imageView = textureImageView,
-            .sampler = textureSampler,
+            .imageView = texture.imageView,
+            .sampler = texture.sampler,
         };
 
         std::array<VkWriteDescriptorSet, 2> writeDescriptorSets = {{
@@ -718,7 +718,7 @@ void Engine::createDescriptorSets() {
     }
 }
 
-VkCommandBuffer Engine::beginSingleTimeCommands() {
+VkCommandBuffer Engine::beginSingleTimeCommands() const {
     VkCommandBufferAllocateInfo allocateInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
             .pNext = nullptr,
@@ -739,7 +739,7 @@ VkCommandBuffer Engine::beginSingleTimeCommands() {
     return commandBuffer;
 }
 
-void Engine::endSingleTimeCommands(VkCommandBuffer commandBuffer) {
+void Engine::endSingleTimeCommands(VkCommandBuffer commandBuffer) const {
     vkEndCommandBuffer(commandBuffer);
 
     VkSubmitInfo submitInfo{
@@ -758,6 +758,7 @@ void Engine::endSingleTimeCommands(VkCommandBuffer commandBuffer) {
     vkFreeCommandBuffers(vkDevice, commandPool, 1, &commandBuffer);
 }
 
-void Engine::loadGeometry() {
+void Engine::loadResources() {
     geometry.loadFromFile("/storage/emulated/0/Documents/mydreamland/geometry/vertices.dat");
+    texture.loadFromFile(this, "/storage/emulated/0/Documents/mydreamland/texture/texture.jpg");
 }

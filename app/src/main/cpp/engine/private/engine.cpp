@@ -26,13 +26,10 @@ void Engine::init() {
     createCmdPool();
     createDescriptorPool();
 
-    loadGeometry();
+    loadResources();
     createVertexBuffer();
     createIndexBuffer();
     createUniformBuffers();
-    createTextureImage();
-    createTextureImageView();
-    createTextureSampler();
 
     createDescriptorSets();
 
@@ -47,10 +44,6 @@ void Engine::destroy() {
         vkDestroySemaphore(vkDevice, imageAvailableSemaphores[i], nullptr);
     }
 
-    vkDestroySampler(vkDevice, textureSampler, nullptr);
-    vkDestroyImageView(vkDevice, textureImageView, nullptr);
-    vkDestroyImage(vkDevice, textureImage, nullptr);
-    vkFreeMemory(vkDevice, textureImageMemory, nullptr);
     for(size_t i = 0; i < NUM_IMAGES_IN_SWAPCHAIN; i++) {
         vkDestroyBuffer(vkDevice, uniformBuffers[i], nullptr);
         vkFreeMemory(vkDevice, uniformBuffersMemory[i], nullptr);
@@ -59,6 +52,7 @@ void Engine::destroy() {
     vkFreeMemory(vkDevice, indexBufferMemory, nullptr);
     vkDestroyBuffer(vkDevice, vertexBuffer, nullptr);
     vkFreeMemory(vkDevice, vertexBufferMemory, nullptr);
+    texture.destroy(this);
 
     vkDestroyDescriptorPool(vkDevice, descriptorPool, nullptr);
     vkDestroyCommandPool(vkDevice, commandPool, nullptr);

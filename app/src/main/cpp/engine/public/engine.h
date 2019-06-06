@@ -27,6 +27,8 @@
 
 #include <stb_image.h>
 
+class Engine;
+
 std::ifstream &operator>>(std::ifstream &f, glm::vec3 &v);
 std::ifstream &operator>>(std::ifstream &f, glm::vec2 &v);
 
@@ -48,6 +50,17 @@ public:
     void loadFromFile(const char *filename);
 };
 
+class Texture {
+public:
+    VkImage image = VK_NULL_HANDLE;
+    VkDeviceMemory imageMemory = VK_NULL_HANDLE;
+    VkImageView imageView = VK_NULL_HANDLE;
+    VkSampler sampler = VK_NULL_HANDLE;
+
+    void loadFromFile(const Engine *engine, const char *fileName);
+    void destroy(const Engine *engine);
+};
+
 struct UniformBuffer {
     alignas(16) glm::mat4 model;
     alignas(16) glm::mat4 view;
@@ -55,6 +68,7 @@ struct UniformBuffer {
 };
 
 class Engine {
+    friend class Texture;
 public:
     ANativeActivity *activity = nullptr;
     ANativeWindow *window = nullptr;
@@ -117,16 +131,13 @@ private:
     VkDeviceMemory indexBufferMemory = VK_NULL_HANDLE;
     std::vector<VkBuffer> uniformBuffers;
     std::vector<VkDeviceMemory> uniformBuffersMemory;
-    VkImage textureImage = VK_NULL_HANDLE;
-    VkDeviceMemory textureImageMemory = VK_NULL_HANDLE;
-    VkImageView textureImageView = VK_NULL_HANDLE;
-    VkSampler textureSampler = VK_NULL_HANDLE;
 
     VkImage depthStencilImage;
     VkDeviceMemory depthStencilImageMemory;
     VkImageView depthStencilImageView;
 
     Geometry geometry;
+    Texture texture;
 
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkFence> inFlightFences;
@@ -157,36 +168,33 @@ private:
     void createDescriptorPool();
     void createDescriptorSets();
 
-    void loadGeometry();
+    void loadResources();
     void createVertexBuffer();
     void createIndexBuffer();
     void createUniformBuffers();
 
     void createSyncObjs();
 
-    VkCommandBuffer beginSingleTimeCommands();
-    void endSingleTimeCommands(VkCommandBuffer commandBuffer);
+    VkCommandBuffer beginSingleTimeCommands() const;
+    void endSingleTimeCommands(VkCommandBuffer commandBuffer) const;
 
     /* engine_physics.cpp */
     void updateUniformBuffer(uint32_t imageIndex);
 
     /* engine_image.cpp */
-    void createTextureImage();
-    void createTextureImageView();
-    void createTextureSampler();
     void createDepthStencilResources();
 
     void createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkFormat format,
                      VkImageTiling tiling, VkImageUsageFlags usage,
                      VkMemoryPropertyFlags propertyFlags, VkImage &image,
-                     VkDeviceMemory &imageMemory);
+                     VkDeviceMemory &imageMemory) const;
     void transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image,
                                VkImageAspectFlags aspectFlags, VkImageLayout oldLayout,
-                               VkImageLayout newLayout, uint32_t mipLevels);
+                               VkImageLayout newLayout, uint32_t mipLevels) const;
     void copyBufferToImage(VkCommandBuffer commandBuffer,
-            VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+            VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) const;
     VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags,
-                                uint32_t mipLevels);
+                                uint32_t mipLevels) const;
 
     /* engine_shader_helper.cpp */
     std::vector<char> readFile(const char *fileName);
@@ -194,9 +202,10 @@ private:
 
     /* engine_buffer_helper.cpp */
     uint32_t findOptimalMemoryTypeIndexSupportSpecifiedPropertyFlags(uint32_t targetMemoryypeBits,
-            VkMemoryPropertyFlags targetMemoryPropertyFlags);
+            VkMemoryPropertyFlags targetMemoryPropertyFlags) const;
     void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
-            VkMemoryPropertyFlags propertyFlags, VkBuffer &buffer, VkDeviceMemory &bufferMemory);
+            VkMemoryPropertyFlags propertyFlags, VkBuffer &buffer, VkDeviceMemory &bufferMemory)
+            const;
     void copyBuffer(VkBuffer srcBuffer, VkBuffer destBuffer, VkDeviceSize size);
 
     /* engine_debug_output.cpp */

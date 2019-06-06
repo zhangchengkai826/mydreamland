@@ -6,7 +6,7 @@
 
 uint32_t Engine::findOptimalMemoryTypeIndexSupportSpecifiedPropertyFlags(
         uint32_t targetMemoryTypeBits,
-        VkMemoryPropertyFlags targetMemoryPropertyFlags) {
+        VkMemoryPropertyFlags targetMemoryPropertyFlags) const {
     VkPhysicalDeviceMemoryProperties memoryProperties;
     vkGetPhysicalDeviceMemoryProperties(vkPhysicalDevice, &memoryProperties);
     for(uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++) {
@@ -22,7 +22,7 @@ uint32_t Engine::findOptimalMemoryTypeIndexSupportSpecifiedPropertyFlags(
 
 void Engine::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
                   VkMemoryPropertyFlags propertyFlags, VkBuffer &buffer,
-                  VkDeviceMemory &bufferMemory) {
+                  VkDeviceMemory &bufferMemory) const {
     VkBufferCreateInfo bufferCreateInfo{
             .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
             .pNext = nullptr,

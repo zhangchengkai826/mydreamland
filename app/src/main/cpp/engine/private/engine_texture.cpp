@@ -8,7 +8,7 @@
 void Engine::createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkFormat format,
                          VkImageTiling tiling, VkImageUsageFlags usage,
                          VkMemoryPropertyFlags propertyFlags, VkImage &image,
-                         VkDeviceMemory &imageMemory) {
+                         VkDeviceMemory &imageMemory) const {
     VkImageCreateInfo imageCreateInfo{
             .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
             .imageType = VK_IMAGE_TYPE_2D,
@@ -45,18 +45,19 @@ void Engine::createImage(uint32_t width, uint32_t height, uint32_t mipLevels, Vk
     vkBindImageMemory(vkDevice, image, imageMemory, 0);
 }
 
-void Engine::createTextureImage() {
-    AAsset* imgFile = AAssetManager_open(activity->assetManager,
-                                         "texture/texture.jpg", AASSET_MODE_BUFFER);
-    size_t imgFileLen = AAsset_getLength(imgFile);
-    std::vector<char> content(imgFileLen);
-    AAsset_read(imgFile, content.data(), imgFileLen);
-    AAsset_close(imgFile);
+void Texture::loadFromFile(const Engine *engine, const char *fileName) {
+    FILE *f = fopen(fileName, "r");
+    fseek(f, 0, SEEK_END);
+    auto nBytes = static_cast<uint32_t>(ftell(f));
+    fseek(f, 0, SEEK_SET);
+    std::vector<uint8_t> content(nBytes);
+    fread(content.data(), 1, nBytes, f);
+    fclose(f);
 
     int texWidth, texHeight, texChannels;
-    stbi_uc* pixels = stbi_load_from_memory(reinterpret_cast<stbi_uc *>(content.data()), imgFileLen,
-            &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-    VkDeviceSize imageSize = texWidth * texHeight * 4;
+    stbi_uc* pixels = stbi_load_from_memory(content.data(), content.size(),
+                                            &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    VkDeviceSize imageSize = static_cast<uint32_t>(texWidth * texHeight * 4);
 
     if (!pixels) {
         throw std::runtime_error("Engine::createTextureImage failed!");
@@ -64,40 +65,66 @@ void Engine::createTextureImage() {
 
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
-    createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-        VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+    engine->createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            stagingBuffer, stagingBufferMemory);
 
     void *data;
-    vkMapMemory(vkDevice, stagingBufferMemory, 0, imageSize, 0, &data);
+    vkMapMemory(engine->vkDevice, stagingBufferMemory, 0, imageSize, 0, &data);
     memcpy(data, pixels, static_cast<size_t>(imageSize));
-    vkUnmapMemory(vkDevice, stagingBufferMemory);
+    vkUnmapMemory(engine->vkDevice, stagingBufferMemory);
 
     stbi_image_free(pixels);
 
-    createImage(texWidth, texHeight, 1, VK_FORMAT_R8G8B8A8_UNORM,
-            VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
+    engine->createImage(texWidth, texHeight, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, imageMemory);
 
-    VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+    VkCommandBuffer commandBuffer = engine->beginSingleTimeCommands();
 
-    transitionImageLayout(commandBuffer, textureImage, VK_IMAGE_ASPECT_COLOR_BIT,
+    engine->transitionImageLayout(commandBuffer, image, VK_IMAGE_ASPECT_COLOR_BIT,
                           VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                           1);
-    copyBufferToImage(commandBuffer, stagingBuffer, textureImage, static_cast<uint32_t>(texWidth),
-            static_cast<uint32_t>(texHeight));
-    transitionImageLayout(commandBuffer, textureImage, VK_IMAGE_ASPECT_COLOR_BIT,
+    engine->copyBufferToImage(commandBuffer, stagingBuffer, image, static_cast<uint32_t>(texWidth),
+                      static_cast<uint32_t>(texHeight));
+    engine->transitionImageLayout(commandBuffer, image, VK_IMAGE_ASPECT_COLOR_BIT,
                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
 
-    endSingleTimeCommands(commandBuffer);
+    engine->endSingleTimeCommands(commandBuffer);
 
-    vkDestroyBuffer(vkDevice, stagingBuffer, nullptr);
-    vkFreeMemory(vkDevice, stagingBufferMemory, nullptr);
+    vkDestroyBuffer(engine->vkDevice, stagingBuffer, nullptr);
+    vkFreeMemory(engine->vkDevice, stagingBufferMemory, nullptr);
+
+    imageView = engine->createImageView(image, VK_FORMAT_R8G8B8A8_UNORM,
+                                       VK_IMAGE_ASPECT_COLOR_BIT, 1);
+
+    VkSamplerCreateInfo createInfo{
+            .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = 0,
+            .magFilter = VK_FILTER_LINEAR,
+            .minFilter = VK_FILTER_LINEAR,
+            .addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+            .addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+            .addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+            .anisotropyEnable = VK_TRUE,
+            .maxAnisotropy = 16,
+            .borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
+            .unnormalizedCoordinates = VK_FALSE,
+            .compareEnable = VK_FALSE,
+            .compareOp = VK_COMPARE_OP_ALWAYS,
+            .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+            .mipLodBias = 0.0f,
+            .minLod = 0.0f,
+            .maxLod = 0.0f,
+    };
+    vkCreateSampler(engine->vkDevice, &createInfo, nullptr, &sampler);
 }
 
 void Engine::transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image,
                                    VkImageAspectFlags aspectFlags, VkImageLayout oldLayout,
-                                   VkImageLayout newLayout, uint32_t mipLevels) {
+                                   VkImageLayout newLayout, uint32_t mipLevels) const {
     VkImageMemoryBarrier barrier{
         .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
         .oldLayout = oldLayout,
@@ -142,8 +169,15 @@ void Engine::transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image,
     vkCmdPipelineBarrier(commandBuffer, srcStage, dstStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
 }
 
+void Texture::destroy(const Engine *engine) {
+    vkDestroySampler(engine->vkDevice, sampler, nullptr);
+    vkDestroyImageView(engine->vkDevice, imageView, nullptr);
+    vkDestroyImage(engine->vkDevice, image, nullptr);
+    vkFreeMemory(engine->vkDevice, imageMemory, nullptr);
+}
+
 void Engine::copyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, VkImage image,
-        uint32_t width, uint32_t height) {
+        uint32_t width, uint32_t height) const {
     VkBufferImageCopy bufferImageCopy{
         .bufferOffset = 0,
         .bufferRowLength = 0,
@@ -159,14 +193,8 @@ void Engine::copyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, V
             1, &bufferImageCopy);
 }
 
-void Engine::createTextureImageView() {
-    textureImageView = createImageView(textureImage, VK_FORMAT_R8G8B8A8_UNORM,
-                                       VK_IMAGE_ASPECT_COLOR_BIT, 1);
-}
-
-VkImageView
-Engine::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags,
-                        uint32_t mipLevels) {
+VkImageView Engine::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags,
+        uint32_t mipLevels) const {
     VkImageViewCreateInfo imgViewCreateInfo {
             .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
             .image = image,
@@ -186,30 +214,6 @@ Engine::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspec
     vkCreateImageView(vkDevice, &imgViewCreateInfo, nullptr,
                       &imageView);
     return imageView;
-}
-
-void Engine::createTextureSampler() {
-    VkSamplerCreateInfo createInfo{
-        .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
-        .pNext = nullptr,
-        .flags = 0,
-        .magFilter = VK_FILTER_LINEAR,
-        .minFilter = VK_FILTER_LINEAR,
-        .addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-        .addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-        .addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-        .anisotropyEnable = VK_TRUE,
-        .maxAnisotropy = 16,
-        .borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
-        .unnormalizedCoordinates = VK_FALSE,
-        .compareEnable = VK_FALSE,
-        .compareOp = VK_COMPARE_OP_ALWAYS,
-        .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
-        .mipLodBias = 0.0f,
-        .minLod = 0.0f,
-        .maxLod = 0.0f,
-    };
-    vkCreateSampler(vkDevice, &createInfo, nullptr, &textureSampler);
 }
 
 void Engine::createDepthStencilResources() {
