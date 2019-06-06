@@ -37,31 +37,21 @@ void Engine::init() {
     createSyncObjs();
     currentFrame = 0;
 
-    loadResources();
     createUniformBuffers();
 
-    createDescriptorSetLayout();
-    createDescriptorPool();
-    createDescriptorSets();
-    createGraphicsPipelineLayout();
-    createGraphicsPipeline();
-
+    loadResources();
     recordCmdBuffers();
 }
 
 void Engine::destroy() {
     vkDeviceWaitIdle(vkDevice);
 
-    vkDestroyPipeline(vkDevice, graphicsPipeline, nullptr);
-    vkDestroyPipelineLayout(vkDevice, graphicsPipelineLayout, nullptr);
-    vkDestroyDescriptorPool(vkDevice, descriptorPool, nullptr);
-    vkDestroyDescriptorSetLayout(vkDevice, descriptorSetLayout, nullptr);
+    destroyResources();
 
     for(size_t i = 0; i < NUM_IMAGES_IN_SWAPCHAIN; i++) {
         vkDestroyBuffer(vkDevice, uniformBuffers[i], nullptr);
         vkFreeMemory(vkDevice, uniformBuffersMemory[i], nullptr);
     }
-    destroyResources();
 
     for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         vkDestroyFence(vkDevice, inFlightFences[i], nullptr);

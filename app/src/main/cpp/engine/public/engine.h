@@ -70,6 +70,28 @@ public:
     void destroy(const Engine *engine);
 };
 
+class Material {
+public:
+    std::vector<VkDescriptorSet> descriptorSets;
+    VkPipeline graphicsPipeline;
+    VkPipelineLayout graphicsPipelineLayout;
+
+    void init(const Engine *engine, const Texture *texture);
+    void destroy(Engine *engine);
+
+private:
+    VkDescriptorSetLayout descriptorSetLayout;
+    VkDescriptorPool descriptorPool;
+
+    VkShaderModule createShaderModule(const Engine *engine, const char *fileName);
+
+    void createDescriptorSetLayout(const Engine *engine);
+    void createDescriptorPool(const Engine *engine);
+    void createDescriptorSets(const Engine *engine, const Texture *texture);
+    void createGraphicsPipelineLayout(const Engine *engine);
+    void createGraphicsPipeline(const Engine *engine);
+};
+
 struct UniformBuffer {
     alignas(16) glm::mat4 model;
     alignas(16) glm::mat4 view;
@@ -79,6 +101,7 @@ struct UniformBuffer {
 class Engine {
     friend class Geometry;
     friend class Texture;
+    friend class Material;
 public:
     pthread_mutex_t mutex;
 
@@ -131,16 +154,12 @@ private:
     std::vector<VkFence> inFlightFences;
     int currentFrame;
 
-    Geometry geometry;
-    Texture texture;
     std::vector<VkBuffer> uniformBuffers;
     std::vector<VkDeviceMemory> uniformBuffersMemory;
 
-    VkDescriptorSetLayout descriptorSetLayout;
-    VkDescriptorPool descriptorPool;
-    std::vector<VkDescriptorSet> descriptorSets;
-    VkPipelineLayout graphicsPipelineLayout;
-    VkPipeline graphicsPipeline;
+    Geometry geometry;
+    Texture texture;
+    Material material;
 
     /* engine_helper.cpp */
     void createVKInstance();
@@ -169,12 +188,6 @@ private:
 
     void createUniformBuffers();
 
-    void createDescriptorSetLayout();
-    void createDescriptorPool();
-    void createDescriptorSets();
-    void createGraphicsPipelineLayout();
-    void createGraphicsPipeline();
-
     void recordCmdBuffers();
 
     VkCommandBuffer beginSingleTimeCommands() const;
@@ -196,10 +209,6 @@ private:
             VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) const;
     VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags,
                                 uint32_t mipLevels) const;
-
-    /* engine_shader_helper.cpp */
-    std::vector<char> readFile(const char *fileName);
-    VkShaderModule createShaderModule(const std::vector<char> &code);
 
     /* engine_buffer_helper.cpp */
     uint32_t findOptimalMemoryTypeIndexSupportSpecifiedPropertyFlags(uint32_t targetMemoryypeBits,

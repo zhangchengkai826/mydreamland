@@ -34,12 +34,12 @@ add_library(engine STATIC
 
         engine/private/engine.cpp
         engine/private/engine_helper.cpp
-        engine/private/engine_shader_helper.cpp
         engine/private/engine_debug_output.cpp
         engine/private/engine_buffer_helper.cpp
         engine/private/engine_physics.cpp
         engine/private/engine_texture.cpp
-        engine/private/engine_geometry.cpp)
+        engine/private/engine_geometry.cpp
+        engine/private/engine_material.cpp)
 
 target_include_directories(engine PRIVATE
         engine/public)
