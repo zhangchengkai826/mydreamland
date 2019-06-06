@@ -72,7 +72,7 @@ public:
 
 class Material {
 public:
-    std::vector<VkDescriptorSet> descriptorSets;
+    VkDescriptorSet descriptorSet;
     VkPipeline graphicsPipeline;
     VkPipelineLayout graphicsPipelineLayout;
 
@@ -154,8 +154,8 @@ private:
     std::vector<VkFence> inFlightFences;
     int currentFrame;
 
-    std::vector<VkBuffer> uniformBuffers;
-    std::vector<VkDeviceMemory> uniformBuffersMemory;
+    VkBuffer uniformBuffer;
+    VkDeviceMemory uniformBuffersMemory;
 
     Geometry geometry;
     Texture texture;
@@ -194,7 +194,7 @@ private:
     void endSingleTimeCommands(VkCommandBuffer commandBuffer) const;
 
     /* engine_physics.cpp */
-    void updateUniformBuffer(uint32_t imageIndex);
+    void updateUniformBuffer();
 
     /* engine_texture.cpp */
 

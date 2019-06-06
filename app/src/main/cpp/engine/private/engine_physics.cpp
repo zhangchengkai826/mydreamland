@@ -4,7 +4,7 @@
 
 #include <engine.h>
 
-void Engine::updateUniformBuffer(uint32_t imageIndex) {
+void Engine::updateUniformBuffer() {
     static auto startTime = std::chrono::high_resolution_clock::now();
     auto currentTime = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration<float,
@@ -29,7 +29,7 @@ void Engine::updateUniformBuffer(uint32_t imageIndex) {
     ubo.proj[1][1] *= -1;
 
     void *data;
-    vkMapMemory(vkDevice, uniformBuffersMemory[imageIndex], 0, sizeof(UniformBuffer), 0, &data);
+    vkMapMemory(vkDevice, uniformBuffersMemory, 0, sizeof(UniformBuffer), 0, &data);
     memcpy(data, &ubo, sizeof(UniformBuffer));
-    vkUnmapMemory(vkDevice, uniformBuffersMemory[imageIndex]);
+    vkUnmapMemory(vkDevice, uniformBuffersMemory);
 }

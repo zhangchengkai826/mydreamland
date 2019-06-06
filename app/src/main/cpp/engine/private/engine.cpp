@@ -48,10 +48,8 @@ void Engine::destroy() {
 
     destroyResources();
 
-    for(size_t i = 0; i < NUM_IMAGES_IN_SWAPCHAIN; i++) {
-        vkDestroyBuffer(vkDevice, uniformBuffers[i], nullptr);
-        vkFreeMemory(vkDevice, uniformBuffersMemory[i], nullptr);
-    }
+    vkDestroyBuffer(vkDevice, uniformBuffer, nullptr);
+    vkFreeMemory(vkDevice, uniformBuffersMemory, nullptr);
 
     for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         vkDestroyFence(vkDevice, inFlightFences[i], nullptr);
@@ -95,7 +93,7 @@ void Engine::drawFrame() {
                           std::numeric_limits<uint64_t>::max(),
                           imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
 
-    updateUniformBuffer(imageIndex);
+    updateUniformBuffer();
 
     VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
     VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT};

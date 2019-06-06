@@ -413,7 +413,7 @@ void Engine::recordCmdBuffers() {
         vkCmdBindIndexBuffer(commandBuffers[i], geometry.indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
         vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                material.graphicsPipelineLayout, 0, 1, &material.descriptorSets[i],
+                                material.graphicsPipelineLayout, 0, 1, &material.descriptorSet,
                                 0, nullptr);
 
         vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(geometry.nIndices), 1, 0, 0, 0);
@@ -446,13 +446,9 @@ void Engine::createSyncObjs() {
 
 void Engine::createUniformBuffers() {
     VkDeviceSize bufferSize = sizeof(UniformBuffer);
-    uniformBuffers.resize(NUM_IMAGES_IN_SWAPCHAIN);
-    uniformBuffersMemory.resize(NUM_IMAGES_IN_SWAPCHAIN);
-    for(size_t i = 0; i < NUM_IMAGES_IN_SWAPCHAIN; i++) {
-        createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+    createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                uniformBuffers[i], uniformBuffersMemory[i]);
-    }
+                uniformBuffer, uniformBuffersMemory);
 }
 
 

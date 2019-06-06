@@ -50,9 +50,9 @@ void Material::createDescriptorSetLayout(const Engine *engine) {
 
 void Material::createDescriptorPool(const Engine *engine) {
     std::array<VkDescriptorPoolSize, 2> poolSizes = {{
-         {.descriptorCount = Engine::NUM_IMAGES_IN_SWAPCHAIN,
+         {.descriptorCount = 1,
                  .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,},
-         {.descriptorCount = Engine::NUM_IMAGES_IN_SWAPCHAIN,
+         {.descriptorCount = 1,
                  .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,},
     }};
     VkDescriptorPoolCreateInfo createInfo{
@@ -61,27 +61,25 @@ void Material::createDescriptorPool(const Engine *engine) {
             .flags = 0,
             .poolSizeCount = static_cast<uint32_t>(poolSizes.size()),
             .pPoolSizes = poolSizes.data(),
-            .maxSets = static_cast<uint32_t>(Engine::NUM_IMAGES_IN_SWAPCHAIN),
+            .maxSets = 1,
     };
 
     vkCreateDescriptorPool(engine->vkDevice, &createInfo, nullptr, &descriptorPool);
 }
 
 void Material::createDescriptorSets(const Engine *engine, const Texture *texture) {
-    std::vector<VkDescriptorSetLayout> layouts(Engine::NUM_IMAGES_IN_SWAPCHAIN, descriptorSetLayout);
     VkDescriptorSetAllocateInfo allocateInfo{
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
             .pNext = nullptr,
             .descriptorPool = descriptorPool,
-            .descriptorSetCount = Engine::NUM_IMAGES_IN_SWAPCHAIN,
-            .pSetLayouts = layouts.data(),
+            .descriptorSetCount = 1,
+            .pSetLayouts = &descriptorSetLayout,
     };
-    descriptorSets.resize(Engine::NUM_IMAGES_IN_SWAPCHAIN);
-    vkAllocateDescriptorSets(engine->vkDevice, &allocateInfo, descriptorSets.data());
+    vkAllocateDescriptorSets(engine->vkDevice, &allocateInfo, &descriptorSet);
 
-    for(size_t i = 0; i < Engine::NUM_IMAGES_IN_SWAPCHAIN; i++) {
+    for(size_t i = 0; i < 1; i++) {
         VkDescriptorBufferInfo bufferInfo{
-                .buffer = engine->uniformBuffers[i],
+                .buffer = engine->uniformBuffer,
                 .offset = 0,
                 .range = sizeof(UniformBuffer),
         };
@@ -95,7 +93,7 @@ void Material::createDescriptorSets(const Engine *engine, const Texture *texture
            {
                .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                .pNext = nullptr,
-               .dstSet = descriptorSets[i],
+               .dstSet = descriptorSet,
                .dstBinding = 0,
                .dstArrayElement = 0,
                .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -107,7 +105,7 @@ void Material::createDescriptorSets(const Engine *engine, const Texture *texture
            {
                .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                .pNext = nullptr,
-               .dstSet = descriptorSets[i],
+               .dstSet = descriptorSet,
                .dstBinding = 1,
                .dstArrayElement = 0,
                .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
@@ -116,7 +114,7 @@ void Material::createDescriptorSets(const Engine *engine, const Texture *texture
                .pImageInfo = &imageInfo,
                .pTexelBufferView = nullptr,
            },
-   }};
+        }};
         vkUpdateDescriptorSets(engine->vkDevice, static_cast<uint32_t>(writeDescriptorSets.size()),
                                writeDescriptorSets.data(), 0, nullptr);
     }
