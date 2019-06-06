@@ -47,9 +47,16 @@ std::ifstream &operator>>(std::ifstream &f, Vertex &v);
 
 class Geometry {
 public:
-    std::vector<Vertex> vertices;
-    std::vector<uint16_t> indices;
-    void loadFromFile(const char *filename);
+    VkBuffer vertexBuffer;
+    VkDeviceMemory vertexBufferMemory;
+    VkBuffer indexBuffer;
+    VkDeviceMemory indexBufferMemory;
+
+    uint32_t nVertices;
+    uint32_t nIndices;
+
+    void initFromFile(const Engine *engine, const char *filename);
+    void destroy(const Engine *engine);
 };
 
 class Texture {
@@ -59,7 +66,7 @@ public:
     VkImageView imageView;
     VkSampler sampler;
 
-    void loadFromFile(const Engine *engine, const char *fileName);
+    void initFromFile(const Engine *engine, const char *fileName);
     void destroy(const Engine *engine);
 };
 
@@ -70,6 +77,7 @@ struct UniformBuffer {
 };
 
 class Engine {
+    friend class Geometry;
     friend class Texture;
 public:
     pthread_mutex_t mutex;
@@ -123,21 +131,16 @@ private:
     std::vector<VkFence> inFlightFences;
     int currentFrame;
 
+    Geometry geometry;
+    Texture texture;
+    std::vector<VkBuffer> uniformBuffers;
+    std::vector<VkDeviceMemory> uniformBuffersMemory;
+
     VkDescriptorSetLayout descriptorSetLayout;
     VkDescriptorPool descriptorPool;
     std::vector<VkDescriptorSet> descriptorSets;
     VkPipelineLayout graphicsPipelineLayout;
     VkPipeline graphicsPipeline;
-
-    VkBuffer vertexBuffer;
-    VkDeviceMemory vertexBufferMemory;
-    VkBuffer indexBuffer;
-    VkDeviceMemory indexBufferMemory;
-    std::vector<VkBuffer> uniformBuffers;
-    std::vector<VkDeviceMemory> uniformBuffersMemory;
-
-    Geometry geometry;
-    Texture texture;
 
     /* engine_helper.cpp */
     void createVKInstance();
@@ -162,8 +165,8 @@ private:
     void createSyncObjs();
 
     void loadResources();
-    void createVertexBuffer();
-    void createIndexBuffer();
+    void destroyResources();
+
     void createUniformBuffers();
 
     void createDescriptorSetLayout();
@@ -204,7 +207,7 @@ private:
     void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
             VkMemoryPropertyFlags propertyFlags, VkBuffer &buffer, VkDeviceMemory &bufferMemory)
             const;
-    void copyBuffer(VkBuffer srcBuffer, VkBuffer destBuffer, VkDeviceSize size);
+    void copyBuffer(VkBuffer srcBuffer, VkBuffer destBuffer, VkDeviceSize size) const;
 
     /* engine_debug_output.cpp */
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugReportCallback(

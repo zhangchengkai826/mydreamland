@@ -45,7 +45,7 @@ void Engine::createImage(uint32_t width, uint32_t height, uint32_t mipLevels, Vk
     vkBindImageMemory(vkDevice, image, imageMemory, 0);
 }
 
-void Texture::loadFromFile(const Engine *engine, const char *fileName) {
+void Texture::initFromFile(const Engine *engine, const char *fileName) {
     FILE *f = fopen(fileName, "r");
     fseek(f, 0, SEEK_END);
     auto nBytes = static_cast<uint32_t>(ftell(f));

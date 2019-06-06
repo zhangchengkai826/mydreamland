@@ -51,7 +51,7 @@ void Engine::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
     vkBindBufferMemory(vkDevice, buffer, bufferMemory, 0);
 }
 
-void Engine::copyBuffer(VkBuffer srcBuffer, VkBuffer destBuffer, VkDeviceSize size) {
+void Engine::copyBuffer(VkBuffer srcBuffer, VkBuffer destBuffer, VkDeviceSize size) const {
     VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
     VkBufferCopy bufferCopy{

@@ -48,24 +48,68 @@ std::ifstream& operator>>(std::ifstream &f, Vertex &v) {
     return f;
 }
 
-void Geometry::loadFromFile(const char *filename) {
+void Geometry::initFromFile(const Engine *engine, const char *filename) {
+    std::vector<Vertex> vertices;
+    std::vector<uint16_t> indices;
+
     std::ifstream f(filename);
     std::string ignore;
-    int n;
 
-    f >> ignore >> n;
-    for(int i =0; i < n; i++) {
+    f >> ignore >> nVertices;
+    for(int i =0; i < nVertices; i++) {
         Vertex vertex;
         f >> vertex;
         vertices.push_back(vertex);
     }
 
-    f >> ignore >> n;
-    for(int i = 0; i < n; i++) {
+    f >> ignore >> nIndices;
+    for(int i = 0; i < nIndices; i++) {
         uint16_t indice;
         f >> indice;
         indices.push_back(indice);
     }
 
     f.close();
+
+    VkDeviceSize bufferSize;
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+    void *data;
+
+    bufferSize = sizeof(Vertex) * vertices.size();
+    engine->createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                 stagingBuffer, stagingBufferMemory);
+    vkMapMemory(engine->vkDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
+    memcpy(data, vertices.data(), static_cast<size_t>(bufferSize));
+    vkUnmapMemory(engine->vkDevice, stagingBufferMemory);
+
+    engine->createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, vertexBufferMemory);
+    engine->copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
+
+    vkDestroyBuffer(engine->vkDevice, stagingBuffer, nullptr);
+    vkFreeMemory(engine->vkDevice, stagingBufferMemory, nullptr);
+
+    bufferSize = sizeof(uint16_t) * indices.size();
+    engine->createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                 stagingBuffer, stagingBufferMemory);
+    vkMapMemory(engine->vkDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
+    memcpy(data, indices.data(), static_cast<size_t>(bufferSize));
+    vkUnmapMemory(engine->vkDevice, stagingBufferMemory);
+
+    engine->createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer, indexBufferMemory);
+    engine->copyBuffer(stagingBuffer, indexBuffer, bufferSize);
+
+    vkDestroyBuffer(engine->vkDevice, stagingBuffer, nullptr);
+    vkFreeMemory(engine->vkDevice, stagingBufferMemory, nullptr);
+}
+
+void Geometry::destroy(const Engine *engine) {
+    vkDestroyBuffer(engine->vkDevice, indexBuffer, nullptr);
+    vkFreeMemory(engine->vkDevice, indexBufferMemory, nullptr);
+    vkDestroyBuffer(engine->vkDevice, vertexBuffer, nullptr);
+    vkFreeMemory(engine->vkDevice, vertexBufferMemory, nullptr);
 }

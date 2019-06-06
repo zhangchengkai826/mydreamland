@@ -38,8 +38,6 @@ void Engine::init() {
     currentFrame = 0;
 
     loadResources();
-    createVertexBuffer();
-    createIndexBuffer();
     createUniformBuffers();
 
     createDescriptorSetLayout();
@@ -63,11 +61,7 @@ void Engine::destroy() {
         vkDestroyBuffer(vkDevice, uniformBuffers[i], nullptr);
         vkFreeMemory(vkDevice, uniformBuffersMemory[i], nullptr);
     }
-    vkDestroyBuffer(vkDevice, indexBuffer, nullptr);
-    vkFreeMemory(vkDevice, indexBufferMemory, nullptr);
-    vkDestroyBuffer(vkDevice, vertexBuffer, nullptr);
-    vkFreeMemory(vkDevice, vertexBufferMemory, nullptr);
-    texture.destroy(this);
+    destroyResources();
 
     for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         vkDestroyFence(vkDevice, inFlightFences[i], nullptr);
