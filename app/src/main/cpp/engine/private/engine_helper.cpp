@@ -10,17 +10,18 @@ void Engine::createVKInstance() {
             .pNext = nullptr,
             .apiVersion = VK_MAKE_VERSION(1, 0, 66),
             .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
-            .engineVersion = VK_MAKE_VERSION(1, 0, 0),
             .pApplicationName = "mydreamland",
+            .engineVersion = VK_MAKE_VERSION(1, 0, 0),
             .pEngineName = "mydreamland_engine",
     };
 
     std::vector<const char *> instanceExt;
     instanceExt.push_back("VK_KHR_surface");
     instanceExt.push_back("VK_KHR_android_surface");
-    if(DEBUG_ON && validationLayerNames.size() > 0) {
-        instanceExt.push_back("VK_EXT_debug_report");
-    }
+
+#ifdef DEBUG
+    instanceExt.push_back("VK_EXT_debug_report");
+#endif
 
     VkInstanceCreateInfo instanceCreateInfo{
             .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
@@ -31,10 +32,12 @@ void Engine::createVKInstance() {
             .enabledLayerCount = 0,
             .ppEnabledLayerNames = nullptr,
     };
-    if(DEBUG_ON && validationLayerNames.size() > 0) {
-        instanceCreateInfo.enabledLayerCount = static_cast<uint32_t>(validationLayerNames.size());
-        instanceCreateInfo.ppEnabledLayerNames = validationLayerNames.data();
-    }
+
+#ifdef DEBUG
+    instanceCreateInfo.enabledLayerCount = static_cast<uint32_t>(validationLayerNames.size());
+    instanceCreateInfo.ppEnabledLayerNames = validationLayerNames.data();
+#endif
+
     vkCreateInstance(&instanceCreateInfo, nullptr, &vkInstance);
 }
 
@@ -56,6 +59,55 @@ void Engine::selectPhysicalDevice() {
     VkPhysicalDevice physicalDevices[physicalDeviceCount];
     vkEnumeratePhysicalDevices(vkInstance, &physicalDeviceCount, physicalDevices);
     vkPhysicalDevice = physicalDevices[0];  // Pick up the first physical device
+}
+
+void Engine::selectPhysicalDeviceSurfaceFormat() {
+    physicalDeviceSurfaceFormat = {VK_FORMAT_R8G8B8A8_UNORM,
+                                   VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
+
+    uint32_t formatCount;
+    vkGetPhysicalDeviceSurfaceFormatsKHR(vkPhysicalDevice, vkSurface, &formatCount, nullptr);
+    assert(formatCount > 0);
+    std::vector<VkSurfaceFormatKHR> formats(formatCount);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(vkPhysicalDevice, vkSurface, &formatCount,
+                                         formats.data());
+    bool b_formatSupport = false;
+    __android_log_print(ANDROID_LOG_INFO, "main",
+                        "Vulkan Selected Physical Device Surface Supported Formats:");
+    for(const auto &format: formats) {
+        if(format.format == physicalDeviceSurfaceFormat.format && format.colorSpace ==
+                                                                  physicalDeviceSurfaceFormat.colorSpace) {
+            b_formatSupport = true;
+        }
+        if(format.format == VK_FORMAT_UNDEFINED) {
+            b_formatSupport = true;
+        }
+        __android_log_print(ANDROID_LOG_INFO, "main",
+                            "\tFormat: %d\tColor Space: %d", format.format, format.colorSpace);
+    }
+    assert(b_formatSupport);
+}
+
+void Engine::selectPhysicalDeviceSurfacePresentMode() {
+    physicalDeviceSurfacePresentMode = VK_PRESENT_MODE_FIFO_KHR;
+
+    uint32_t presentModeCount;
+    vkGetPhysicalDeviceSurfacePresentModesKHR(vkPhysicalDevice, vkSurface, &presentModeCount,
+                                              nullptr);
+    assert(presentModeCount > 0);
+    std::vector<VkPresentModeKHR> presentModes(presentModeCount);
+    vkGetPhysicalDeviceSurfacePresentModesKHR(vkPhysicalDevice, vkSurface, &presentModeCount,
+                                              presentModes.data());
+    bool b_presentModeSupport = false;
+    __android_log_print(ANDROID_LOG_INFO, "main",
+                        "Vulkan Selected Physical Device Surface Supported Present Modes:");
+    for(const auto &pm: presentModes) {
+        if(pm == physicalDeviceSurfacePresentMode) {
+            b_presentModeSupport = true;
+        }
+        __android_log_print(ANDROID_LOG_INFO, "main", "\tPresent Mode: %d", pm);
+    }
+    assert(b_presentModeSupport);
 }
 
 void Engine::updatePhysicalDeviceFeatures() {
@@ -148,10 +200,12 @@ void Engine::createLogicalDevice() {
             .ppEnabledExtensionNames = deviceExt.data(),
             .pEnabledFeatures = &physicalDeviceFeatures,
     };
-    if(DEBUG_ON && validationLayerNames.size() > 0) {
-        deviceCreateInfo.enabledLayerCount = validationLayerNames.size();
-        deviceCreateInfo.ppEnabledLayerNames = validationLayerNames.data();
-    }
+
+#ifdef DEBUG
+    deviceCreateInfo.enabledLayerCount = validationLayerNames.size();
+    deviceCreateInfo.ppEnabledLayerNames = validationLayerNames.data();
+#endif
+
     vkCreateDevice(vkPhysicalDevice, &deviceCreateInfo, nullptr, &vkDevice);
 }
 

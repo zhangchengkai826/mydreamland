@@ -27,6 +27,8 @@
 
 #include <stb_image.h>
 
+#define DEBUG
+
 class Engine;
 
 std::ifstream &operator>>(std::ifstream &f, glm::vec3 &v);
@@ -52,10 +54,10 @@ public:
 
 class Texture {
 public:
-    VkImage image = VK_NULL_HANDLE;
-    VkDeviceMemory imageMemory = VK_NULL_HANDLE;
-    VkImageView imageView = VK_NULL_HANDLE;
-    VkSampler sampler = VK_NULL_HANDLE;
+    VkImage image;
+    VkDeviceMemory imageMemory;
+    VkImageView imageView;
+    VkSampler sampler;
 
     void loadFromFile(const Engine *engine, const char *fileName);
     void destroy(const Engine *engine);
@@ -70,92 +72,89 @@ struct UniformBuffer {
 class Engine {
     friend class Texture;
 public:
-    ANativeActivity *activity = nullptr;
-    ANativeWindow *window = nullptr;
+    pthread_mutex_t mutex;
 
-    bool bDisplayInited = false;
-    bool bAnimating = true;
+    ANativeActivity *activity;
+    ANativeWindow *window;
 
-    int fpsFrameCounter = 0;
+    int fpsFrameCounter;
+    bool bAnimating;
 
     void init();
     void destroy();
-    void initDisplay();
-    void destroyDisplay();
 
     void drawFrame();
 
 private:
     constexpr static int NUM_IMAGES_IN_SWAPCHAIN = 3;
     constexpr static int MAX_FRAMES_IN_FLIGHT = 2;
-    constexpr static bool DEBUG_ON = true;
 
-    VkInstance vkInstance = VK_NULL_HANDLE;
+#ifdef DEBUG
     std::vector<VkLayerProperties> validationLayerProperties;
     std::vector<const char *> validationLayerNames;
-    VkDebugReportCallbackEXT vkDebugReportCallbackExt = VK_NULL_HANDLE;
+#endif
 
-    VkSurfaceKHR vkSurface = VK_NULL_HANDLE;
-    VkPhysicalDevice vkPhysicalDevice = VK_NULL_HANDLE;
-    VkPhysicalDeviceFeatures physicalDeviceFeatures;
+    VkInstance vkInstance;
+    VkDebugReportCallbackEXT vkDebugReportCallbackExt;
+
+    VkSurfaceKHR vkSurface;
+    VkPhysicalDevice vkPhysicalDevice;
     VkSurfaceCapabilitiesKHR physicalDeviceSurfaceCapabilities;
-    uint32_t physicalDeviceGraphicsQueueFamilyIndex = 0;
-    VkSurfaceFormatKHR physicalDeviceSurfaceFormat = {VK_FORMAT_R8G8B8A8_UNORM,
-                                   VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
-    VkPresentModeKHR physicalDeviceSurfacePresentMode = VK_PRESENT_MODE_FIFO_KHR;
+    VkSurfaceFormatKHR physicalDeviceSurfaceFormat;
+    VkPresentModeKHR physicalDeviceSurfacePresentMode;
+    VkPhysicalDeviceFeatures physicalDeviceFeatures;
+    uint32_t physicalDeviceGraphicsQueueFamilyIndex;
+    VkDevice vkDevice;
+    VkQueue graphicsQueue;
 
-    VkDevice vkDevice = VK_NULL_HANDLE;
-    VkQueue graphicsQueue = VK_NULL_HANDLE;
-
-    VkSwapchainKHR vkSwapchain = VK_NULL_HANDLE;
+    VkSwapchainKHR vkSwapchain;
     std::vector<VkImage> swapChainImages;
     std::vector<VkImageView> swapChainImageViews;
-
-    VkRenderPass renderPass = VK_NULL_HANDLE;
-
-    VkDescriptorSetLayout descriptorSetLayout = VK_NULL_HANDLE;
-    VkPipelineLayout graphicsPipelineLayout = VK_NULL_HANDLE;
-    VkPipeline graphicsPipeline = VK_NULL_HANDLE;
-
-    std::vector<VkFramebuffer> swapChainFrameBuffers;
-
-    VkCommandPool commandPool = VK_NULL_HANDLE;
-    std::vector<VkCommandBuffer> commandBuffers;
-
-    VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
-    std::vector<VkDescriptorSet> descriptorSets;
-
-    VkBuffer vertexBuffer = VK_NULL_HANDLE;
-    VkDeviceMemory vertexBufferMemory = VK_NULL_HANDLE;
-    VkBuffer indexBuffer = VK_NULL_HANDLE;
-    VkDeviceMemory indexBufferMemory = VK_NULL_HANDLE;
-    std::vector<VkBuffer> uniformBuffers;
-    std::vector<VkDeviceMemory> uniformBuffersMemory;
-
     VkImage depthStencilImage;
     VkDeviceMemory depthStencilImageMemory;
     VkImageView depthStencilImageView;
+    VkRenderPass renderPass;
+    std::vector<VkFramebuffer> swapChainFrameBuffers;
 
-    Geometry geometry;
-    Texture texture;
+    VkCommandPool commandPool;
+    std::vector<VkCommandBuffer> commandBuffers;
 
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkFence> inFlightFences;
-    int currentFrame = 0;
+    int currentFrame;
+
+    VkDescriptorSetLayout descriptorSetLayout;
+    VkDescriptorPool descriptorPool;
+    std::vector<VkDescriptorSet> descriptorSets;
+    VkPipelineLayout graphicsPipelineLayout;
+    VkPipeline graphicsPipeline;
+
+    VkBuffer vertexBuffer;
+    VkDeviceMemory vertexBufferMemory;
+    VkBuffer indexBuffer;
+    VkDeviceMemory indexBufferMemory;
+    std::vector<VkBuffer> uniformBuffers;
+    std::vector<VkDeviceMemory> uniformBuffersMemory;
+
+    Geometry geometry;
+    Texture texture;
 
     /* engine_helper.cpp */
     void createVKInstance();
     void createVKAndroidSurface();
 
     void selectPhysicalDevice();
-    void updatePhysicalDeviceFeatures();
     void updatePhysicalDeviceSurfaceCapabilities();
+    void selectPhysicalDeviceSurfaceFormat();
+    void selectPhysicalDeviceSurfacePresentMode();
+    void updatePhysicalDeviceFeatures();
     void updatePhysicalDeviceGraphicsQueueFamilyIndex();
-
     void createLogicalDevice();
-    void createSwapChain();
 
     void createRenderPass();
+
+    void createSwapChain();
+
     void createDescriptorSetLayout();
     void createGraphicsPipelineLayout();
     void createGraphicsPipeline();
@@ -221,8 +220,6 @@ private:
     void logPhysicalDeviceProperties();
     void logPhysicalDeviceAvailableExtensions();
     void checkPhysicalDeviceGraphicsQueueSurfaceSupport();
-    void checkPhysicalDeviceSurfaceFormatSupport();
-    void checkPhysicalDeviceSurfacePresentModeSupport();
 };
 
 #endif //MYDREAMLAND_ENGINE_H

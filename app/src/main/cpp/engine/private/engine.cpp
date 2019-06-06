@@ -5,44 +5,59 @@
 #include "engine.h"
 
 void Engine::init() {
-    if(DEBUG_ON) {
-        updateAvailableValidationLayerNames();
-    }
+
+#ifdef DEBUG
+    updateAvailableValidationLayerNames();
+#endif
+
     createVKInstance();
-    if(DEBUG_ON && validationLayerNames.size() > 0) {
-        createVKDebugReportCallback();
-    }
+
+#ifdef DEBUG
+    createVKDebugReportCallback();
+#endif
+
+    createVKAndroidSurface();
     selectPhysicalDevice();
+    updatePhysicalDeviceSurfaceCapabilities();
+    selectPhysicalDeviceSurfaceFormat();
+    selectPhysicalDeviceSurfacePresentMode();
     updatePhysicalDeviceFeatures();
     updatePhysicalDeviceGraphicsQueueFamilyIndex();
     createLogicalDevice();
     vkGetDeviceQueue(vkDevice, physicalDeviceGraphicsQueueFamilyIndex, 0, &graphicsQueue);
 
+    createSwapChain();
+    createDepthStencilResources();
     createRenderPass();
-
-    createDescriptorSetLayout();
-    createGraphicsPipelineLayout();
+    createFrameBuffers();
 
     createCmdPool();
-    createDescriptorPool();
+    allocCmdBuffers();
+
+    createSyncObjs();
+    currentFrame = 0;
 
     loadResources();
     createVertexBuffer();
     createIndexBuffer();
     createUniformBuffers();
 
+    createDescriptorSetLayout();
+    createDescriptorPool();
     createDescriptorSets();
+    createGraphicsPipelineLayout();
+    createGraphicsPipeline();
 
-    createSyncObjs();
+    recordCmdBuffers();
 }
 
 void Engine::destroy() {
     vkDeviceWaitIdle(vkDevice);
 
-    for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        vkDestroyFence(vkDevice, inFlightFences[i], nullptr);
-        vkDestroySemaphore(vkDevice, imageAvailableSemaphores[i], nullptr);
-    }
+    vkDestroyPipeline(vkDevice, graphicsPipeline, nullptr);
+    vkDestroyPipelineLayout(vkDevice, graphicsPipelineLayout, nullptr);
+    vkDestroyDescriptorPool(vkDevice, descriptorPool, nullptr);
+    vkDestroyDescriptorSetLayout(vkDevice, descriptorSetLayout, nullptr);
 
     for(size_t i = 0; i < NUM_IMAGES_IN_SWAPCHAIN; i++) {
         vkDestroyBuffer(vkDevice, uniformBuffers[i], nullptr);
@@ -54,59 +69,36 @@ void Engine::destroy() {
     vkFreeMemory(vkDevice, vertexBufferMemory, nullptr);
     texture.destroy(this);
 
-    vkDestroyDescriptorPool(vkDevice, descriptorPool, nullptr);
-    vkDestroyCommandPool(vkDevice, commandPool, nullptr);
-
-    vkDestroyPipelineLayout(vkDevice, graphicsPipelineLayout, nullptr);
-    vkDestroyDescriptorSetLayout(vkDevice, descriptorSetLayout, nullptr);
-
-    vkDestroyRenderPass(vkDevice, renderPass, nullptr);
-
-    vkDestroyDevice(vkDevice, nullptr);
-    if(DEBUG_ON && validationLayerNames.size() > 0) {
-        PFN_vkDestroyDebugReportCallbackEXT vkDestroyDebugReportCallbackEXT;
-        vkDestroyDebugReportCallbackEXT = (PFN_vkDestroyDebugReportCallbackEXT)
-                vkGetInstanceProcAddr(vkInstance, "vkDestroyDebugReportCallbackEXT");
-        vkDestroyDebugReportCallbackEXT(vkInstance, vkDebugReportCallbackExt, nullptr);
+    for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        vkDestroyFence(vkDevice, inFlightFences[i], nullptr);
+        vkDestroySemaphore(vkDevice, imageAvailableSemaphores[i], nullptr);
     }
-    vkDestroyInstance(vkInstance, nullptr);
-}
 
-void Engine::initDisplay() {
-    createVKAndroidSurface();
-    updatePhysicalDeviceSurfaceCapabilities();
-    checkPhysicalDeviceSurfaceFormatSupport();
-
-    createSwapChain();
-    createDepthStencilResources();
-
-    createGraphicsPipeline();
-
-    createFrameBuffers();
-
-    allocCmdBuffers();
-    recordCmdBuffers();
-}
-
-void Engine::destroyDisplay() {
-    vkDeviceWaitIdle(vkDevice);
+    vkDestroyCommandPool(vkDevice, commandPool, nullptr);
 
     for(auto framebuffer: swapChainFrameBuffers) {
         vkDestroyFramebuffer(vkDevice, framebuffer, nullptr);
     }
-
-    vkDestroyPipeline(vkDevice, graphicsPipeline, nullptr);
-
+    vkDestroyRenderPass(vkDevice, renderPass, nullptr);
     vkDestroyImageView(vkDevice, depthStencilImageView, nullptr);
     vkDestroyImage(vkDevice, depthStencilImage, nullptr);
     vkFreeMemory(vkDevice, depthStencilImageMemory, nullptr);
-
     for(auto imageView: swapChainImageViews) {
         vkDestroyImageView(vkDevice, imageView, nullptr);
     }
     vkDestroySwapchainKHR(vkDevice, vkSwapchain, nullptr);
 
+    vkDestroyDevice(vkDevice, nullptr);
     vkDestroySurfaceKHR(vkInstance, vkSurface, nullptr);
+
+#ifdef DEBUG
+    PFN_vkDestroyDebugReportCallbackEXT vkDestroyDebugReportCallbackEXT;
+    vkDestroyDebugReportCallbackEXT = (PFN_vkDestroyDebugReportCallbackEXT)
+            vkGetInstanceProcAddr(vkInstance, "vkDestroyDebugReportCallbackEXT");
+    vkDestroyDebugReportCallbackEXT(vkInstance, vkDebugReportCallbackExt, nullptr);
+#endif
+
+    vkDestroyInstance(vkInstance, nullptr);
 }
 
 void Engine::drawFrame() {

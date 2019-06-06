@@ -225,11 +225,4 @@ void Engine::createDepthStencilResources() {
     depthStencilImageView = createImageView(depthStencilImage, VK_FORMAT_D24_UNORM_S8_UINT,
                                             VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
                                             1);
-
-    VkCommandBuffer commandBuffer = beginSingleTimeCommands();
-    transitionImageLayout(commandBuffer, depthStencilImage,
-                          VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
-                          VK_IMAGE_LAYOUT_UNDEFINED,
-                          VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1);
-    endSingleTimeCommands(commandBuffer);
 }
