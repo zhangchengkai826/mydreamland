@@ -151,28 +151,28 @@ private:
     void updatePhysicalDeviceGraphicsQueueFamilyIndex();
     void createLogicalDevice();
 
-    void createRenderPass();
-
     void createSwapChain();
-
-    void createDescriptorSetLayout();
-    void createGraphicsPipelineLayout();
-    void createGraphicsPipeline();
+    void createDepthStencilResources();
+    void createRenderPass();
     void createFrameBuffers();
 
     void createCmdPool();
     void allocCmdBuffers();
-    void recordCmdBuffers();
 
-    void createDescriptorPool();
-    void createDescriptorSets();
+    void createSyncObjs();
 
     void loadResources();
     void createVertexBuffer();
     void createIndexBuffer();
     void createUniformBuffers();
 
-    void createSyncObjs();
+    void createDescriptorSetLayout();
+    void createDescriptorPool();
+    void createDescriptorSets();
+    void createGraphicsPipelineLayout();
+    void createGraphicsPipeline();
+
+    void recordCmdBuffers();
 
     VkCommandBuffer beginSingleTimeCommands() const;
     void endSingleTimeCommands(VkCommandBuffer commandBuffer) const;
@@ -180,8 +180,7 @@ private:
     /* engine_physics.cpp */
     void updateUniformBuffer(uint32_t imageIndex);
 
-    /* engine_image.cpp */
-    void createDepthStencilResources();
+    /* engine_texture.cpp */
 
     void createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkFormat format,
                      VkImageTiling tiling, VkImageUsageFlags usage,
