@@ -446,9 +446,41 @@ void Engine::createSyncObjs() {
 
 void Engine::createUniformBuffers() {
     VkDeviceSize bufferSize = sizeof(UniformBuffer);
-    createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+
+    UniformBuffer ubo{
+            .model = glm::mat4(1.0f),
+            .view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f),
+                    glm::vec3(0.0f, 0.0f, 1.0f)),
+            .proj = glm::perspective(glm::radians(45.0f),
+                    physicalDeviceSurfaceCapabilities.currentExtent.width /
+                    static_cast<float>(physicalDeviceSurfaceCapabilities.currentExtent.height),
+                    0.1f, 10.0f),
+    };
+    /* Vulkan NDC y-axis points downwards, while OpenGL's pointing upwards
+     *
+     * projection matrix determines handedness, so Vulkan is right-handedness instead of OpenGL's
+     * left-handedness
+     */
+    ubo.proj[1][1] *= -1;
+
+    createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                         stagingBuffer, stagingBufferMemory);
+
+    void *data;
+    vkMapMemory(vkDevice, stagingBufferMemory, 0, sizeof(UniformBuffer), 0, &data);
+    memcpy(data, &ubo, sizeof(UniformBuffer));
+    vkUnmapMemory(vkDevice, stagingBufferMemory);
+
+    createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                 uniformBuffer, uniformBuffersMemory);
+    copyBuffer(stagingBuffer, uniformBuffer, bufferSize);
+
+    vkDestroyBuffer(vkDevice, stagingBuffer, nullptr);
+    vkFreeMemory(vkDevice, stagingBufferMemory, nullptr);
 }
 
 

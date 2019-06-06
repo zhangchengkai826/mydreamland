@@ -93,8 +93,6 @@ void Engine::drawFrame() {
                           std::numeric_limits<uint64_t>::max(),
                           imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
 
-    updateUniformBuffer();
-
     VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
     VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT};
     VkSubmitInfo submitInfo{
