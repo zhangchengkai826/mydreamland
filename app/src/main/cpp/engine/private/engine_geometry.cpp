@@ -72,39 +72,20 @@ void Geometry::initFromFile(const Engine *engine, const char *filename) {
     f.close();
 
     VkDeviceSize bufferSize;
-    VkBuffer stagingBuffer;
-    VkDeviceMemory stagingBufferMemory;
-    void *data;
+    VkCommandBuffer commandBuffer = engine->beginSingleTimeCommands();
 
     bufferSize = sizeof(Vertex) * vertices.size();
-    engine->createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                 stagingBuffer, stagingBufferMemory);
-    vkMapMemory(engine->vkDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
-    memcpy(data, vertices.data(), static_cast<size_t>(bufferSize));
-    vkUnmapMemory(engine->vkDevice, stagingBufferMemory);
-
-    engine->createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, vertexBufferMemory);
-    engine->copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
-
-    vkDestroyBuffer(engine->vkDevice, stagingBuffer, nullptr);
-    vkFreeMemory(engine->vkDevice, stagingBufferMemory, nullptr);
+    engine->createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        vertexBuffer, vertexBufferMemory);
+    vkCmdUpdateBuffer(commandBuffer, vertexBuffer, 0, bufferSize, vertices.data());
 
     bufferSize = sizeof(uint16_t) * indices.size();
-    engine->createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                 stagingBuffer, stagingBufferMemory);
-    vkMapMemory(engine->vkDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
-    memcpy(data, indices.data(), static_cast<size_t>(bufferSize));
-    vkUnmapMemory(engine->vkDevice, stagingBufferMemory);
-
     engine->createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer, indexBufferMemory);
-    engine->copyBuffer(stagingBuffer, indexBuffer, bufferSize);
+    vkCmdUpdateBuffer(commandBuffer, indexBuffer, 0, bufferSize, indices.data());
 
-    vkDestroyBuffer(engine->vkDevice, stagingBuffer, nullptr);
-    vkFreeMemory(engine->vkDevice, stagingBufferMemory, nullptr);
+    engine->endSingleTimeCommands(commandBuffer);
 }
 
 void Geometry::destroy(const Engine *engine) {
