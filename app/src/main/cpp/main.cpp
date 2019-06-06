@@ -99,6 +99,10 @@ static void ANativeActivity_onNativeWindowCreated(ANativeActivity *activity,
     pthread_create(&physicsLoopTID, nullptr, physicsLoop, nullptr);
 }
 
+/* if user **press power button when app window is showing**, this method is NOT guaranteed to be
+ * called. If fortunately it is called, it MAY aborted in the middle, which MAY cause crash and/or
+ * resource leaks. So, DO NOT **press power button when app window is showing**.
+ */
 static void ANativeActivity_onNativeWindowDestroyed(ANativeActivity *activity,
         ANativeWindow *window) {
     __android_log_print(ANDROID_LOG_INFO, "main",
