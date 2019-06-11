@@ -314,12 +314,13 @@ void Engine::createRenderPass() {
         .dependencyFlags = 0,
     };
 
+    /* VkSubmitInfo.pSignalSemaphores takes care of everything */
     VkSubpassDependency dependency0ToExternal{
         .srcSubpass = 0,
         .dstSubpass = VK_SUBPASS_EXTERNAL,
-        .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-        .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-        .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        .srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+        .srcAccessMask = 0,
+        .dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
         .dstAccessMask = 0,
         .dependencyFlags = 0,
     };
@@ -449,6 +450,7 @@ void Engine::recordCmdBuffers() {
 
 void Engine::createSyncObjs() {
     imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+    renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
     inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
     VkSemaphoreCreateInfo semaphoreCreateInfo{
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
@@ -463,6 +465,8 @@ void Engine::createSyncObjs() {
     for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         vkCreateSemaphore(vkDevice, &semaphoreCreateInfo, nullptr,
                           &imageAvailableSemaphores[i]);
+        vkCreateSemaphore(vkDevice, &semaphoreCreateInfo, nullptr,
+                          &renderFinishedSemaphores[i]);
         vkCreateFence(vkDevice, &fenceCreateInfo, nullptr, &inFlightFences[i]);
     }
 }

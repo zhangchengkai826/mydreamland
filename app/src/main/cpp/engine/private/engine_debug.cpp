@@ -52,6 +52,7 @@ void Engine::logAvailableInstanceExtensions() {
     }
 }
 
+#ifdef DEBUG
 void Engine::updateAvailableValidationLayerNames() {
     uint32_t layerCount = 0;
     vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
@@ -93,6 +94,7 @@ void Engine::createVKDebugReportCallback() {
     vkCreateDebugReportCallbackExt(vkInstance, &debugReportCallbackCreateInfo, nullptr,
                                    &vkDebugReportCallbackExt);
 }
+#endif
 
 void Engine::logPhysicalDeviceProperties() {
     VkPhysicalDeviceProperties physicalDeviceProperties;
