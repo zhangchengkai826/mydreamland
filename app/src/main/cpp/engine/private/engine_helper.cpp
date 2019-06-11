@@ -278,6 +278,9 @@ void Engine::createRenderPass() {
             .finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
     };
 
+    std::array<VkAttachmentDescription, 2> attachments = {colorAttachmentDescription,
+                                                          depthStencilAttachmentDescription};
+
     VkAttachmentReference colorAttachmentRef{
             .attachment = 0,
             .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -300,8 +303,29 @@ void Engine::createRenderPass() {
             .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
     };
 
-    std::array<VkAttachmentDescription, 2> attachments = {colorAttachmentDescription,
-                                                          depthStencilAttachmentDescription};
+    /* WAR data hazard, only needs execution dependency */
+    VkSubpassDependency dependencyExternalTo0{
+        .srcSubpass = VK_SUBPASS_EXTERNAL,
+        .dstSubpass = 0,
+        .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        .srcAccessMask = 0,
+        .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        .dstAccessMask = 0,
+        .dependencyFlags = 0,
+    };
+
+    VkSubpassDependency dependency0ToExternal{
+        .srcSubpass = 0,
+        .dstSubpass = VK_SUBPASS_EXTERNAL,
+        .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+        .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        .dstAccessMask = 0,
+        .dependencyFlags = 0,
+    };
+
+    VkSubpassDependency dependencies[] = {dependencyExternalTo0, dependency0ToExternal};
+
     VkRenderPassCreateInfo renderPassCreateInfo{
             .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
             .pNext = nullptr,
@@ -310,8 +334,8 @@ void Engine::createRenderPass() {
             .pAttachments = attachments.data(),
             .subpassCount = 1,
             .pSubpasses = &subpassDescription,
-            .dependencyCount = 0,
-            .pDependencies = nullptr,
+            .dependencyCount = 2,
+            .pDependencies = dependencies,
     };
     vkCreateRenderPass(vkDevice, &renderPassCreateInfo, nullptr, &renderPass);
 }

@@ -34,8 +34,8 @@ add_library(engine STATIC
 
         engine/private/engine.cpp
         engine/private/engine_helper.cpp
-        engine/private/engine_debug_output.cpp
-        engine/private/engine_buffer_helper.cpp
+        engine/private/engine_debug.cpp
+        engine/private/engine_buffer.cpp
         engine/private/engine_physics.cpp
         engine/private/engine_texture.cpp
         engine/private/engine_geometry.cpp

@@ -105,10 +105,16 @@ class Engine {
 public:
     pthread_mutex_t mutex;
 
+    /* vars need sync begin */
+
+    /* render & physics */
+    int fpsFrameCounter;
+
+    /* vars need sync end */
+
     ANativeActivity *activity;
     ANativeWindow *window;
 
-    int fpsFrameCounter;
     bool bAnimating;
 
     void init();

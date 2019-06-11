@@ -91,16 +91,16 @@ void Engine::drawFrame() {
     uint32_t imageIndex;
     vkAcquireNextImageKHR(vkDevice, vkSwapchain,
                           std::numeric_limits<uint64_t>::max(),
-                          imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+                          VK_NULL_HANDLE, VK_NULL_HANDLE, &imageIndex);
 
-    VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
-    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT};
+    //VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
+    //VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
     VkSubmitInfo submitInfo{
             .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
             .pNext = nullptr,
-            .waitSemaphoreCount = 1,
-            .pWaitSemaphores = waitSemaphores,
-            .pWaitDstStageMask = waitStages,
+            .waitSemaphoreCount = 0,
+            .pWaitSemaphores = nullptr,
+            .pWaitDstStageMask = nullptr,
             .commandBufferCount = 1,
             .pCommandBuffers = &commandBuffers[imageIndex],
             .signalSemaphoreCount = 0,
