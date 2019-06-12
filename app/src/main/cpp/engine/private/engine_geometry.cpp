@@ -48,7 +48,7 @@ std::ifstream& operator>>(std::ifstream &f, Vertex &v) {
     return f;
 }
 
-void Geometry::initFromFile(const Engine *engine, const char *filename) {
+void Geometry::initFromFile(const VkCommandBuffer &commandBuffer, const char *filename) {
     std::vector<Vertex> vertices;
     std::vector<uint16_t> indices;
 
@@ -71,8 +71,8 @@ void Geometry::initFromFile(const Engine *engine, const char *filename) {
 
     f.close();
 
+    /* GPU-side commands */
     VkDeviceSize bufferSize;
-    VkCommandBuffer commandBuffer = engine->beginSingleTimeCommands();
 
     bufferSize = sizeof(Vertex) * vertices.size();
     engine->createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT |
@@ -84,8 +84,6 @@ void Geometry::initFromFile(const Engine *engine, const char *filename) {
     engine->createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer, indexBufferMemory);
     vkCmdUpdateBuffer(commandBuffer, indexBuffer, 0, bufferSize, indices.data());
-
-    engine->endSingleTimeCommands(commandBuffer);
 }
 
 void Geometry::destroy(const Engine *engine) {

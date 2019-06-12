@@ -55,7 +55,7 @@ public:
     uint32_t nVertices;
     uint32_t nIndices;
 
-    void initFromFile(const Engine *engine, const char *filename);
+    void initFromFile(const VkCommandBuffer &commandBuffer, const char *filename);
     void destroy(const Engine *engine);
 };
 
@@ -197,8 +197,8 @@ private:
 
     void recordCmdBuffers();
 
-    VkCommandBuffer beginSingleTimeCommands() const;
-    void endSingleTimeCommands(VkCommandBuffer commandBuffer) const;
+    VkCommandBuffer beginOneTimeSubmitCommands() const;
+    void endOneTimeSubmitCommandsSyncWithFence(VkCommandBuffer commandBuffer) const;
 
     /* engine_physics.cpp */
     void updateUniformBuffer();

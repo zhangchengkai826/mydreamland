@@ -52,7 +52,7 @@ void Engine::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
 }
 
 void Engine::copyBuffer(VkBuffer srcBuffer, VkBuffer destBuffer, VkDeviceSize size) const {
-    VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+    VkCommandBuffer commandBuffer = beginOneTimeSubmitCommands();
 
     VkBufferCopy bufferCopy{
         .srcOffset = 0,
@@ -61,5 +61,5 @@ void Engine::copyBuffer(VkBuffer srcBuffer, VkBuffer destBuffer, VkDeviceSize si
     };
     vkCmdCopyBuffer(commandBuffer, srcBuffer, destBuffer, 1, &bufferCopy);
 
-    endSingleTimeCommands(commandBuffer);
+    endOneTimeSubmitCommandsSyncWithFence(commandBuffer);
 }

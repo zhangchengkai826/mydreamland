@@ -479,7 +479,7 @@ void Engine::createSyncObjs() {
 
 
 void Engine::createUniformBuffers() {
-    VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+    VkCommandBuffer commandBuffer = beginOneTimeSubmitCommands();
 
     VkDeviceSize bufferSize = sizeof(UniformBuffer);
     UniformBuffer ubo{
@@ -504,12 +504,12 @@ void Engine::createUniformBuffers() {
 
     vkCmdUpdateBuffer(commandBuffer, uniformBuffer, 0, bufferSize, &ubo);
 
-    endSingleTimeCommands(commandBuffer);
+    endOneTimeSubmitCommandsSyncWithFence(commandBuffer);
 }
 
 
 
-VkCommandBuffer Engine::beginSingleTimeCommands() const {
+VkCommandBuffer Engine::beginOneTimeSubmitCommands() const {
     VkCommandBufferAllocateInfo allocateInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
             .pNext = nullptr,
@@ -530,30 +530,46 @@ VkCommandBuffer Engine::beginSingleTimeCommands() const {
     return commandBuffer;
 }
 
-void Engine::endSingleTimeCommands(VkCommandBuffer commandBuffer) const {
+void Engine::endOneTimeSubmitCommandsSyncWithFence(VkCommandBuffer commandBuffer) const {
     vkEndCommandBuffer(commandBuffer);
 
     VkSubmitInfo submitInfo{
             .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+            .pNext = nullptr,
             .commandBufferCount = 1,
             .pCommandBuffers = &commandBuffer,
-            .pNext = nullptr,
-            .pWaitSemaphores = nullptr,
             .waitSemaphoreCount = 0,
-            .pSignalSemaphores = nullptr,
-            .signalSemaphoreCount = 0,
+            .pWaitSemaphores = nullptr,
             .pWaitDstStageMask = nullptr,
+            .signalSemaphoreCount = 0,
+            .pSignalSemaphores = nullptr,
     };
-    vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(graphicsQueue);
+
+    VkFence fence;
+    VkFenceCreateInfo fenceCreateInfo{
+        .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = 0,
+    };
+    vkCreateFence(vkDevice, &fenceCreateInfo, nullptr, &fence);
+
+    vkQueueSubmit(graphicsQueue, 1, &submitInfo, fence);
+    /* fence signal & wait will make all memory access available & visible */
+    vkWaitForFences(vkDevice, 1, &fence, VK_TRUE, std::numeric_limits<uint64_t>::max());
+
+    vkDestroyFence(vkDevice, fence, nullptr);
     vkFreeCommandBuffers(vkDevice, commandPool, 1, &commandBuffer);
 }
 
 void Engine::loadResources() {
-    geometry.initFromFile(this,
+    VkCommandBuffer commandBuffer = beginOneTimeSubmitCommands();
+
+    geometry.initFromFile(commandBuffer,
                           "/storage/emulated/0/Documents/mydreamland/geometry/vertices.dat");
     texture.initFromFile(this, "/storage/emulated/0/Documents/mydreamland/texture/texture.jpg");
     material.init(this, &texture);
+
+    endOneTimeSubmitCommandsSyncWithFence(commandBuffer);
 }
 
 void Engine::destroyResources() {

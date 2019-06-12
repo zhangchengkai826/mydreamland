@@ -81,7 +81,7 @@ void Texture::initFromFile(const Engine *engine, const char *fileName) {
                 VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                 image, imageMemory);
 
-    VkCommandBuffer commandBuffer = engine->beginSingleTimeCommands();
+    VkCommandBuffer commandBuffer = engine->beginOneTimeSubmitCommands();
 
     engine->transitionImageLayout(commandBuffer, image, VK_IMAGE_ASPECT_COLOR_BIT,
                           VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -92,7 +92,7 @@ void Texture::initFromFile(const Engine *engine, const char *fileName) {
                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
 
-    engine->endSingleTimeCommands(commandBuffer);
+    engine->endOneTimeSubmitCommandsSyncWithFence(commandBuffer);
 
     vkDestroyBuffer(engine->vkDevice, stagingBuffer, nullptr);
     vkFreeMemory(engine->vkDevice, stagingBufferMemory, nullptr);
