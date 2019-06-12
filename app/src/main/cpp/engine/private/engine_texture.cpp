@@ -96,7 +96,8 @@ void Texture::initFromFile(const Engine *engine, const VkCommandBuffer &commandB
                                   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1,
                                   VK_PIPELINE_STAGE_TRANSFER_BIT,
                                   VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-                                  VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT);
+                                  VK_ACCESS_TRANSFER_WRITE_BIT, 0);
+    /* vkQueueSubmit fence signal operation will make all writes available */
 
     vkDestroyBuffer(engine->vkDevice, stagingBuffer, nullptr);
     vkFreeMemory(engine->vkDevice, stagingBufferMemory, nullptr);

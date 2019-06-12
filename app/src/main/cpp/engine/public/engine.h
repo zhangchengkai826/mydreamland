@@ -74,7 +74,7 @@ public:
 
 class Material {
 public:
-    VkDescriptorSet descriptorSet;
+    std::vector<VkDescriptorSet> descriptorSets;
     VkPipeline graphicsPipeline;
     VkPipelineLayout graphicsPipelineLayout;
 

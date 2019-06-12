@@ -64,7 +64,7 @@ void Engine::destroy() {
     }
     vkDestroyRenderPass(vkDevice, renderPass, nullptr);
 
-    for(int i = 0; i < NUM_IMAGES_IN_SWAPCHAIN; i++) {
+    for(int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         vkDestroyImageView(vkDevice, depthStencilImageViews[i], nullptr);
         vkDestroyImage(vkDevice, depthStencilImages[i], nullptr);
         vkFreeMemory(vkDevice, depthStencilImageMemorys[i], nullptr);

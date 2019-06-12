@@ -50,9 +50,9 @@ void Material::createDescriptorSetLayout(const Engine *engine) {
 
 void Material::createDescriptorPool(const Engine *engine) {
     std::array<VkDescriptorPoolSize, 2> poolSizes = {{
-         {.descriptorCount = 1,
+         {.descriptorCount = Engine::MAX_FRAMES_IN_FLIGHT,
                  .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,},
-         {.descriptorCount = 1,
+         {.descriptorCount = Engine::MAX_FRAMES_IN_FLIGHT,
                  .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,},
     }};
     VkDescriptorPoolCreateInfo createInfo{
@@ -61,23 +61,24 @@ void Material::createDescriptorPool(const Engine *engine) {
             .flags = 0,
             .poolSizeCount = static_cast<uint32_t>(poolSizes.size()),
             .pPoolSizes = poolSizes.data(),
-            .maxSets = 1,
+            .maxSets = Engine::MAX_FRAMES_IN_FLIGHT,
     };
 
     vkCreateDescriptorPool(engine->vkDevice, &createInfo, nullptr, &descriptorPool);
 }
 
 void Material::createDescriptorSets(const Engine *engine, const Texture *texture) {
+    VkDescriptorSetLayout layout[] = {descriptorSetLayout, descriptorSetLayout};
     VkDescriptorSetAllocateInfo allocateInfo{
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
             .pNext = nullptr,
             .descriptorPool = descriptorPool,
-            .descriptorSetCount = 1,
-            .pSetLayouts = &descriptorSetLayout,
+            .descriptorSetCount = Engine::MAX_FRAMES_IN_FLIGHT,
+            .pSetLayouts = layout,
     };
-    vkAllocateDescriptorSets(engine->vkDevice, &allocateInfo, &descriptorSet);
+    vkAllocateDescriptorSets(engine->vkDevice, &allocateInfo, descriptorSets.data());
 
-    for(size_t i = 0; i < 1; i++) {
+    for(size_t i = 0; i < Engine::MAX_FRAMES_IN_FLIGHT; i++) {
         VkDescriptorBufferInfo bufferInfo{
                 .buffer = engine->uniformBuffer,
                 .offset = 0,
@@ -93,7 +94,7 @@ void Material::createDescriptorSets(const Engine *engine, const Texture *texture
            {
                .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                .pNext = nullptr,
-               .dstSet = descriptorSet,
+               .dstSet = descriptorSets,
                .dstBinding = 0,
                .dstArrayElement = 0,
                .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -105,7 +106,7 @@ void Material::createDescriptorSets(const Engine *engine, const Texture *texture
            {
                .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                .pNext = nullptr,
-               .dstSet = descriptorSet,
+               .dstSet = descriptorSets,
                .dstBinding = 1,
                .dstArrayElement = 0,
                .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
