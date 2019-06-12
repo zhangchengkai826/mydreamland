@@ -63,9 +63,13 @@ void Engine::destroy() {
         vkDestroyFramebuffer(vkDevice, framebuffer, nullptr);
     }
     vkDestroyRenderPass(vkDevice, renderPass, nullptr);
-    vkDestroyImageView(vkDevice, depthStencilImageView, nullptr);
-    vkDestroyImage(vkDevice, depthStencilImage, nullptr);
-    vkFreeMemory(vkDevice, depthStencilImageMemory, nullptr);
+
+    for(int i = 0; i < NUM_IMAGES_IN_SWAPCHAIN; i++) {
+        vkDestroyImageView(vkDevice, depthStencilImageViews[i], nullptr);
+        vkDestroyImage(vkDevice, depthStencilImages[i], nullptr);
+        vkFreeMemory(vkDevice, depthStencilImageMemorys[i], nullptr);
+    }
+
     for(auto imageView: swapChainImageViews) {
         vkDestroyImageView(vkDevice, imageView, nullptr);
     }

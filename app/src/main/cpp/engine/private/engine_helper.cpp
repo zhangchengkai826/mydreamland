@@ -342,14 +342,19 @@ void Engine::createRenderPass() {
 }
 
 void Engine::createDepthStencilResources() {
-    createImage(physicalDeviceSurfaceCapabilities.currentExtent.width,
-                physicalDeviceSurfaceCapabilities.currentExtent.height, 1,
-                VK_FORMAT_D24_UNORM_S8_UINT, VK_IMAGE_TILING_OPTIMAL,
-                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                depthStencilImage, depthStencilImageMemory);
-    depthStencilImageView = createImageView(depthStencilImage, VK_FORMAT_D24_UNORM_S8_UINT,
-                                            VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
-                                            1);
+    depthStencilImageMemorys.resize(NUM_IMAGES_IN_SWAPCHAIN);
+    depthStencilImages.resize(NUM_IMAGES_IN_SWAPCHAIN);
+    depthStencilImageViews.resize(NUM_IMAGES_IN_SWAPCHAIN);
+    for(int i = 0; i < NUM_IMAGES_IN_SWAPCHAIN; i++) {
+        createImage(physicalDeviceSurfaceCapabilities.currentExtent.width,
+                    physicalDeviceSurfaceCapabilities.currentExtent.height, 1,
+                    VK_FORMAT_D24_UNORM_S8_UINT, VK_IMAGE_TILING_OPTIMAL,
+                    VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                    depthStencilImages[i], depthStencilImageMemorys[i]);
+        depthStencilImageViews[i] = createImageView(depthStencilImages[i], VK_FORMAT_D24_UNORM_S8_UINT,
+                                                VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
+                                                1);
+    }
 }
 
 void Engine::createFrameBuffers() {
@@ -357,7 +362,7 @@ void Engine::createFrameBuffers() {
     for(size_t i = 0; i < swapChainFrameBuffers.size(); i++) {
         std::array<VkImageView, 2> attachments = {
                 swapChainImageViews[i],
-                depthStencilImageView
+                depthStencilImageViews[i],
         };
         VkFramebufferCreateInfo framebufferCreateInfo{
                 .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,

@@ -147,9 +147,9 @@ private:
     VkSwapchainKHR vkSwapchain;
     std::vector<VkImage> swapChainImages;
     std::vector<VkImageView> swapChainImageViews;
-    VkImage depthStencilImage;
-    VkDeviceMemory depthStencilImageMemory;
-    VkImageView depthStencilImageView;
+    std::vector<VkImage> depthStencilImages;
+    std::vector<VkDeviceMemory> depthStencilImageMemorys;
+    std::vector<VkImageView> depthStencilImageViews;
     VkRenderPass renderPass;
     std::vector<VkFramebuffer> swapChainFrameBuffers;
 
