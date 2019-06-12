@@ -303,13 +303,14 @@ void Engine::createRenderPass() {
             .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
     };
 
-    /* WAR data hazard, only needs execution dependency */
+    /* WAR data hazard, only needs execution dependency (presentation <- layout transition) */
     VkSubpassDependency dependencyExternalTo0{
         .srcSubpass = VK_SUBPASS_EXTERNAL,
         .dstSubpass = 0,
         .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
         .srcAccessMask = 0,
-        .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        /* sub-pass guarantees execution dependency (layout transition <- use of attachment) */
+        .dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
         .dstAccessMask = 0,
         .dependencyFlags = 0,
     };
