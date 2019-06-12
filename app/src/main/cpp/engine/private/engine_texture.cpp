@@ -11,6 +11,8 @@ void Engine::createImage(uint32_t width, uint32_t height, uint32_t mipLevels, Vk
                          VkDeviceMemory &imageMemory) const {
     VkImageCreateInfo imageCreateInfo{
             .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = 0,
             .imageType = VK_IMAGE_TYPE_2D,
             .extent.width = width,
             .extent.height = height,
@@ -22,11 +24,9 @@ void Engine::createImage(uint32_t width, uint32_t height, uint32_t mipLevels, Vk
             .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
             .usage = usage,
             .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-            .samples = VK_SAMPLE_COUNT_1_BIT,
-            .flags = 0,
-            .pNext = nullptr,
             .queueFamilyIndexCount = 0,
             .pQueueFamilyIndices = nullptr,
+            .samples = VK_SAMPLE_COUNT_1_BIT,
     };
     vkCreateImage(vkDevice, &imageCreateInfo, nullptr, &image);
 
@@ -45,7 +45,8 @@ void Engine::createImage(uint32_t width, uint32_t height, uint32_t mipLevels, Vk
     vkBindImageMemory(vkDevice, image, imageMemory, 0);
 }
 
-void Texture::initFromFile(const Engine *engine, const char *fileName) {
+void Texture::initFromFile(const Engine *engine, const VkCommandBuffer &commandBuffer,
+                           const char *fileName) {
     FILE *f = fopen(fileName, "r");
     fseek(f, 0, SEEK_END);
     auto nBytes = static_cast<uint32_t>(ftell(f));
@@ -81,18 +82,21 @@ void Texture::initFromFile(const Engine *engine, const char *fileName) {
                 VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                 image, imageMemory);
 
-    VkCommandBuffer commandBuffer = engine->beginOneTimeSubmitCommands();
+    /* GPU-side commands */
 
+    /* vkQueueSubmit takes care of necessary memory domain & visibility operations */
     engine->transitionImageLayout(commandBuffer, image, VK_IMAGE_ASPECT_COLOR_BIT,
-                          VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                          1);
+                                  VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                  1, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                                  VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0);
     engine->copyBufferToImage(commandBuffer, stagingBuffer, image, static_cast<uint32_t>(texWidth),
                       static_cast<uint32_t>(texHeight));
     engine->transitionImageLayout(commandBuffer, image, VK_IMAGE_ASPECT_COLOR_BIT,
-                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
-
-    engine->endOneTimeSubmitCommandsSyncWithFence(commandBuffer);
+                                  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1,
+                                  VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                  VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                                  VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT);
 
     vkDestroyBuffer(engine->vkDevice, stagingBuffer, nullptr);
     vkFreeMemory(engine->vkDevice, stagingBufferMemory, nullptr);
@@ -125,49 +129,29 @@ void Texture::initFromFile(const Engine *engine, const char *fileName) {
 
 void Engine::transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image,
                                    VkImageAspectFlags aspectFlags, VkImageLayout oldLayout,
-                                   VkImageLayout newLayout, uint32_t mipLevels) const {
+                                   VkImageLayout newLayout, uint32_t mipLevels,
+                                   VkPipelineStageFlags srcStageMask,
+                                   VkPipelineStageFlags dstStageMask, VkAccessFlags srcAccessMask,
+                                   VkAccessFlags dstAccessMask) const {
     VkImageMemoryBarrier barrier{
         .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+        .pNext = nullptr,
+        .image = image,
         .oldLayout = oldLayout,
         .newLayout = newLayout,
         .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
         .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-        .pNext = nullptr,
-        .image = image,
         .subresourceRange.aspectMask = aspectFlags,
         .subresourceRange.layerCount = 1,
         .subresourceRange.baseArrayLayer = 0,
         .subresourceRange.levelCount = mipLevels,
         .subresourceRange.baseMipLevel = 0,
-        .srcAccessMask = 0,
-        .dstAccessMask = 0,
+        .srcAccessMask = srcAccessMask,
+        .dstAccessMask = dstAccessMask,
     };
 
-    VkPipelineStageFlags srcStage, dstStage;
-    if(oldLayout == VK_IMAGE_LAYOUT_UNDEFINED &&
-       newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-        barrier.srcAccessMask = 0,
-        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        dstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-    } else if(oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL &&
-        newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-        srcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-        dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-    }  else if(oldLayout == VK_IMAGE_LAYOUT_UNDEFINED &&
-        newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
-        barrier.srcAccessMask = 0;
-        barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-        srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        dstStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-    } else {
-        throw std::runtime_error("Engine::transitionImageLayout: unsupported layout transition!");
-    }
-
-    vkCmdPipelineBarrier(commandBuffer, srcStage, dstStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+    vkCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, 0, 0, nullptr, 0, nullptr,
+            1, &barrier);
 }
 
 void Texture::destroy(const Engine *engine) {

@@ -55,7 +55,8 @@ public:
     uint32_t nVertices;
     uint32_t nIndices;
 
-    void initFromFile(const VkCommandBuffer &commandBuffer, const char *filename);
+    void initFromFile(const Engine *engine, const VkCommandBuffer &commandBuffer,
+                      const char *filename);
     void destroy(const Engine *engine);
 };
 
@@ -66,7 +67,8 @@ public:
     VkImageView imageView;
     VkSampler sampler;
 
-    void initFromFile(const Engine *engine, const char *fileName);
+    void initFromFile(const Engine *engine, const VkCommandBuffer &commandBuffer,
+                      const char *fileName);
     void destroy(const Engine *engine);
 };
 
@@ -211,7 +213,10 @@ private:
                      VkDeviceMemory &imageMemory) const;
     void transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image,
                                VkImageAspectFlags aspectFlags, VkImageLayout oldLayout,
-                               VkImageLayout newLayout, uint32_t mipLevels) const;
+                               VkImageLayout newLayout, uint32_t mipLevels,
+                               VkPipelineStageFlags srcStageMask,
+                               VkPipelineStageFlags dstStageMask, VkAccessFlags srcAccessMask,
+                               VkAccessFlags dstAccessMask) const;
     void copyBufferToImage(VkCommandBuffer commandBuffer,
             VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) const;
     VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags,

@@ -48,7 +48,8 @@ std::ifstream& operator>>(std::ifstream &f, Vertex &v) {
     return f;
 }
 
-void Geometry::initFromFile(const VkCommandBuffer &commandBuffer, const char *filename) {
+void Geometry::initFromFile(const Engine *engine, const VkCommandBuffer &commandBuffer,
+                            const char *filename) {
     std::vector<Vertex> vertices;
     std::vector<uint16_t> indices;
 

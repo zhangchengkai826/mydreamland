@@ -564,9 +564,10 @@ void Engine::endOneTimeSubmitCommandsSyncWithFence(VkCommandBuffer commandBuffer
 void Engine::loadResources() {
     VkCommandBuffer commandBuffer = beginOneTimeSubmitCommands();
 
-    geometry.initFromFile(commandBuffer,
+    geometry.initFromFile(this, commandBuffer,
                           "/storage/emulated/0/Documents/mydreamland/geometry/vertices.dat");
-    texture.initFromFile(this, "/storage/emulated/0/Documents/mydreamland/texture/texture.jpg");
+    texture.initFromFile(this, <#initializer#>,
+                         "/storage/emulated/0/Documents/mydreamland/texture/texture.jpg", 0);
     material.init(this, &texture);
 
     endOneTimeSubmitCommandsSyncWithFence(commandBuffer);
