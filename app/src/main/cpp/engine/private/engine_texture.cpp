@@ -8,7 +8,7 @@
 void Engine::createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkFormat format,
                          VkImageTiling tiling, VkImageUsageFlags usage,
                          VkMemoryPropertyFlags propertyFlags, VkImage &image,
-                         VkDeviceMemory &imageMemory) const {
+                         VkDeviceMemory &imageMemory) {
     VkImageCreateInfo imageCreateInfo{
             .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
             .pNext = nullptr,
@@ -45,8 +45,8 @@ void Engine::createImage(uint32_t width, uint32_t height, uint32_t mipLevels, Vk
     vkBindImageMemory(vkDevice, image, imageMemory, 0);
 }
 
-void Texture::initFromFile(const Engine *engine, const VkCommandBuffer &commandBuffer,
-                           const char *fileName) {
+void Texture::initFromFile(Engine *engine, VkCommandBuffer commandBuffer, VkBuffer &stagingBuffer,
+                           VkDeviceMemory &stagingBufferMemory, const char *fileName) {
     FILE *f = fopen(fileName, "r");
     fseek(f, 0, SEEK_END);
     auto nBytes = static_cast<uint32_t>(ftell(f));
@@ -64,8 +64,6 @@ void Texture::initFromFile(const Engine *engine, const VkCommandBuffer &commandB
         throw std::runtime_error("Engine::createTextureImage failed!");
     }
 
-    VkBuffer stagingBuffer;
-    VkDeviceMemory stagingBufferMemory;
     engine->createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
             stagingBuffer, stagingBufferMemory);
@@ -99,9 +97,6 @@ void Texture::initFromFile(const Engine *engine, const VkCommandBuffer &commandB
                                   VK_ACCESS_TRANSFER_WRITE_BIT, 0);
     /* vkQueueSubmit fence signal operation will make all writes available */
 
-    vkDestroyBuffer(engine->vkDevice, stagingBuffer, nullptr);
-    vkFreeMemory(engine->vkDevice, stagingBufferMemory, nullptr);
-
     imageView = engine->createImageView(image, VK_FORMAT_R8G8B8A8_UNORM,
                                        VK_IMAGE_ASPECT_COLOR_BIT, 1);
 
@@ -133,7 +128,7 @@ void Engine::transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image,
                                    VkImageLayout newLayout, uint32_t mipLevels,
                                    VkPipelineStageFlags srcStageMask,
                                    VkPipelineStageFlags dstStageMask, VkAccessFlags srcAccessMask,
-                                   VkAccessFlags dstAccessMask) const {
+                                   VkAccessFlags dstAccessMask) {
     VkImageMemoryBarrier barrier{
         .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
         .pNext = nullptr,
@@ -155,7 +150,7 @@ void Engine::transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image,
             1, &barrier);
 }
 
-void Texture::destroy(const Engine *engine) {
+void Texture::destroy(Engine *engine) {
     vkDestroySampler(engine->vkDevice, sampler, nullptr);
     vkDestroyImageView(engine->vkDevice, imageView, nullptr);
     vkDestroyImage(engine->vkDevice, image, nullptr);
@@ -163,7 +158,7 @@ void Texture::destroy(const Engine *engine) {
 }
 
 void Engine::copyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, VkImage image,
-        uint32_t width, uint32_t height) const {
+        uint32_t width, uint32_t height) {
     VkBufferImageCopy bufferImageCopy{
         .bufferOffset = 0,
         .bufferRowLength = 0,
@@ -180,7 +175,7 @@ void Engine::copyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, V
 }
 
 VkImageView Engine::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags,
-        uint32_t mipLevels) const {
+        uint32_t mipLevels) {
     VkImageViewCreateInfo imgViewCreateInfo {
             .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
             .image = image,

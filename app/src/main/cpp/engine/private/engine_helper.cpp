@@ -511,7 +511,7 @@ void Engine::createUniformBuffers() {
 
 
 
-VkCommandBuffer Engine::beginOneTimeSubmitCommands() const {
+VkCommandBuffer Engine::beginOneTimeSubmitCommands() {
     VkCommandBufferAllocateInfo allocateInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
             .pNext = nullptr,
@@ -532,7 +532,7 @@ VkCommandBuffer Engine::beginOneTimeSubmitCommands() const {
     return commandBuffer;
 }
 
-void Engine::endOneTimeSubmitCommandsSyncWithFence(VkCommandBuffer commandBuffer) const {
+void Engine::endOneTimeSubmitCommandsSyncWithFence(VkCommandBuffer commandBuffer) {
     vkEndCommandBuffer(commandBuffer);
 
     VkSubmitInfo submitInfo{
@@ -568,11 +568,18 @@ void Engine::loadResources() {
 
     geometry.initFromFile(this, commandBuffer,
             "/storage/emulated/0/Documents/mydreamland/geometry/vertices.dat");
-    texture.initFromFile(this, commandBuffer,
-            "/storage/emulated/0/Documents/mydreamland/texture/texture.jpg");
+
+    VkBuffer stagingBuffer = VK_NULL_HANDLE;
+    VkDeviceMemory stagingBufferMemory = VK_NULL_HANDLE;
+    texture.initFromFile(this, commandBuffer, stagingBuffer, stagingBufferMemory,
+                         "/storage/emulated/0/Documents/mydreamland/texture/texture.jpg");
+
     material.init(this, &texture);
 
     endOneTimeSubmitCommandsSyncWithFence(commandBuffer);
+
+    vkDestroyBuffer(vkDevice, stagingBuffer, nullptr);
+    vkFreeMemory(vkDevice, stagingBufferMemory, nullptr);
 }
 
 void Engine::destroyResources() {

@@ -6,7 +6,7 @@
 
 uint32_t Engine::findOptimalMemoryTypeIndexSupportSpecifiedPropertyFlags(
         uint32_t targetMemoryTypeBits,
-        VkMemoryPropertyFlags targetMemoryPropertyFlags) const {
+        VkMemoryPropertyFlags targetMemoryPropertyFlags) {
     VkPhysicalDeviceMemoryProperties memoryProperties;
     vkGetPhysicalDeviceMemoryProperties(vkPhysicalDevice, &memoryProperties);
     for(uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++) {
@@ -22,7 +22,7 @@ uint32_t Engine::findOptimalMemoryTypeIndexSupportSpecifiedPropertyFlags(
 
 void Engine::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
                   VkMemoryPropertyFlags propertyFlags, VkBuffer &buffer,
-                  VkDeviceMemory &bufferMemory) const {
+                  VkDeviceMemory &bufferMemory) {
     VkBufferCreateInfo bufferCreateInfo{
             .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
             .pNext = nullptr,
@@ -51,7 +51,7 @@ void Engine::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
     vkBindBufferMemory(vkDevice, buffer, bufferMemory, 0);
 }
 
-void Engine::copyBuffer(VkBuffer srcBuffer, VkBuffer destBuffer, VkDeviceSize size) const {
+void Engine::copyBuffer(VkBuffer srcBuffer, VkBuffer destBuffer, VkDeviceSize size) {
     VkCommandBuffer commandBuffer = beginOneTimeSubmitCommands();
 
     VkBufferCopy bufferCopy{

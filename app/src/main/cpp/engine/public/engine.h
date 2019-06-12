@@ -55,9 +55,9 @@ public:
     uint32_t nVertices;
     uint32_t nIndices;
 
-    void initFromFile(const Engine *engine, const VkCommandBuffer &commandBuffer,
+    void initFromFile(Engine *engine, VkCommandBuffer commandBuffer,
                       const char *filename);
-    void destroy(const Engine *engine);
+    void destroy(Engine *engine);
 };
 
 class Texture {
@@ -67,9 +67,9 @@ public:
     VkImageView imageView;
     VkSampler sampler;
 
-    void initFromFile(const Engine *engine, const VkCommandBuffer &commandBuffer,
-                      const char *fileName);
-    void destroy(const Engine *engine);
+    void initFromFile(Engine *engine, VkCommandBuffer commandBuffer, VkBuffer &stagingBuffer,
+                      VkDeviceMemory &stagingBufferMemory, const char *fileName);
+    void destroy(Engine *engine);
 };
 
 class Material {
@@ -78,20 +78,20 @@ public:
     VkPipeline graphicsPipeline;
     VkPipelineLayout graphicsPipelineLayout;
 
-    void init(const Engine *engine, const Texture *texture);
+    void init(Engine *engine, Texture *texture);
     void destroy(Engine *engine);
 
 private:
     VkDescriptorSetLayout descriptorSetLayout;
     VkDescriptorPool descriptorPool;
 
-    VkShaderModule createShaderModule(const Engine *engine, const char *fileName);
+    VkShaderModule createShaderModule(Engine *engine, const char *fileName);
 
-    void createDescriptorSetLayout(const Engine *engine);
-    void createDescriptorPool(const Engine *engine);
-    void createDescriptorSets(const Engine *engine, const Texture *texture);
-    void createGraphicsPipelineLayout(const Engine *engine);
-    void createGraphicsPipeline(const Engine *engine);
+    void createDescriptorSetLayout(Engine *engine);
+    void createDescriptorPool(Engine *engine);
+    void createDescriptorSets(Engine *engine, Texture *texture);
+    void createGraphicsPipelineLayout(Engine *engine);
+    void createGraphicsPipeline(Engine *engine);
 };
 
 struct UniformBuffer {
@@ -199,8 +199,8 @@ private:
 
     void recordCmdBuffers();
 
-    VkCommandBuffer beginOneTimeSubmitCommands() const;
-    void endOneTimeSubmitCommandsSyncWithFence(VkCommandBuffer commandBuffer) const;
+    VkCommandBuffer beginOneTimeSubmitCommands();
+    void endOneTimeSubmitCommandsSyncWithFence(VkCommandBuffer commandBuffer);
 
     /* engine_physics.cpp */
     void updateUniformBuffer();
@@ -210,25 +210,24 @@ private:
     void createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkFormat format,
                      VkImageTiling tiling, VkImageUsageFlags usage,
                      VkMemoryPropertyFlags propertyFlags, VkImage &image,
-                     VkDeviceMemory &imageMemory) const;
+                     VkDeviceMemory &imageMemory);
     void transitionImageLayout(VkCommandBuffer commandBuffer, VkImage image,
                                VkImageAspectFlags aspectFlags, VkImageLayout oldLayout,
                                VkImageLayout newLayout, uint32_t mipLevels,
                                VkPipelineStageFlags srcStageMask,
                                VkPipelineStageFlags dstStageMask, VkAccessFlags srcAccessMask,
-                               VkAccessFlags dstAccessMask) const;
+                               VkAccessFlags dstAccessMask);
     void copyBufferToImage(VkCommandBuffer commandBuffer,
-            VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) const;
+            VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
     VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags,
-                                uint32_t mipLevels) const;
+                                uint32_t mipLevels);
 
     /* engine_buffer_helper.cpp */
     uint32_t findOptimalMemoryTypeIndexSupportSpecifiedPropertyFlags(uint32_t targetMemoryypeBits,
-            VkMemoryPropertyFlags targetMemoryPropertyFlags) const;
+            VkMemoryPropertyFlags targetMemoryPropertyFlags);
     void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
-            VkMemoryPropertyFlags propertyFlags, VkBuffer &buffer, VkDeviceMemory &bufferMemory)
-            const;
-    void copyBuffer(VkBuffer srcBuffer, VkBuffer destBuffer, VkDeviceSize size) const;
+            VkMemoryPropertyFlags propertyFlags, VkBuffer &buffer, VkDeviceMemory &bufferMemory);
+    void copyBuffer(VkBuffer srcBuffer, VkBuffer destBuffer, VkDeviceSize size);
 
     /* engine_debug_output.cpp */
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugReportCallback(

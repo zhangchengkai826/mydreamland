@@ -48,7 +48,7 @@ std::ifstream& operator>>(std::ifstream &f, Vertex &v) {
     return f;
 }
 
-void Geometry::initFromFile(const Engine *engine, const VkCommandBuffer &commandBuffer,
+void Geometry::initFromFile(Engine *engine, VkCommandBuffer commandBuffer,
                             const char *filename) {
     std::vector<Vertex> vertices;
     std::vector<uint16_t> indices;
@@ -87,7 +87,7 @@ void Geometry::initFromFile(const Engine *engine, const VkCommandBuffer &command
     vkCmdUpdateBuffer(commandBuffer, indexBuffer, 0, bufferSize, indices.data());
 }
 
-void Geometry::destroy(const Engine *engine) {
+void Geometry::destroy(Engine *engine) {
     vkDestroyBuffer(engine->vkDevice, indexBuffer, nullptr);
     vkFreeMemory(engine->vkDevice, indexBufferMemory, nullptr);
     vkDestroyBuffer(engine->vkDevice, vertexBuffer, nullptr);

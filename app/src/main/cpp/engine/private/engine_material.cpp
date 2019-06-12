@@ -4,7 +4,7 @@
 
 #include <engine.h>
 
-void Material::init(const Engine *engine, const Texture *texture) {
+void Material::init(Engine *engine, Texture *texture) {
     createDescriptorSetLayout(engine);
     createDescriptorPool(engine);
     createDescriptorSets(engine, texture);
@@ -19,7 +19,7 @@ void Material::destroy(Engine *engine) {
     vkDestroyDescriptorSetLayout(engine->vkDevice, descriptorSetLayout, nullptr);
 }
 
-void Material::createDescriptorSetLayout(const Engine *engine) {
+void Material::createDescriptorSetLayout(Engine *engine) {
     VkDescriptorSetLayoutBinding uniformLayoutBinding{
             .binding = 0,
             .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -48,7 +48,7 @@ void Material::createDescriptorSetLayout(const Engine *engine) {
             &descriptorSetLayout);
 }
 
-void Material::createDescriptorPool(const Engine *engine) {
+void Material::createDescriptorPool(Engine *engine) {
     std::array<VkDescriptorPoolSize, 2> poolSizes = {{
          {.descriptorCount = 1,
                  .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,},
@@ -67,7 +67,7 @@ void Material::createDescriptorPool(const Engine *engine) {
     vkCreateDescriptorPool(engine->vkDevice, &createInfo, nullptr, &descriptorPool);
 }
 
-void Material::createDescriptorSets(const Engine *engine, const Texture *texture) {
+void Material::createDescriptorSets(Engine *engine, Texture *texture) {
     VkDescriptorSetAllocateInfo allocateInfo{
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
             .pNext = nullptr,
@@ -118,7 +118,7 @@ void Material::createDescriptorSets(const Engine *engine, const Texture *texture
                            writeDescriptorSets.data(), 0, nullptr);
 }
 
-void Material::createGraphicsPipelineLayout(const Engine *engine) {
+void Material::createGraphicsPipelineLayout(Engine *engine) {
     VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
             .pNext = nullptr,
@@ -132,7 +132,7 @@ void Material::createGraphicsPipelineLayout(const Engine *engine) {
                            &graphicsPipelineLayout);
 }
 
-void Material::createGraphicsPipeline(const Engine *engine) {
+void Material::createGraphicsPipeline(Engine *engine) {
     VkShaderModule vertShaderModule = createShaderModule(engine, "shaders/shader.vert.spv");
     VkShaderModule fragShaderModule = createShaderModule(engine, "shaders/shader.frag.spv");
 
@@ -297,7 +297,7 @@ void Material::createGraphicsPipeline(const Engine *engine) {
 }
 
 
-VkShaderModule Material::createShaderModule(const Engine *engine, const char *fileName) {
+VkShaderModule Material::createShaderModule(Engine *engine, const char *fileName) {
     AAsset* shaderFile = AAssetManager_open(engine->activity->assetManager,
                                             fileName, AASSET_MODE_BUFFER);
     size_t shaderFileLen = AAsset_getLength(shaderFile);
