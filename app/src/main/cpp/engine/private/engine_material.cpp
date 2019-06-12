@@ -50,9 +50,9 @@ void Material::createDescriptorSetLayout(const Engine *engine) {
 
 void Material::createDescriptorPool(const Engine *engine) {
     std::array<VkDescriptorPoolSize, 2> poolSizes = {{
-         {.descriptorCount = Engine::MAX_FRAMES_IN_FLIGHT,
+         {.descriptorCount = 1,
                  .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,},
-         {.descriptorCount = Engine::MAX_FRAMES_IN_FLIGHT,
+         {.descriptorCount = 1,
                  .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,},
     }};
     VkDescriptorPoolCreateInfo createInfo{
@@ -61,64 +61,61 @@ void Material::createDescriptorPool(const Engine *engine) {
             .flags = 0,
             .poolSizeCount = static_cast<uint32_t>(poolSizes.size()),
             .pPoolSizes = poolSizes.data(),
-            .maxSets = Engine::MAX_FRAMES_IN_FLIGHT,
+            .maxSets = 1,
     };
 
     vkCreateDescriptorPool(engine->vkDevice, &createInfo, nullptr, &descriptorPool);
 }
 
 void Material::createDescriptorSets(const Engine *engine, const Texture *texture) {
-    VkDescriptorSetLayout layout[] = {descriptorSetLayout, descriptorSetLayout};
     VkDescriptorSetAllocateInfo allocateInfo{
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
             .pNext = nullptr,
             .descriptorPool = descriptorPool,
-            .descriptorSetCount = Engine::MAX_FRAMES_IN_FLIGHT,
-            .pSetLayouts = layout,
+            .descriptorSetCount = 1,
+            .pSetLayouts = &descriptorSetLayout,
     };
-    vkAllocateDescriptorSets(engine->vkDevice, &allocateInfo, descriptorSets.data());
+    vkAllocateDescriptorSets(engine->vkDevice, &allocateInfo, &descriptorSet);
 
-    for(size_t i = 0; i < Engine::MAX_FRAMES_IN_FLIGHT; i++) {
-        VkDescriptorBufferInfo bufferInfo{
-                .buffer = engine->uniformBuffer,
-                .offset = 0,
-                .range = sizeof(UniformBuffer),
-        };
-        VkDescriptorImageInfo imageInfo{
-                .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                .imageView = texture->imageView,
-                .sampler = texture->sampler,
-        };
+    VkDescriptorBufferInfo bufferInfo{
+            .buffer = engine->uniformBuffer,
+            .offset = 0,
+            .range = sizeof(UniformBuffer),
+    };
+    VkDescriptorImageInfo imageInfo{
+            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            .imageView = texture->imageView,
+            .sampler = texture->sampler,
+    };
 
-        std::array<VkWriteDescriptorSet, 2> writeDescriptorSets = {{
-           {
-               .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-               .pNext = nullptr,
-               .dstSet = descriptorSets,
-               .dstBinding = 0,
-               .dstArrayElement = 0,
-               .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-               .descriptorCount = 1,
-               .pBufferInfo = &bufferInfo,
-               .pImageInfo = nullptr,
-               .pTexelBufferView = nullptr,
-           },
-           {
-               .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-               .pNext = nullptr,
-               .dstSet = descriptorSets,
-               .dstBinding = 1,
-               .dstArrayElement = 0,
-               .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-               .descriptorCount = 1,
-               .pBufferInfo = nullptr,
-               .pImageInfo = &imageInfo,
-               .pTexelBufferView = nullptr,
-           },
-        }};
-        vkUpdateDescriptorSets(engine->vkDevice, static_cast<uint32_t>(writeDescriptorSets.size()),
-                               writeDescriptorSets.data(), 0, nullptr);
-    }
+    std::array<VkWriteDescriptorSet, 2> writeDescriptorSets = {{
+       {
+           .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+           .pNext = nullptr,
+           .dstSet = descriptorSet,
+           .dstBinding = 0,
+           .dstArrayElement = 0,
+           .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+           .descriptorCount = 1,
+           .pBufferInfo = &bufferInfo,
+           .pImageInfo = nullptr,
+           .pTexelBufferView = nullptr,
+       },
+       {
+           .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+           .pNext = nullptr,
+           .dstSet = descriptorSet,
+           .dstBinding = 1,
+           .dstArrayElement = 0,
+           .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+           .descriptorCount = 1,
+           .pBufferInfo = nullptr,
+           .pImageInfo = &imageInfo,
+           .pTexelBufferView = nullptr,
+       },
+    }};
+    vkUpdateDescriptorSets(engine->vkDevice, static_cast<uint32_t>(writeDescriptorSets.size()),
+                           writeDescriptorSets.data(), 0, nullptr);
 }
 
 void Material::createGraphicsPipelineLayout(const Engine *engine) {
@@ -142,19 +139,19 @@ void Material::createGraphicsPipeline(const Engine *engine) {
     VkPipelineShaderStageCreateInfo vertShaderStageInfo{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
             .pNext = nullptr,
+            .flags = 0,
             .stage = VK_SHADER_STAGE_VERTEX_BIT,
             .module = vertShaderModule,
             .pName = "main",
-            .flags = 0,
             .pSpecializationInfo = nullptr,
     };
     VkPipelineShaderStageCreateInfo fragShaderStageInfo{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
             .pNext = nullptr,
+            .flags = 0,
             .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
             .module = fragShaderModule,
             .pName = "main",
-            .flags = 0,
             .pSpecializationInfo = nullptr,
     };
     VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
@@ -212,7 +209,7 @@ void Material::createGraphicsPipeline(const Engine *engine) {
             .polygonMode = VK_POLYGON_MODE_FILL,
             .lineWidth = 1.0f,
             .cullMode = VK_CULL_MODE_BACK_BIT,
-            .frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE, //
+            .frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
             .depthBiasEnable = VK_FALSE,
             .depthBiasConstantFactor = 0.0f,
             .depthBiasClamp = 0.0f,

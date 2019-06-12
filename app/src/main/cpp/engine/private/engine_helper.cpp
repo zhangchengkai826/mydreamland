@@ -309,7 +309,9 @@ void Engine::createRenderPass() {
         .dstSubpass = 0,
         .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
         .srcAccessMask = 0,
-        /* sub-pass guarantees execution dependency (layout transition <- use of attachment) */
+        /* sub-pass guarantees execution dependency
+         * (layout transition <- sub-pass who needs that layout)
+         */
         .dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
         .dstAccessMask = 0,
         .dependencyFlags = 0,
@@ -343,10 +345,10 @@ void Engine::createRenderPass() {
 }
 
 void Engine::createDepthStencilResources() {
-    depthStencilImageMemorys.resize(MAX_FRAMES_IN_FLIGHT);
-    depthStencilImages.resize(MAX_FRAMES_IN_FLIGHT);
-    depthStencilImageViews.resize(MAX_FRAMES_IN_FLIGHT);
-    for(int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    depthStencilImageMemorys.resize(NUM_IMAGES_IN_SWAPCHAIN);
+    depthStencilImages.resize(NUM_IMAGES_IN_SWAPCHAIN);
+    depthStencilImageViews.resize(NUM_IMAGES_IN_SWAPCHAIN);
+    for(int i = 0; i < NUM_IMAGES_IN_SWAPCHAIN; i++) {
         createImage(physicalDeviceSurfaceCapabilities.currentExtent.width,
                     physicalDeviceSurfaceCapabilities.currentExtent.height, 1,
                     VK_FORMAT_D24_UNORM_S8_UINT, VK_IMAGE_TILING_OPTIMAL,
@@ -444,7 +446,7 @@ void Engine::recordCmdBuffers() {
         vkCmdBindIndexBuffer(commandBuffers[i], geometry.indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
         vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                material.graphicsPipelineLayout, 0, 1, &material.descriptorSets,
+                                material.graphicsPipelineLayout, 0, 1, &material.descriptorSet,
                                 0, nullptr);
 
         vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(geometry.nIndices), 1, 0, 0, 0);

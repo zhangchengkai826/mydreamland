@@ -74,7 +74,7 @@ public:
 
 class Material {
 public:
-    std::vector<VkDescriptorSet> descriptorSets;
+    VkDescriptorSet descriptorSet; /* read only, can be used simultaneously in multiple frames */
     VkPipeline graphicsPipeline;
     VkPipelineLayout graphicsPipelineLayout;
 
