@@ -17,6 +17,7 @@
 #include <fstream>
 #include <string>
 #include <map>
+#include <atomic>
 
 #include <android/native_activity.h>
 #include <android/log.h>
@@ -103,6 +104,7 @@ private:
 class Object3D {
 public:
     void init(Geometry *geo, Material *mat, glm::mat4 modelMat);
+
     Geometry *geo;
     Material *mat;
     glm::mat4 modelMat;
@@ -121,15 +123,12 @@ class Engine {
     friend class Texture;
     friend class Material;
 public:
-    pthread_mutex_t mutex;
+    /* render & physics threads both access them */
+    std::atomic_int *fpsFrameCounter;
 
-    /* vars need sync begin */
+    /* physics thread access them */
 
-    /* render & physics */
-    int fpsFrameCounter;
-
-    /* vars need sync end */
-
+    /* render thread access them */
     ANativeActivity *activity;
     ANativeWindow *window;
 

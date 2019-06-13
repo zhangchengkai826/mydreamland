@@ -26,11 +26,8 @@ static void *physicsLoop(void *arg) {
         };
         nanosleep(&tm, nullptr);
 
-        pthread_mutex_lock(&engine.mutex);
         __android_log_print(ANDROID_LOG_INFO, "main",
-                "fps: %d", engine.fpsFrameCounter);
-        engine.fpsFrameCounter = 0;
-        pthread_mutex_unlock(&engine.mutex);
+                "fps: %d", engine.fpsFrameCounter->exchange(0));
     }
     return nullptr;
 }
@@ -50,9 +47,7 @@ static void *renderLoop(void *arg) {
         if(engine.bAnimating) {
             engine.drawFrame();
 
-            pthread_mutex_lock(&engine.mutex);
-            engine.fpsFrameCounter++;
-            pthread_mutex_unlock(&engine.mutex);
+            engine.fpsFrameCounter->fetch_add(1);
         } else {
             timespec tm{
                 .tv_sec = 0,
@@ -73,6 +68,17 @@ static void ANativeActivity_onStop(ANativeActivity *activity) {
     __android_log_print(ANDROID_LOG_INFO, "main", "### ANativeActivity_onStop ###");
 }
 
+/* Here we assume after each onNativeWindowCreated call there will be exactly one
+ * onNativeWindowDestroyed call before the process gets killed by the os.
+ *
+ * Note if the process gets killed, cpp destructors may not be called, and smart pointers
+ * may failed to be auto-deleted. So every thing should be explicit.
+ *
+ * All global variables should be only treated as public data stores for all running threads.
+ * They should only use their default constructor, and their default constructor should do no-op.
+ * All members of a class who instantiates global variables should only use their
+ * default constructor, and their default constructor should do no-op.
+ */
 static void ANativeActivity_onNativeWindowCreated(ANativeActivity *activity,
         ANativeWindow *window) {
     __android_log_print(ANDROID_LOG_INFO, "main",
@@ -80,10 +86,9 @@ static void ANativeActivity_onNativeWindowCreated(ANativeActivity *activity,
 
     /* global initialize, only main thread exists */
 
-    pthread_mutex_init(&engine.mutex, nullptr);
     engine.activity = activity;
     engine.window = window;
-    engine.fpsFrameCounter = 0;
+    engine.fpsFrameCounter = new std::atomic_int(0);
     engine.bAnimating = true;
     engine.init();
 
@@ -120,7 +125,7 @@ static void ANativeActivity_onNativeWindowDestroyed(ANativeActivity *activity,
     /* global destroy, only main thread exists */
 
     engine.destroy();
-    pthread_mutex_destroy(&engine.mutex);
+    delete engine.fpsFrameCounter;
 
     /* global destroy end */
 }
