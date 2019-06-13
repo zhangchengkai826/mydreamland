@@ -28,6 +28,7 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/spline.hpp>
 
 #include <stb_image.h>
 
@@ -101,6 +102,41 @@ private:
     void createGraphicsPipeline(Engine *engine);
 };
 
+class AnimController {
+public:
+private:
+    float t; /* current t-axis value */
+    float tMax; /* t-axis value range: [0, tMax) */
+
+    /* 9 anim curves. (t-axis, v-axis)
+     *
+     * when animation is disabled for host Object3D, this controller is ignored completely.
+     *
+     * when animation is enabled,
+     * each curve's (t1, v1) always corresponds host Object3D's modelMat. (t0, v0) is solely for
+     * catmull-rom interpolation purpose.
+     * auto-replay.
+     * each curve use catmull-rom spline, so at-lease has 4 control points.
+     * if each curve has n points, t1 = 0, t(n-2) = tMax
+     * if ti <= t < t(i+1), use t(i-1), ti, t(i+1), t(i+2), t to calculate interpolated point.
+     */
+    std::vector<glm::vec2> posX;
+    std::vector<glm::vec2> posY;
+    std::vector<glm::vec2> posZ;
+
+    std::vector<glm::vec2> rotX;
+    std::vector<glm::vec2> rotY;
+    std::vector<glm::vec2> rotZ;
+
+    std::vector<glm::vec2> scaleX;
+    std::vector<glm::vec2> scaleY;
+    std::vector<glm::vec2> scaleZ;
+
+    glm::mat4 advance(float dt);
+
+    float interpolate(std::vector<glm::vec2> &curve);
+};
+
 class Object3D {
 public:
     void init(Geometry *geo, Material *mat, glm::mat4 modelMat);
@@ -108,6 +144,7 @@ public:
     Geometry *geo;
     Material *mat;
     glm::mat4 modelMat;
+    AnimController animController;
 
 private:
 };

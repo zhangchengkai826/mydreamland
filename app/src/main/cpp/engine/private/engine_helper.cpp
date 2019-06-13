@@ -635,3 +635,43 @@ void Object3D::init(Geometry *geo, Material *mat, glm::mat4 modelMat) {
     this->mat = mat;
     this->modelMat = modelMat;
 }
+
+float AnimController::interpolate(std::vector<glm::vec2> &curve) {
+    int i;
+    for(i = 1; i < curve.size()-3; i++) {
+        if(t >= curve[i].x && t < curve[i+1].x) {
+            break;
+        }
+    }
+    float s = (t - curve[i].x) / (curve[i-1].x - curve[i].x); /* 0 <= s < 1 */
+    return glm::catmullRom(curve[i-1], curve[i], curve[i+1], curve[i+2], s).y;
+}
+
+glm::mat4 AnimController::advance(float dt) {
+    t += dt;
+    if(t >= tMax) {
+        t = 0.0f;
+    }
+
+    glm::mat4 result(1.0f); /* identity */
+    glm::vec3 T, R, S;
+
+    T.x = interpolate(posX);
+    T.y = interpolate(posY);
+    T.z = interpolate(posZ);
+    R.x = interpolate(rotX);
+    R.y = interpolate(rotY);
+    R.z = interpolate(rotZ);
+    S.x = interpolate(scaleX);
+    S.y = interpolate(scaleY);
+    S.z = interpolate(scaleZ);
+
+    /* result = T * Rx * Ry * Rz * S */
+    glm::translate(result, T);
+    glm::rotate(result, R.x, glm::vec3(1, 0, 0));
+    glm::rotate(result, R.y, glm::vec3(0, 1, 0));
+    glm::rotate(result, R.z, glm::vec3(0, 0, 1));
+    glm::scale(result, S);
+
+    return result;
+}
