@@ -610,6 +610,11 @@ void Engine::loadResources() {
 
     Object3D obj3d;
     obj3d.init(&(*geometries)["plane.geo"], &(*materials)["internal/base.mat"]);
+    obj3d.animController.tMax = 3;
+    obj3d.animController.rotZ[0] = glm::vec2(-3, -900);
+    obj3d.animController.rotZ.push_back(glm::vec2(0, 0));
+    obj3d.animController.rotZ.push_back(glm::vec2(3, 0));
+    obj3d.animController.rotZ.push_back(glm::vec2(6, -900));
     object3ds->emplace("internal/plane.obj3d", obj3d);
 
     endOneTimeSubmitCommandsSyncWithFence(commandBuffer);
@@ -666,8 +671,8 @@ float AnimController::interpolate(std::vector<glm::vec2> &curve) {
         return curve[i-1].y;
     }
 
-    float s = (t - curve[i].x) / (curve[i-1].x - curve[i].x); /* 0 <= s < 1 */
-    return glm::catmullRom(curve[i-1], curve[i], curve[i+1], curve[i+2], s).y;
+    float s = (t - curve[i-1].x) / (curve[i].x - curve[i-1].x); /* 0 <= s < 1 */
+    return glm::catmullRom(curve[i-2], curve[i-1], curve[i], curve[i+1], s).y;
 }
 
 glm::mat4 AnimController::advance(float dt) {
@@ -690,11 +695,11 @@ glm::mat4 AnimController::advance(float dt) {
     S.z = interpolate(scaleZ);
 
     /* result = T * Rx * Ry * Rz * S */
-    glm::translate(result, T);
-    glm::rotate(result, R.x, glm::vec3(1, 0, 0));
-    glm::rotate(result, R.y, glm::vec3(0, 1, 0));
-    glm::rotate(result, R.z, glm::vec3(0, 0, 1));
-    glm::scale(result, S);
+    result = glm::translate(result, T);
+    result = glm::rotate(result, glm::radians(R.x), glm::vec3(1, 0, 0));
+    result = glm::rotate(result, glm::radians(R.y), glm::vec3(0, 1, 0));
+    result = glm::rotate(result, glm::radians(R.z), glm::vec3(0, 0, 1));
+    result = glm::scale(result, S);
 
     return result;
 }
