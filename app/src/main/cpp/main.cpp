@@ -10,6 +10,10 @@ static pthread_t renderLoopTID, physicsLoopTID;
 static pthread_mutex_t renderLoopShouldExit, physicsLoopShouldExit;
 
 static void *physicsLoop(void *arg) {
+    int rate = 24; /* unit: s^-1 */
+    float dt = 1.0f / rate;
+    long dt_nsec = static_cast<int>(dt * 1000000000);
+    int loopId = 0; /* 0 <= loopId < rate */
     while(true) {
         if(pthread_mutex_trylock(&physicsLoopShouldExit) == 0) {
             // lock succeed
@@ -21,13 +25,20 @@ static void *physicsLoop(void *arg) {
         __android_log_print(ANDROID_LOG_INFO, "main",
                             "### physicsLoop ###");
         timespec tm{
-                .tv_sec = 1,
-                .tv_nsec = 0,
+                .tv_sec = 0,
+                .tv_nsec = dt_nsec,
         };
         nanosleep(&tm, nullptr);
 
-        __android_log_print(ANDROID_LOG_INFO, "main",
-                "fps: %d", engine.fpsFrameCounter->exchange(0));
+        if(loopId == 0) {
+            __android_log_print(ANDROID_LOG_INFO, "main",
+                                "fps: %d", engine.fpsFrameCounter->exchange(0));
+        }
+
+        loopId++;
+        if(loopId >= rate) {
+            loopId = 0;
+        }
     }
     return nullptr;
 }
