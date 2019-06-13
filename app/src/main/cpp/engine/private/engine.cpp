@@ -12,8 +12,6 @@ void Engine::init() {
     depthStencilImageViews = new std::vector<VkImageView>();
     swapChainFrameBuffers = new std::vector<VkFramebuffer>();
 
-    frameCommandBuffers = new std::vector<VkCommandBuffer>();
-
     imageAvailableSemaphores = new std::vector<VkSemaphore>();
     renderFinishedSemaphores = new std::vector<VkSemaphore>();
     inFlightFrameFences = new std::vector<VkFence>();
@@ -59,7 +57,6 @@ void Engine::init() {
     createUniformBuffers();
 
     loadResources();
-    recordFrameCmdBuffers();
 }
 
 void Engine::destroy() {
@@ -120,8 +117,6 @@ void Engine::destroy() {
     delete renderFinishedSemaphores;
     delete imageAvailableSemaphores;
 
-    delete frameCommandBuffers;
-
     delete swapChainFrameBuffers;
     delete depthStencilImageViews;
     delete depthStencilImages;
@@ -140,6 +135,8 @@ void Engine::drawFrame() {
                           std::numeric_limits<uint64_t>::max(),
                           (*imageAvailableSemaphores)[currentFrame], VK_NULL_HANDLE, &imageIndex);
 
+    recordFrameCmdBuffers(imageIndex);
+
     VkSemaphore waitSemaphores[] = {(*imageAvailableSemaphores)[currentFrame]};
     VkSemaphore signalSemaphores[] = {(*renderFinishedSemaphores)[currentFrame]};
     VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
@@ -150,7 +147,7 @@ void Engine::drawFrame() {
             .pWaitSemaphores = waitSemaphores,
             .pWaitDstStageMask = waitStages,
             .commandBufferCount = 1,
-            .pCommandBuffers = &(*frameCommandBuffers)[imageIndex],
+            .pCommandBuffers = &frameCommandBuffers[currentFrame],
             .signalSemaphoreCount = 1,
             .pSignalSemaphores = signalSemaphores,
     };

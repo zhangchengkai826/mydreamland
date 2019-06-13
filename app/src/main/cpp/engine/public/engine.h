@@ -136,6 +136,7 @@ public:
 
     Geometry *geo;
     Material *mat;
+    glm::mat4 modelMat;
     AnimController animController;
 
 private:
@@ -201,7 +202,7 @@ private:
     std::vector<VkFramebuffer> *swapChainFrameBuffers;
 
     VkCommandPool commandPool;
-    std::vector<VkCommandBuffer> *frameCommandBuffers;
+    VkCommandBuffer frameCommandBuffers[MAX_FRAMES_IN_FLIGHT];
 
     std::vector<VkSemaphore> *imageAvailableSemaphores;
     std::vector<VkSemaphore> *renderFinishedSemaphores;
@@ -242,7 +243,7 @@ private:
 
     void createUniformBuffers();
 
-    void recordFrameCmdBuffers();
+    void recordFrameCmdBuffers(int imageIndex);
 
     VkCommandBuffer beginOneTimeSubmitCommands();
     void endOneTimeSubmitCommandsSyncWithFence(VkCommandBuffer commandBuffer);

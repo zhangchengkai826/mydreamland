@@ -386,76 +386,70 @@ void Engine::createFrameBuffers() {
 void Engine::createCmdPool() {
     VkCommandPoolCreateInfo commandPoolCreateInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-            .queueFamilyIndex = physicalDeviceGraphicsQueueFamilyIndex,
-            .flags = 0,
             .pNext = nullptr,
+            .flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+            .queueFamilyIndex = physicalDeviceGraphicsQueueFamilyIndex,
     };
     vkCreateCommandPool(vkDevice, &commandPoolCreateInfo, nullptr, &commandPool);
 }
 
-void Engine::allocFrameCmdBuffers() {
-    frameCommandBuffers->resize(NUM_IMAGES_IN_SWAPCHAIN);
-    VkCommandBufferAllocateInfo commandBufferAllocateInfo{
-            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+void Engine::recordFrameCmdBuffers(int imageIndex) {
+    VkCommandBufferBeginInfo beginInfo{
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
             .pNext = nullptr,
-            .commandPool = commandPool,
-            .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-            .commandBufferCount = static_cast<uint32_t>(frameCommandBuffers->size()),
+            .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+            .pInheritanceInfo = nullptr,
     };
-    vkAllocateCommandBuffers(vkDevice, &commandBufferAllocateInfo,
-                             frameCommandBuffers->data());
-}
+    /* implicitly reset command buffer */
+    vkBeginCommandBuffer(frameCommandBuffers[currentFrame], &beginInfo);
+    
+    
+    std::array<VkClearValue, 2> clearValues{{
+        {.color = {.float32 = {0.0f, 0.0f, 0.0f, 1.0f}}},
+        {.depthStencil = {.depth = 1.0f, .stencil = 0}},
+    }};
+    VkRenderPassBeginInfo renderPassBeginInfo{
+            .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+            .pNext = nullptr,
+            .renderPass = renderPass,
+            .framebuffer = (*swapChainFrameBuffers)[imageIndex],
+            .renderArea.offset = {0, 0},
+            .renderArea.extent = physicalDeviceSurfaceCapabilities.currentExtent,
+            .clearValueCount = static_cast<uint32_t>(clearValues.size()),
+            .pClearValues = clearValues.data(),
+    };
+    PFN_vkCmdBeginRenderPass vkCmdBeginRenderPass;
+    vkCmdBeginRenderPass = (PFN_vkCmdBeginRenderPass)vkGetInstanceProcAddr(
+            vkInstance, "vkCmdBeginRenderPass");
+    vkCmdBeginRenderPass(frameCommandBuffers[currentFrame], &renderPassBeginInfo,
+                         VK_SUBPASS_CONTENTS_INLINE);
 
-void Engine::recordFrameCmdBuffers() {
-    for(size_t i = 0; i < frameCommandBuffers->size(); i++) {
-        VkCommandBufferBeginInfo commandBufferBeginInfo{
-                .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-                .pNext = nullptr,
-                .flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT,
-                .pInheritanceInfo = nullptr,
-        };
-        vkBeginCommandBuffer((*frameCommandBuffers)[i], &commandBufferBeginInfo);
+    vkCmdBindPipeline(frameCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS,
+                      (*object3ds)["internal/plane.obj3d"].mat->graphicsPipeline);
 
-        std::array<VkClearValue, 2> clearValues{{
-            {.color = {.float32 = {0.0f, 0.0f, 0.0f, 1.0f}}},
-            {.depthStencil = {.depth = 1.0f, .stencil = 0}},
-        }};
-        VkRenderPassBeginInfo renderPassBeginInfo{
-                .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-                .pNext = nullptr,
-                .renderPass = renderPass,
-                .framebuffer = (*swapChainFrameBuffers)[i],
-                .renderArea.offset = {0, 0},
-                .renderArea.extent = physicalDeviceSurfaceCapabilities.currentExtent,
-                .clearValueCount = static_cast<uint32_t>(clearValues.size()),
-                .pClearValues = clearValues.data(),
-        };
-        PFN_vkCmdBeginRenderPass vkCmdBeginRenderPass;
-        vkCmdBeginRenderPass = (PFN_vkCmdBeginRenderPass)vkGetInstanceProcAddr(
-                vkInstance, "vkCmdBeginRenderPass");
-        vkCmdBeginRenderPass((*frameCommandBuffers)[i], &renderPassBeginInfo,
-                             VK_SUBPASS_CONTENTS_INLINE);
+    VkBuffer vertexBuffers[] = {(*object3ds)["internal/plane.obj3d"].geo->vertexBuffer};
+    VkDeviceSize offsets[] = {0};
+    vkCmdBindVertexBuffers(frameCommandBuffers[currentFrame], 0, 1, vertexBuffers, offsets);
 
-        vkCmdBindPipeline((*frameCommandBuffers)[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
-                          (*object3ds)["internal/plane.obj3d"].mat->graphicsPipeline);
+    vkCmdBindIndexBuffer(frameCommandBuffers[currentFrame], (*object3ds)["internal/plane.obj3d"].geo->indexBuffer, 0,
+            VK_INDEX_TYPE_UINT16);
 
-        VkBuffer vertexBuffers[] = {(*object3ds)["internal/plane.obj3d"].geo->vertexBuffer};
-        VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers((*frameCommandBuffers)[i], 0, 1, vertexBuffers, offsets);
+    vkCmdBindDescriptorSets(frameCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            (*object3ds)["internal/plane.obj3d"].mat->graphicsPipelineLayout, 0, 1,
+                            &(*object3ds)["internal/plane.obj3d"].mat->descriptorSet, 0, nullptr);
 
-        vkCmdBindIndexBuffer((*frameCommandBuffers)[i], (*object3ds)["internal/plane.obj3d"].geo->indexBuffer, 0,
-                VK_INDEX_TYPE_UINT16);
+    /* note that vkCmdPushConstants.pValues is instantly remembered by the command buffer, and if
+     * the data pointed by pValues changes afterwords, it has no effect on command buffer
+     */
 
-        vkCmdBindDescriptorSets((*frameCommandBuffers)[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                (*object3ds)["internal/plane.obj3d"].mat->graphicsPipelineLayout, 0, 1,
-                                &(*object3ds)["internal/plane.obj3d"].mat->descriptorSet, 0, nullptr);
+    /* vkCmdPushConstants((*frameframeCommandBuffers[currentFrame]s)[i], (*object3ds)["internal/plane.obj3d"].mat->graphicsPipelineLayout,
+                       VK_SHADER_STAGE_VERTEX_BIT, 0, 64, &modelMat); */
 
-        vkCmdDrawIndexed((*frameCommandBuffers)[i], static_cast<uint32_t>(
-                (*object3ds)["internal/plane.obj3d"].geo->nIndices), 1, 0, 0, 0);
+    vkCmdDrawIndexed(frameCommandBuffers[currentFrame], static_cast<uint32_t>(
+            (*object3ds)["internal/plane.obj3d"].geo->nIndices), 1, 0, 0, 0);
 
-        vkCmdEndRenderPass((*frameCommandBuffers)[i]);
-        vkEndCommandBuffer((*frameCommandBuffers)[i]);
-    }
+    vkCmdEndRenderPass(frameCommandBuffers[currentFrame]);
+    vkEndCommandBuffer(frameCommandBuffers[currentFrame]);
 }
 
 void Engine::createFrameSyncObjs() {
@@ -644,6 +638,8 @@ void Object3D::init(Geometry *geo, Material *mat) {
     this->animController.scaleX.push_back(glm::vec2(0, 1));
     this->animController.scaleY.push_back(glm::vec2(0, 1));
     this->animController.scaleZ.push_back(glm::vec2(0, 1));
+
+    this->modelMat = this->animController.advance(0);
 }
 
 float AnimController::interpolate(std::vector<glm::vec2> &curve) {
@@ -691,4 +687,15 @@ glm::mat4 AnimController::advance(float dt) {
     glm::scale(result, S);
 
     return result;
+}
+
+void Engine::allocFrameCmdBuffers() {
+    VkCommandBufferAllocateInfo allocateInfo{
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+            .pNext = nullptr,
+            .commandPool = commandPool,
+            .commandBufferCount = MAX_FRAMES_IN_FLIGHT,
+            .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+    };
+    vkAllocateCommandBuffers(vkDevice, &allocateInfo, frameCommandBuffers);
 }

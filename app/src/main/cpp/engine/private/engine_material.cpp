@@ -119,14 +119,20 @@ void Material::createDescriptorSets(Engine *engine, Texture *texture) {
 }
 
 void Material::createGraphicsPipelineLayout(Engine *engine) {
+    VkPushConstantRange range{
+        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+        .offset = 0,
+        .size = 64,
+    };
+
     VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
             .pNext = nullptr,
             .flags = 0,
             .setLayoutCount = 1,
             .pSetLayouts = &descriptorSetLayout,
-            .pushConstantRangeCount = 0,
-            .pPushConstantRanges = nullptr,
+            .pushConstantRangeCount = 1,
+            .pPushConstantRanges = &range,
     };
     vkCreatePipelineLayout(engine->vkDevice, &pipelineLayoutCreateInfo, nullptr,
                            &graphicsPipelineLayout);
