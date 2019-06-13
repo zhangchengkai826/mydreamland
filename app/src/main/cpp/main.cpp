@@ -24,11 +24,12 @@ static void *physicsLoop(void *arg) {
         // do tasks here
         __android_log_print(ANDROID_LOG_INFO, "main",
                             "### physicsLoop ###");
-        timespec tm{
-                .tv_sec = 0,
-                .tv_nsec = dt_nsec,
-        };
-        nanosleep(&tm, nullptr);
+
+        for(auto it = engine.object3ds->begin(); it != engine.object3ds->end(); it++) {
+            glm::mat4 modelMat = it->second.animController.advance(dt);
+            __android_log_print(ANDROID_LOG_INFO, "main",
+                                "modelMat: %s", glm::to_string(modelMat).c_str());
+        }
 
         if(loopId == 0) {
             __android_log_print(ANDROID_LOG_INFO, "main",
@@ -39,6 +40,12 @@ static void *physicsLoop(void *arg) {
         if(loopId >= rate) {
             loopId = 0;
         }
+
+        timespec tm{
+                .tv_sec = 0,
+                .tv_nsec = dt_nsec,
+        };
+        nanosleep(&tm, nullptr);
     }
     return nullptr;
 }

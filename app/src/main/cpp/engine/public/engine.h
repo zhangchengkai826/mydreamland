@@ -15,6 +15,7 @@
 #include <chrono>
 #include <exception>
 #include <fstream>
+#include <sstream>
 #include <string>
 #include <map>
 #include <atomic>
@@ -29,6 +30,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/spline.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 #include <stb_image.h>
 
@@ -152,6 +154,7 @@ class Engine {
 public:
     /* render & physics threads both access them */
     std::atomic_int *fpsFrameCounter;
+    std::map<std::string, Object3D> *object3ds;
 
     /* physics thread access them */
 
@@ -211,7 +214,6 @@ private:
     std::map<std::string, Geometry> *geometries;
     std::map<std::string, Texture> *textures;
     std::map<std::string, Material> *materials;
-    std::map<std::string, Object3D> *object3ds;
 
     /* engine_helper.cpp */
     void createVKInstance();
