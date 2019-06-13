@@ -34,8 +34,8 @@ void Engine::createVKInstance() {
     };
 
 #ifdef DEBUG
-    instanceCreateInfo.enabledLayerCount = static_cast<uint32_t>(validationLayerNames.size());
-    instanceCreateInfo.ppEnabledLayerNames = validationLayerNames.data();
+    instanceCreateInfo.enabledLayerCount = static_cast<uint32_t>(validationLayerNames->size());
+    instanceCreateInfo.ppEnabledLayerNames = validationLayerNames->data();
 #endif
 
     vkCreateInstance(&instanceCreateInfo, nullptr, &vkInstance);
@@ -202,8 +202,8 @@ void Engine::createLogicalDevice() {
     };
 
 #ifdef DEBUG
-    deviceCreateInfo.enabledLayerCount = validationLayerNames.size();
-    deviceCreateInfo.ppEnabledLayerNames = validationLayerNames.data();
+    deviceCreateInfo.enabledLayerCount = validationLayerNames->size();
+    deviceCreateInfo.ppEnabledLayerNames = validationLayerNames->data();
 #endif
 
     vkCreateDevice(vkPhysicalDevice, &deviceCreateInfo, nullptr, &vkDevice);
@@ -241,14 +241,14 @@ void Engine::createSwapChain() {
 
     // retrieve swap chain images
     vkGetSwapchainImagesKHR(vkDevice, vkSwapchain, &imageCount, nullptr);
-    swapChainImages.resize(NUM_IMAGES_IN_SWAPCHAIN);
+    swapChainImages->resize(NUM_IMAGES_IN_SWAPCHAIN);
     vkGetSwapchainImagesKHR(vkDevice, vkSwapchain, &imageCount,
-                            swapChainImages.data());
+                            swapChainImages->data());
 
     // create swap chain image views
-    swapChainImageViews.resize(NUM_IMAGES_IN_SWAPCHAIN);
-    for(int i = 0; i < swapChainImageViews.size(); i++) {
-        swapChainImageViews[i] = createImageView(swapChainImages[i],
+    swapChainImageViews->resize(NUM_IMAGES_IN_SWAPCHAIN);
+    for(int i = 0; i < swapChainImageViews->size(); i++) {
+        (*swapChainImageViews)[i] = createImageView((*swapChainImages)[i],
                                                  physicalDeviceSurfaceFormat.format,
                                                  VK_IMAGE_ASPECT_COLOR_BIT, 1);
     }
@@ -345,27 +345,27 @@ void Engine::createRenderPass() {
 }
 
 void Engine::createDepthStencilResources() {
-    depthStencilImageMemorys.resize(NUM_IMAGES_IN_SWAPCHAIN);
-    depthStencilImages.resize(NUM_IMAGES_IN_SWAPCHAIN);
-    depthStencilImageViews.resize(NUM_IMAGES_IN_SWAPCHAIN);
+    depthStencilImageMemorys->resize(NUM_IMAGES_IN_SWAPCHAIN);
+    depthStencilImages->resize(NUM_IMAGES_IN_SWAPCHAIN);
+    depthStencilImageViews->resize(NUM_IMAGES_IN_SWAPCHAIN);
     for(int i = 0; i < NUM_IMAGES_IN_SWAPCHAIN; i++) {
         createImage(physicalDeviceSurfaceCapabilities.currentExtent.width,
                     physicalDeviceSurfaceCapabilities.currentExtent.height, 1,
                     VK_FORMAT_D24_UNORM_S8_UINT, VK_IMAGE_TILING_OPTIMAL,
                     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                    depthStencilImages[i], depthStencilImageMemorys[i]);
-        depthStencilImageViews[i] = createImageView(depthStencilImages[i], VK_FORMAT_D24_UNORM_S8_UINT,
-                                                VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
-                                                1);
+                    (*depthStencilImages)[i], (*depthStencilImageMemorys)[i]);
+        (*depthStencilImageViews)[i] = createImageView((*depthStencilImages)[i],
+                VK_FORMAT_D24_UNORM_S8_UINT,
+                VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 1);
     }
 }
 
 void Engine::createFrameBuffers() {
-    swapChainFrameBuffers.resize(NUM_IMAGES_IN_SWAPCHAIN);
-    for(size_t i = 0; i < swapChainFrameBuffers.size(); i++) {
+    swapChainFrameBuffers->resize(NUM_IMAGES_IN_SWAPCHAIN);
+    for(size_t i = 0; i < swapChainFrameBuffers->size(); i++) {
         std::array<VkImageView, 2> attachments = {
-                swapChainImageViews[i],
-                depthStencilImageViews[i],
+                (*swapChainImageViews)[i],
+                (*depthStencilImageViews)[i],
         };
         VkFramebufferCreateInfo framebufferCreateInfo{
                 .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
@@ -379,7 +379,7 @@ void Engine::createFrameBuffers() {
                 .layers = 1
         };
         vkCreateFramebuffer(vkDevice, &framebufferCreateInfo, nullptr,
-                            &swapChainFrameBuffers[i]);
+                            &(*swapChainFrameBuffers)[i]);
     }
 }
 
@@ -394,27 +394,27 @@ void Engine::createCmdPool() {
 }
 
 void Engine::allocFrameCmdBuffers() {
-    frameCommandBuffers.resize(NUM_IMAGES_IN_SWAPCHAIN);
+    frameCommandBuffers->resize(NUM_IMAGES_IN_SWAPCHAIN);
     VkCommandBufferAllocateInfo commandBufferAllocateInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
             .pNext = nullptr,
             .commandPool = commandPool,
             .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-            .commandBufferCount = static_cast<uint32_t>(frameCommandBuffers.size()),
+            .commandBufferCount = static_cast<uint32_t>(frameCommandBuffers->size()),
     };
     vkAllocateCommandBuffers(vkDevice, &commandBufferAllocateInfo,
-                             frameCommandBuffers.data());
+                             frameCommandBuffers->data());
 }
 
 void Engine::recordFrameCmdBuffers() {
-    for(size_t i = 0; i < frameCommandBuffers.size(); i++) {
+    for(size_t i = 0; i < frameCommandBuffers->size(); i++) {
         VkCommandBufferBeginInfo commandBufferBeginInfo{
                 .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
                 .pNext = nullptr,
                 .flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT,
                 .pInheritanceInfo = nullptr,
         };
-        vkBeginCommandBuffer(frameCommandBuffers[i], &commandBufferBeginInfo);
+        vkBeginCommandBuffer((*frameCommandBuffers)[i], &commandBufferBeginInfo);
 
         std::array<VkClearValue, 2> clearValues{{
             {.color = {.float32 = {0.0f, 0.0f, 0.0f, 1.0f}}},
@@ -424,7 +424,7 @@ void Engine::recordFrameCmdBuffers() {
                 .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
                 .pNext = nullptr,
                 .renderPass = renderPass,
-                .framebuffer = swapChainFrameBuffers[i],
+                .framebuffer = (*swapChainFrameBuffers)[i],
                 .renderArea.offset = {0, 0},
                 .renderArea.extent = physicalDeviceSurfaceCapabilities.currentExtent,
                 .clearValueCount = static_cast<uint32_t>(clearValues.size()),
@@ -433,35 +433,35 @@ void Engine::recordFrameCmdBuffers() {
         PFN_vkCmdBeginRenderPass vkCmdBeginRenderPass;
         vkCmdBeginRenderPass = (PFN_vkCmdBeginRenderPass)vkGetInstanceProcAddr(
                 vkInstance, "vkCmdBeginRenderPass");
-        vkCmdBeginRenderPass(frameCommandBuffers[i], &renderPassBeginInfo,
+        vkCmdBeginRenderPass((*frameCommandBuffers)[i], &renderPassBeginInfo,
                              VK_SUBPASS_CONTENTS_INLINE);
 
-        vkCmdBindPipeline(frameCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
-                          object3ds["internal/plane.obj3d"].mat->graphicsPipeline);
+        vkCmdBindPipeline((*frameCommandBuffers)[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
+                          (*object3ds)["internal/plane.obj3d"].mat->graphicsPipeline);
 
-        VkBuffer vertexBuffers[] = {object3ds["internal/plane.obj3d"].geo->vertexBuffer};
+        VkBuffer vertexBuffers[] = {(*object3ds)["internal/plane.obj3d"].geo->vertexBuffer};
         VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(frameCommandBuffers[i], 0, 1, vertexBuffers, offsets);
+        vkCmdBindVertexBuffers((*frameCommandBuffers)[i], 0, 1, vertexBuffers, offsets);
 
-        vkCmdBindIndexBuffer(frameCommandBuffers[i], object3ds["internal/plane.obj3d"].geo->indexBuffer, 0,
+        vkCmdBindIndexBuffer((*frameCommandBuffers)[i], (*object3ds)["internal/plane.obj3d"].geo->indexBuffer, 0,
                 VK_INDEX_TYPE_UINT16);
 
-        vkCmdBindDescriptorSets(frameCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                object3ds["internal/plane.obj3d"].mat->graphicsPipelineLayout, 0, 1,
-                                &object3ds["internal/plane.obj3d"].mat->descriptorSet, 0, nullptr);
+        vkCmdBindDescriptorSets((*frameCommandBuffers)[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                (*object3ds)["internal/plane.obj3d"].mat->graphicsPipelineLayout, 0, 1,
+                                &(*object3ds)["internal/plane.obj3d"].mat->descriptorSet, 0, nullptr);
 
-        vkCmdDrawIndexed(frameCommandBuffers[i], static_cast<uint32_t>(
-                object3ds["internal/plane.obj3d"].geo->nIndices), 1, 0, 0, 0);
+        vkCmdDrawIndexed((*frameCommandBuffers)[i], static_cast<uint32_t>(
+                (*object3ds)["internal/plane.obj3d"].geo->nIndices), 1, 0, 0, 0);
 
-        vkCmdEndRenderPass(frameCommandBuffers[i]);
-        vkEndCommandBuffer(frameCommandBuffers[i]);
+        vkCmdEndRenderPass((*frameCommandBuffers)[i]);
+        vkEndCommandBuffer((*frameCommandBuffers)[i]);
     }
 }
 
 void Engine::createFrameSyncObjs() {
-    imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    inFlightFrameFences.resize(MAX_FRAMES_IN_FLIGHT);
+    imageAvailableSemaphores->resize(MAX_FRAMES_IN_FLIGHT);
+    renderFinishedSemaphores->resize(MAX_FRAMES_IN_FLIGHT);
+    inFlightFrameFences->resize(MAX_FRAMES_IN_FLIGHT);
     VkSemaphoreCreateInfo semaphoreCreateInfo{
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
             .pNext = nullptr,
@@ -474,10 +474,10 @@ void Engine::createFrameSyncObjs() {
     };
     for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         vkCreateSemaphore(vkDevice, &semaphoreCreateInfo, nullptr,
-                          &imageAvailableSemaphores[i]);
+                          &(*imageAvailableSemaphores)[i]);
         vkCreateSemaphore(vkDevice, &semaphoreCreateInfo, nullptr,
-                          &renderFinishedSemaphores[i]);
-        vkCreateFence(vkDevice, &fenceCreateInfo, nullptr, &inFlightFrameFences[i]);
+                          &(*renderFinishedSemaphores)[i]);
+        vkCreateFence(vkDevice, &fenceCreateInfo, nullptr, &(*inFlightFrameFences)[i]);
     }
 }
 
@@ -593,11 +593,11 @@ void Engine::loadResources() {
                 if(strcmp(ext, "geo") == 0) {
                     Geometry geo;
                     geo.initFromFile(this, commandBuffer, fileAbsPath.c_str());
-                    geometries.emplace(fileRelPath, geo);
+                    geometries->emplace(fileRelPath, geo);
                 } else if(strcmp(ext, "jpg") == 0) {
                     Texture tex;
                     tex.initFromFile(this, commandBuffer, fileAbsPath.c_str());
-                    textures.emplace(fileRelPath, tex);
+                    textures->emplace(fileRelPath, tex);
                 }
             } else if(S_ISDIR(fileStat.st_mode)) {
                 resDirQueue.push(fileRelPath);
@@ -608,24 +608,24 @@ void Engine::loadResources() {
     }
 
     Material mat;
-    mat.init(this, &textures["statue.jpg"]);
-    materials.emplace("internal/base.mat", mat);
+    mat.init(this, &(*textures)["statue.jpg"]);
+    materials->emplace("internal/base.mat", mat);
 
     Object3D obj3d;
-    obj3d.init(&geometries["plane.geo"], &materials["internal/base.mat"], glm::mat4(1.0f));
-    object3ds.emplace("internal/plane.obj3d", obj3d);
+    obj3d.init(&(*geometries)["plane.geo"], &(*materials)["internal/base.mat"], glm::mat4(1.0f));
+    object3ds->emplace("internal/plane.obj3d", obj3d);
 
     endOneTimeSubmitCommandsSyncWithFence(commandBuffer);
 }
 
 void Engine::destroyResources() {
-    for(auto it = materials.begin(); it != materials.end(); it++) {
+    for(auto it = materials->begin(); it != materials->end(); it++) {
         it->second.destroy(this);
     }
-    for(auto it = textures.begin(); it != textures.end(); it++) {
+    for(auto it = textures->begin(); it != textures->end(); it++) {
         it->second.destroy(this);
     }
-    for(auto it = geometries.begin(); it != geometries.end(); it++) {
+    for(auto it = geometries->begin(); it != geometries->end(); it++) {
         it->second.destroy(this);
     }
 }

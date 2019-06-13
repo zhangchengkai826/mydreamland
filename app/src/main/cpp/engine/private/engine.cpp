@@ -5,8 +5,27 @@
 #include "engine.h"
 
 void Engine::init() {
+    swapChainImages = new std::vector<VkImage>();
+    swapChainImageViews = new std::vector<VkImageView>();
+    depthStencilImageMemorys = new std::vector<VkDeviceMemory>();
+    depthStencilImages = new std::vector<VkImage>();
+    depthStencilImageViews = new std::vector<VkImageView>();
+    swapChainFrameBuffers = new std::vector<VkFramebuffer>();
+
+    frameCommandBuffers = new std::vector<VkCommandBuffer>();
+
+    imageAvailableSemaphores = new std::vector<VkSemaphore>();
+    renderFinishedSemaphores = new std::vector<VkSemaphore>();
+    inFlightFrameFences = new std::vector<VkFence>();
+
+    geometries = new std::map<std::string, Geometry>();
+    textures = new std::map<std::string, Texture>();
+    materials = new std::map<std::string, Material>();
+    object3ds = new std::map<std::string, Object3D>();
 
 #ifdef DEBUG
+    validationLayerProperties = new std::vector<VkLayerProperties>();
+    validationLayerNames = new std::vector<const char *>();
     updateAvailableValidationLayerNames();
 #endif
 
@@ -52,25 +71,25 @@ void Engine::destroy() {
     vkFreeMemory(vkDevice, uniformBuffersMemory, nullptr);
 
     for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        vkDestroyFence(vkDevice, inFlightFrameFences[i], nullptr);
-        vkDestroySemaphore(vkDevice, renderFinishedSemaphores[i], nullptr);
-        vkDestroySemaphore(vkDevice, imageAvailableSemaphores[i], nullptr);
+        vkDestroyFence(vkDevice, (*inFlightFrameFences)[i], nullptr);
+        vkDestroySemaphore(vkDevice, (*renderFinishedSemaphores)[i], nullptr);
+        vkDestroySemaphore(vkDevice, (*imageAvailableSemaphores)[i], nullptr);
     }
 
     vkDestroyCommandPool(vkDevice, commandPool, nullptr);
 
-    for(auto framebuffer: swapChainFrameBuffers) {
+    for(auto framebuffer: *swapChainFrameBuffers) {
         vkDestroyFramebuffer(vkDevice, framebuffer, nullptr);
     }
     vkDestroyRenderPass(vkDevice, renderPass, nullptr);
 
     for(int i = 0; i < NUM_IMAGES_IN_SWAPCHAIN; i++) {
-        vkDestroyImageView(vkDevice, depthStencilImageViews[i], nullptr);
-        vkDestroyImage(vkDevice, depthStencilImages[i], nullptr);
-        vkFreeMemory(vkDevice, depthStencilImageMemorys[i], nullptr);
+        vkDestroyImageView(vkDevice, (*depthStencilImageViews)[i], nullptr);
+        vkDestroyImage(vkDevice, (*depthStencilImages)[i], nullptr);
+        vkFreeMemory(vkDevice, (*depthStencilImageMemorys)[i], nullptr);
     }
 
-    for(auto imageView: swapChainImageViews) {
+    for(auto imageView: *swapChainImageViews) {
         vkDestroyImageView(vkDevice, imageView, nullptr);
     }
     vkDestroySwapchainKHR(vkDevice, vkSwapchain, nullptr);
@@ -86,20 +105,43 @@ void Engine::destroy() {
 #endif
 
     vkDestroyInstance(vkInstance, nullptr);
+
+#ifdef DEBUG
+    delete validationLayerNames;
+    delete validationLayerProperties;
+#endif
+
+    delete object3ds;
+    delete materials;
+    delete textures;
+    delete geometries;
+
+    delete inFlightFrameFences;
+    delete renderFinishedSemaphores;
+    delete imageAvailableSemaphores;
+
+    delete frameCommandBuffers;
+
+    delete swapChainFrameBuffers;
+    delete depthStencilImageViews;
+    delete depthStencilImages;
+    delete depthStencilImageMemorys;
+    delete swapChainImageViews;
+    delete swapChainImages;
 }
 
 void Engine::drawFrame() {
-    vkWaitForFences(vkDevice, 1, &inFlightFrameFences[currentFrame], VK_TRUE,
+    vkWaitForFences(vkDevice, 1, &(*inFlightFrameFences)[currentFrame], VK_TRUE,
                     std::numeric_limits<uint64_t>::max());
-    vkResetFences(vkDevice, 1, &inFlightFrameFences[currentFrame]);
+    vkResetFences(vkDevice, 1, &(*inFlightFrameFences)[currentFrame]);
 
     uint32_t imageIndex;
     vkAcquireNextImageKHR(vkDevice, vkSwapchain,
                           std::numeric_limits<uint64_t>::max(),
-                          imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+                          (*imageAvailableSemaphores)[currentFrame], VK_NULL_HANDLE, &imageIndex);
 
-    VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
-    VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
+    VkSemaphore waitSemaphores[] = {(*imageAvailableSemaphores)[currentFrame]};
+    VkSemaphore signalSemaphores[] = {(*renderFinishedSemaphores)[currentFrame]};
     VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
     VkSubmitInfo submitInfo{
             .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
@@ -108,11 +150,11 @@ void Engine::drawFrame() {
             .pWaitSemaphores = waitSemaphores,
             .pWaitDstStageMask = waitStages,
             .commandBufferCount = 1,
-            .pCommandBuffers = &frameCommandBuffers[imageIndex],
+            .pCommandBuffers = &(*frameCommandBuffers)[imageIndex],
             .signalSemaphoreCount = 1,
             .pSignalSemaphores = signalSemaphores,
     };
-    vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFrameFences[currentFrame]);
+    vkQueueSubmit(graphicsQueue, 1, &submitInfo, (*inFlightFrameFences)[currentFrame]);
 
     VkPresentInfoKHR presentInfo{
             .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,

@@ -144,8 +144,8 @@ private:
     constexpr static int MAX_FRAMES_IN_FLIGHT = 2;
 
 #ifdef DEBUG
-    std::vector<VkLayerProperties> validationLayerProperties;
-    std::vector<const char *> validationLayerNames;
+    std::vector<VkLayerProperties> *validationLayerProperties;
+    std::vector<const char *> *validationLayerNames;
 #endif
 
     VkInstance vkInstance;
@@ -162,29 +162,29 @@ private:
     VkQueue graphicsQueue;
 
     VkSwapchainKHR vkSwapchain;
-    std::vector<VkImage> swapChainImages;
-    std::vector<VkImageView> swapChainImageViews;
-    std::vector<VkImage> depthStencilImages;
-    std::vector<VkDeviceMemory> depthStencilImageMemorys;
-    std::vector<VkImageView> depthStencilImageViews;
+    std::vector<VkImage> *swapChainImages;
+    std::vector<VkImageView> *swapChainImageViews;
+    std::vector<VkImage> *depthStencilImages;
+    std::vector<VkDeviceMemory> *depthStencilImageMemorys;
+    std::vector<VkImageView> *depthStencilImageViews;
     VkRenderPass renderPass;
-    std::vector<VkFramebuffer> swapChainFrameBuffers;
+    std::vector<VkFramebuffer> *swapChainFrameBuffers;
 
     VkCommandPool commandPool;
-    std::vector<VkCommandBuffer> frameCommandBuffers;
+    std::vector<VkCommandBuffer> *frameCommandBuffers;
 
-    std::vector<VkSemaphore> imageAvailableSemaphores;
-    std::vector<VkSemaphore> renderFinishedSemaphores;
-    std::vector<VkFence> inFlightFrameFences;
+    std::vector<VkSemaphore> *imageAvailableSemaphores;
+    std::vector<VkSemaphore> *renderFinishedSemaphores;
+    std::vector<VkFence> *inFlightFrameFences;
     int currentFrame;
 
     VkBuffer uniformBuffer;
     VkDeviceMemory uniformBuffersMemory;
 
-    std::map<std::string, Geometry> geometries;
-    std::map<std::string, Texture> textures;
-    std::map<std::string, Material> materials;
-    std::map<std::string, Object3D> object3ds;
+    std::map<std::string, Geometry> *geometries;
+    std::map<std::string, Texture> *textures;
+    std::map<std::string, Material> *materials;
+    std::map<std::string, Object3D> *object3ds;
 
     /* engine_helper.cpp */
     void createVKInstance();

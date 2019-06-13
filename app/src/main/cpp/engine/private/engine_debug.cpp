@@ -61,18 +61,19 @@ void Engine::updateAvailableValidationLayerNames() {
         throw std::runtime_error("validation layers not found!");
     }
 
-    validationLayerProperties.resize(layerCount);
-    vkEnumerateInstanceLayerProperties(&layerCount, validationLayerProperties.data());
+    validationLayerProperties->resize(layerCount);
+    vkEnumerateInstanceLayerProperties(&layerCount, validationLayerProperties->data());
     __android_log_print(ANDROID_LOG_INFO, "main", "Vulkan Available Validation Layers:");
-    validationLayerNames.resize(validationLayerProperties.size());
-    for(size_t i = 0; i < validationLayerProperties.size(); i++) {
+    validationLayerNames->resize(validationLayerProperties->size());
+    for(size_t i = 0; i < validationLayerProperties->size(); i++) {
         __android_log_print(ANDROID_LOG_INFO, "main",
                             "\tLayer Name: %s\t\tSpec Version: %d\t\tImpl Version: %d\n\tDesc: %s",
-                            validationLayerProperties[i].layerName,
-                            validationLayerProperties[i].specVersion,
-                            validationLayerProperties[i].implementationVersion,
-                            validationLayerProperties[i].description);
-        validationLayerNames[i] = static_cast<const char *>(validationLayerProperties[i].layerName);
+                            (*validationLayerProperties)[i].layerName,
+                            (*validationLayerProperties)[i].specVersion,
+                            (*validationLayerProperties)[i].implementationVersion,
+                            (*validationLayerProperties)[i].description);
+        (*validationLayerNames)[i] =
+                static_cast<const char *>((*validationLayerProperties)[i].layerName);
     }
 }
 
