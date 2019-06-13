@@ -34,7 +34,7 @@ void Engine::init() {
     createCmdPool();
     allocFrameCmdBuffers();
 
-    createSyncObjs();
+    createFrameSyncObjs();
     currentFrame = 0;
 
     createUniformBuffers();
@@ -52,7 +52,7 @@ void Engine::destroy() {
     vkFreeMemory(vkDevice, uniformBuffersMemory, nullptr);
 
     for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        vkDestroyFence(vkDevice, inFlightFences[i], nullptr);
+        vkDestroyFence(vkDevice, inFlightFrameFences[i], nullptr);
         vkDestroySemaphore(vkDevice, renderFinishedSemaphores[i], nullptr);
         vkDestroySemaphore(vkDevice, imageAvailableSemaphores[i], nullptr);
     }
@@ -89,9 +89,9 @@ void Engine::destroy() {
 }
 
 void Engine::drawFrame() {
-    vkWaitForFences(vkDevice, 1, &inFlightFences[currentFrame], VK_TRUE,
+    vkWaitForFences(vkDevice, 1, &inFlightFrameFences[currentFrame], VK_TRUE,
                     std::numeric_limits<uint64_t>::max());
-    vkResetFences(vkDevice, 1, &inFlightFences[currentFrame]);
+    vkResetFences(vkDevice, 1, &inFlightFrameFences[currentFrame]);
 
     uint32_t imageIndex;
     vkAcquireNextImageKHR(vkDevice, vkSwapchain,
@@ -112,7 +112,7 @@ void Engine::drawFrame() {
             .signalSemaphoreCount = 1,
             .pSignalSemaphores = signalSemaphores,
     };
-    vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]);
+    vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFrameFences[currentFrame]);
 
     VkPresentInfoKHR presentInfo{
             .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,

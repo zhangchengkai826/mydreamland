@@ -437,30 +437,31 @@ void Engine::recordFrameCmdBuffers() {
                              VK_SUBPASS_CONTENTS_INLINE);
 
         vkCmdBindPipeline(frameCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
-                          materials["internal/base.mat"].graphicsPipeline);
+                          object3ds["internal/plane.obj3d"].mat->graphicsPipeline);
 
-        VkBuffer vertexBuffers[] = {geometries["plane.geo"].vertexBuffer};
+        VkBuffer vertexBuffers[] = {object3ds["internal/plane.obj3d"].geo->vertexBuffer};
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(frameCommandBuffers[i], 0, 1, vertexBuffers, offsets);
 
-        vkCmdBindIndexBuffer(frameCommandBuffers[i], geometries["plane.geo"].indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+        vkCmdBindIndexBuffer(frameCommandBuffers[i], object3ds["internal/plane.obj3d"].geo->indexBuffer, 0,
+                VK_INDEX_TYPE_UINT16);
 
         vkCmdBindDescriptorSets(frameCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                materials["internal/base.mat"].graphicsPipelineLayout, 0, 1,
-                                &materials["internal/base.mat"].descriptorSet, 0, nullptr);
+                                object3ds["internal/plane.obj3d"].mat->graphicsPipelineLayout, 0, 1,
+                                &object3ds["internal/plane.obj3d"].mat->descriptorSet, 0, nullptr);
 
         vkCmdDrawIndexed(frameCommandBuffers[i], static_cast<uint32_t>(
-                geometries["plane.geo"].nIndices), 1, 0, 0, 0);
+                object3ds["internal/plane.obj3d"].geo->nIndices), 1, 0, 0, 0);
 
         vkCmdEndRenderPass(frameCommandBuffers[i]);
         vkEndCommandBuffer(frameCommandBuffers[i]);
     }
 }
 
-void Engine::createSyncObjs() {
+void Engine::createFrameSyncObjs() {
     imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
     renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+    inFlightFrameFences.resize(MAX_FRAMES_IN_FLIGHT);
     VkSemaphoreCreateInfo semaphoreCreateInfo{
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
             .pNext = nullptr,
@@ -476,7 +477,7 @@ void Engine::createSyncObjs() {
                           &imageAvailableSemaphores[i]);
         vkCreateSemaphore(vkDevice, &semaphoreCreateInfo, nullptr,
                           &renderFinishedSemaphores[i]);
-        vkCreateFence(vkDevice, &fenceCreateInfo, nullptr, &inFlightFences[i]);
+        vkCreateFence(vkDevice, &fenceCreateInfo, nullptr, &inFlightFrameFences[i]);
     }
 }
 
@@ -610,6 +611,10 @@ void Engine::loadResources() {
     mat.init(this, &textures["statue.jpg"]);
     materials.emplace("internal/base.mat", mat);
 
+    Object3D obj3d;
+    obj3d.init(&geometries["plane.geo"], &materials["internal/base.mat"], glm::mat4(1.0f));
+    object3ds.emplace("internal/plane.obj3d", obj3d);
+
     endOneTimeSubmitCommandsSyncWithFence(commandBuffer);
 }
 
@@ -623,4 +628,10 @@ void Engine::destroyResources() {
     for(auto it = geometries.begin(); it != geometries.end(); it++) {
         it->second.destroy(this);
     }
+}
+
+void Object3D::init(Geometry *geo, Material *mat, glm::mat4 modelMat) {
+    this->geo = geo;
+    this->mat = mat;
+    this->modelMat = modelMat;
 }

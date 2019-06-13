@@ -100,6 +100,16 @@ private:
     void createGraphicsPipeline(Engine *engine);
 };
 
+class Object3D {
+public:
+    void init(Geometry *geo, Material *mat, glm::mat4 modelMat);
+    Geometry *geo;
+    Material *mat;
+    glm::mat4 modelMat;
+
+private:
+};
+
 struct UniformBuffer {
     alignas(16) glm::mat4 model;
     alignas(16) glm::mat4 view;
@@ -166,7 +176,7 @@ private:
 
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> renderFinishedSemaphores;
-    std::vector<VkFence> inFlightFences;
+    std::vector<VkFence> inFlightFrameFences;
     int currentFrame;
 
     VkBuffer uniformBuffer;
@@ -175,6 +185,7 @@ private:
     std::map<std::string, Geometry> geometries;
     std::map<std::string, Texture> textures;
     std::map<std::string, Material> materials;
+    std::map<std::string, Object3D> object3ds;
 
     /* engine_helper.cpp */
     void createVKInstance();
@@ -196,7 +207,7 @@ private:
     void createCmdPool();
     void allocFrameCmdBuffers();
 
-    void createSyncObjs();
+    void createFrameSyncObjs();
 
     void loadResources();
     void destroyResources();
