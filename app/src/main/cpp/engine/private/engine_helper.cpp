@@ -612,7 +612,7 @@ void Engine::loadResources() {
     materials->emplace("internal/base.mat", mat);
 
     Object3D obj3d;
-    obj3d.init(&(*geometries)["plane.geo"], &(*materials)["internal/base.mat"], glm::mat4(1.0f));
+    obj3d.init(&(*geometries)["plane.geo"], &(*materials)["internal/base.mat"]);
     object3ds->emplace("internal/plane.obj3d", obj3d);
 
     endOneTimeSubmitCommandsSyncWithFence(commandBuffer);
@@ -630,19 +630,36 @@ void Engine::destroyResources() {
     }
 }
 
-void Object3D::init(Geometry *geo, Material *mat, glm::mat4 modelMat) {
+void Object3D::init(Geometry *geo, Material *mat) {
     this->geo = geo;
     this->mat = mat;
-    this->modelMat = modelMat;
+    this->animController.t = 0;
+    this->animController.tMax = 0;
+    this->animController.posX.push_back(glm::vec2(0, 0));
+    this->animController.posY.push_back(glm::vec2(0, 0));
+    this->animController.posZ.push_back(glm::vec2(0, 0));
+    this->animController.rotX.push_back(glm::vec2(0, 0));
+    this->animController.rotY.push_back(glm::vec2(0, 0));
+    this->animController.rotZ.push_back(glm::vec2(0, 0));
+    this->animController.scaleX.push_back(glm::vec2(0, 1));
+    this->animController.scaleY.push_back(glm::vec2(0, 1));
+    this->animController.scaleZ.push_back(glm::vec2(0, 1));
 }
 
 float AnimController::interpolate(std::vector<glm::vec2> &curve) {
     int i;
-    for(i = 1; i < curve.size()-3; i++) {
-        if(t >= curve[i].x && t < curve[i+1].x) {
+    for(i = 0; i < curve.size(); i++) {
+        if(t < curve[i].x) {
             break;
         }
     }
+    /* 0 <= i <= curve.size() */
+    if(i < 2) {
+        return curve[i].y;
+    } else if(i > curve.size()-2) {
+        return curve[i-1].y;
+    }
+
     float s = (t - curve[i].x) / (curve[i-1].x - curve[i].x); /* 0 <= s < 1 */
     return glm::catmullRom(curve[i-1], curve[i], curve[i+1], curve[i+2], s).y;
 }
