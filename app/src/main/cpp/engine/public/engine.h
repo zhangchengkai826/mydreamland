@@ -133,10 +133,13 @@ public:
 class Object3D {
 public:
     void init(Geometry *geo, Material *mat);
+    void destroy();
 
     Geometry *geo;
     Material *mat;
+
     glm::mat4 modelMat;
+
     AnimController animController;
 
 private:
@@ -153,9 +156,11 @@ class Engine {
     friend class Texture;
     friend class Material;
 public:
+    pthread_mutex_t mutex;
+
     /* render & physics threads both access them */
     std::atomic_int *fpsFrameCounter;
-    std::map<std::string, Object3D> *object3ds;
+    std::map<std::string, Object3D> *object3ds; /* assume now that it's fixed-length after init() in main thread */
 
     /* physics thread access them */
 

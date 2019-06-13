@@ -424,29 +424,32 @@ void Engine::recordFrameCmdBuffers(int imageIndex) {
     vkCmdBeginRenderPass(frameCommandBuffers[currentFrame], &renderPassBeginInfo,
                          VK_SUBPASS_CONTENTS_INLINE);
 
-    vkCmdBindPipeline(frameCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS,
-                      (*object3ds)["internal/plane.obj3d"].mat->graphicsPipeline);
+    pthread_mutex_lock(&mutex);
+    for(auto it = object3ds->begin(); it != object3ds->end(); it++) {
+        vkCmdBindPipeline(frameCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS,
+                          it->second.mat->graphicsPipeline);
 
-    VkBuffer vertexBuffers[] = {(*object3ds)["internal/plane.obj3d"].geo->vertexBuffer};
-    VkDeviceSize offsets[] = {0};
-    vkCmdBindVertexBuffers(frameCommandBuffers[currentFrame], 0, 1, vertexBuffers, offsets);
+        VkBuffer vertexBuffers[] = {it->second.geo->vertexBuffer};
+        VkDeviceSize offsets[] = {0};
+        vkCmdBindVertexBuffers(frameCommandBuffers[currentFrame], 0, 1, vertexBuffers, offsets);
 
-    vkCmdBindIndexBuffer(frameCommandBuffers[currentFrame], (*object3ds)["internal/plane.obj3d"].geo->indexBuffer, 0,
-            VK_INDEX_TYPE_UINT16);
+        vkCmdBindIndexBuffer(frameCommandBuffers[currentFrame], it->second.geo->indexBuffer, 0,
+                             VK_INDEX_TYPE_UINT16);
 
-    vkCmdBindDescriptorSets(frameCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            (*object3ds)["internal/plane.obj3d"].mat->graphicsPipelineLayout, 0, 1,
-                            &(*object3ds)["internal/plane.obj3d"].mat->descriptorSet, 0, nullptr);
+        vkCmdBindDescriptorSets(frameCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                it->second.mat->graphicsPipelineLayout, 0, 1,
+                                &it->second.mat->descriptorSet, 0, nullptr);
 
-    /* note that vkCmdPushConstants.pValues is instantly remembered by the command buffer, and if
-     * the data pointed by pValues changes afterwords, it has no effect on command buffer
-     */
+        /* note that vkCmdPushConstants.pValues is instantly remembered by the command buffer, and if
+         * the data pointed by pValues changes afterwords, it has no effect on command buffer
+         */
+        vkCmdPushConstants(frameCommandBuffers[currentFrame], it->second.mat->graphicsPipelineLayout,
+                           VK_SHADER_STAGE_VERTEX_BIT, 0, 64, &it->second.modelMat);
 
-    /* vkCmdPushConstants((*frameframeCommandBuffers[currentFrame]s)[i], (*object3ds)["internal/plane.obj3d"].mat->graphicsPipelineLayout,
-                       VK_SHADER_STAGE_VERTEX_BIT, 0, 64, &modelMat); */
-
-    vkCmdDrawIndexed(frameCommandBuffers[currentFrame], static_cast<uint32_t>(
-            (*object3ds)["internal/plane.obj3d"].geo->nIndices), 1, 0, 0, 0);
+        vkCmdDrawIndexed(frameCommandBuffers[currentFrame], static_cast<uint32_t>(
+                it->second.geo->nIndices), 1, 0, 0, 0);
+    }
+    pthread_mutex_unlock(&mutex);
 
     vkCmdEndRenderPass(frameCommandBuffers[currentFrame]);
     vkEndCommandBuffer(frameCommandBuffers[currentFrame]);
@@ -613,6 +616,9 @@ void Engine::loadResources() {
 }
 
 void Engine::destroyResources() {
+    for(auto it = object3ds->begin(); it != object3ds->end(); it++) {
+        it->second.destroy();
+    }
     for(auto it = materials->begin(); it != materials->end(); it++) {
         it->second.destroy(this);
     }
@@ -640,6 +646,10 @@ void Object3D::init(Geometry *geo, Material *mat) {
     this->animController.scaleZ.push_back(glm::vec2(0, 1));
 
     this->modelMat = this->animController.advance(0);
+}
+
+void Object3D::destroy() {
+
 }
 
 float AnimController::interpolate(std::vector<glm::vec2> &curve) {

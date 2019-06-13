@@ -25,11 +25,11 @@ static void *physicsLoop(void *arg) {
         __android_log_print(ANDROID_LOG_INFO, "main",
                             "### physicsLoop ###");
 
+        pthread_mutex_lock(&engine.mutex);
         for(auto it = engine.object3ds->begin(); it != engine.object3ds->end(); it++) {
-            glm::mat4 modelMat = it->second.animController.advance(dt);
-            __android_log_print(ANDROID_LOG_INFO, "main",
-                                "modelMat: %s", glm::to_string(modelMat).c_str());
+            it->second.modelMat = it->second.animController.advance(dt);
         }
+        pthread_mutex_unlock(&engine.mutex);
 
         if(loopId == 0) {
             __android_log_print(ANDROID_LOG_INFO, "main",
@@ -104,6 +104,7 @@ static void ANativeActivity_onNativeWindowCreated(ANativeActivity *activity,
 
     /* global initialize, only main thread exists */
 
+    pthread_mutex_init(&engine.mutex, nullptr);
     engine.activity = activity;
     engine.window = window;
     engine.fpsFrameCounter = new std::atomic_int(0);
@@ -144,6 +145,7 @@ static void ANativeActivity_onNativeWindowDestroyed(ANativeActivity *activity,
 
     engine.destroy();
     delete engine.fpsFrameCounter;
+    pthread_mutex_destroy(&engine.mutex);
 
     /* global destroy end */
 }
