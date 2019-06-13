@@ -32,7 +32,7 @@ void Engine::init() {
     createFrameBuffers();
 
     createCmdPool();
-    allocCmdBuffers();
+    allocFrameCmdBuffers();
 
     createSyncObjs();
     currentFrame = 0;
@@ -40,7 +40,7 @@ void Engine::init() {
     createUniformBuffers();
 
     loadResources();
-    recordCmdBuffers();
+    recordFrameCmdBuffers();
 }
 
 void Engine::destroy() {
@@ -108,7 +108,7 @@ void Engine::drawFrame() {
             .pWaitSemaphores = waitSemaphores,
             .pWaitDstStageMask = waitStages,
             .commandBufferCount = 1,
-            .pCommandBuffers = &commandBuffers[imageIndex],
+            .pCommandBuffers = &frameCommandBuffers[imageIndex],
             .signalSemaphoreCount = 1,
             .pSignalSemaphores = signalSemaphores,
     };

@@ -6,6 +6,8 @@
 #define MYDREAMLAND_ENGINE_H
 
 #include <pthread.h>
+#include <sys/stat.h>
+#include <dirent.h>
 
 #include <vector>
 #include <array>
@@ -14,6 +16,7 @@
 #include <exception>
 #include <fstream>
 #include <string>
+#include <map>
 
 #include <android/native_activity.h>
 #include <android/log.h>
@@ -67,9 +70,12 @@ public:
     VkImageView imageView;
     VkSampler sampler;
 
-    void initFromFile(Engine *engine, VkCommandBuffer commandBuffer, VkBuffer &stagingBuffer,
-                      VkDeviceMemory &stagingBufferMemory, const char *fileName);
+    void initFromFile(Engine *engine, VkCommandBuffer commandBuffer, const char *fileName);
     void destroy(Engine *engine);
+
+private:
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
 };
 
 class Material {
@@ -156,7 +162,7 @@ private:
     std::vector<VkFramebuffer> swapChainFrameBuffers;
 
     VkCommandPool commandPool;
-    std::vector<VkCommandBuffer> commandBuffers;
+    std::vector<VkCommandBuffer> frameCommandBuffers;
 
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> renderFinishedSemaphores;
@@ -166,9 +172,9 @@ private:
     VkBuffer uniformBuffer;
     VkDeviceMemory uniformBuffersMemory;
 
-    Geometry geometry;
-    Texture texture;
-    Material material;
+    std::map<std::string, Geometry> geometries;
+    std::map<std::string, Texture> textures;
+    std::map<std::string, Material> materials;
 
     /* engine_helper.cpp */
     void createVKInstance();
@@ -188,7 +194,7 @@ private:
     void createFrameBuffers();
 
     void createCmdPool();
-    void allocCmdBuffers();
+    void allocFrameCmdBuffers();
 
     void createSyncObjs();
 
@@ -197,7 +203,7 @@ private:
 
     void createUniformBuffers();
 
-    void recordCmdBuffers();
+    void recordFrameCmdBuffers();
 
     VkCommandBuffer beginOneTimeSubmitCommands();
     void endOneTimeSubmitCommandsSyncWithFence(VkCommandBuffer commandBuffer);

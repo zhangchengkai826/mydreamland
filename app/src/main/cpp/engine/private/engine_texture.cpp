@@ -45,8 +45,7 @@ void Engine::createImage(uint32_t width, uint32_t height, uint32_t mipLevels, Vk
     vkBindImageMemory(vkDevice, image, imageMemory, 0);
 }
 
-void Texture::initFromFile(Engine *engine, VkCommandBuffer commandBuffer, VkBuffer &stagingBuffer,
-                           VkDeviceMemory &stagingBufferMemory, const char *fileName) {
+void Texture::initFromFile(Engine *engine, VkCommandBuffer commandBuffer, const char *fileName) {
     FILE *f = fopen(fileName, "r");
     fseek(f, 0, SEEK_END);
     auto nBytes = static_cast<uint32_t>(ftell(f));
@@ -155,6 +154,9 @@ void Texture::destroy(Engine *engine) {
     vkDestroyImageView(engine->vkDevice, imageView, nullptr);
     vkDestroyImage(engine->vkDevice, image, nullptr);
     vkFreeMemory(engine->vkDevice, imageMemory, nullptr);
+
+    vkDestroyBuffer(engine->vkDevice, stagingBuffer, nullptr);
+    vkFreeMemory(engine->vkDevice, stagingBufferMemory, nullptr);
 }
 
 void Engine::copyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, VkImage image,

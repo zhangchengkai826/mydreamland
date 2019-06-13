@@ -393,28 +393,28 @@ void Engine::createCmdPool() {
     vkCreateCommandPool(vkDevice, &commandPoolCreateInfo, nullptr, &commandPool);
 }
 
-void Engine::allocCmdBuffers() {
-    commandBuffers.resize(NUM_IMAGES_IN_SWAPCHAIN);
+void Engine::allocFrameCmdBuffers() {
+    frameCommandBuffers.resize(NUM_IMAGES_IN_SWAPCHAIN);
     VkCommandBufferAllocateInfo commandBufferAllocateInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
             .pNext = nullptr,
             .commandPool = commandPool,
             .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-            .commandBufferCount = static_cast<uint32_t>(commandBuffers.size()),
+            .commandBufferCount = static_cast<uint32_t>(frameCommandBuffers.size()),
     };
     vkAllocateCommandBuffers(vkDevice, &commandBufferAllocateInfo,
-                             commandBuffers.data());
+                             frameCommandBuffers.data());
 }
 
-void Engine::recordCmdBuffers() {
-    for(size_t i = 0; i < commandBuffers.size(); i++) {
+void Engine::recordFrameCmdBuffers() {
+    for(size_t i = 0; i < frameCommandBuffers.size(); i++) {
         VkCommandBufferBeginInfo commandBufferBeginInfo{
                 .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
                 .pNext = nullptr,
                 .flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT,
                 .pInheritanceInfo = nullptr,
         };
-        vkBeginCommandBuffer(commandBuffers[i], &commandBufferBeginInfo);
+        vkBeginCommandBuffer(frameCommandBuffers[i], &commandBufferBeginInfo);
 
         std::array<VkClearValue, 2> clearValues{{
             {.color = {.float32 = {0.0f, 0.0f, 0.0f, 1.0f}}},
@@ -433,26 +433,27 @@ void Engine::recordCmdBuffers() {
         PFN_vkCmdBeginRenderPass vkCmdBeginRenderPass;
         vkCmdBeginRenderPass = (PFN_vkCmdBeginRenderPass)vkGetInstanceProcAddr(
                 vkInstance, "vkCmdBeginRenderPass");
-        vkCmdBeginRenderPass(commandBuffers[i], &renderPassBeginInfo,
+        vkCmdBeginRenderPass(frameCommandBuffers[i], &renderPassBeginInfo,
                              VK_SUBPASS_CONTENTS_INLINE);
 
-        vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
-                          material.graphicsPipeline);
+        vkCmdBindPipeline(frameCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
+                          materials["internal/base.mat"].graphicsPipeline);
 
-        VkBuffer vertexBuffers[] = {geometry.vertexBuffer};
+        VkBuffer vertexBuffers[] = {geometries["plane.geo"].vertexBuffer};
         VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
+        vkCmdBindVertexBuffers(frameCommandBuffers[i], 0, 1, vertexBuffers, offsets);
 
-        vkCmdBindIndexBuffer(commandBuffers[i], geometry.indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+        vkCmdBindIndexBuffer(frameCommandBuffers[i], geometries["plane.geo"].indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
-        vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                material.graphicsPipelineLayout, 0, 1, &material.descriptorSet,
-                                0, nullptr);
+        vkCmdBindDescriptorSets(frameCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                materials["internal/base.mat"].graphicsPipelineLayout, 0, 1,
+                                &materials["internal/base.mat"].descriptorSet, 0, nullptr);
 
-        vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(geometry.nIndices), 1, 0, 0, 0);
+        vkCmdDrawIndexed(frameCommandBuffers[i], static_cast<uint32_t>(
+                geometries["plane.geo"].nIndices), 1, 0, 0, 0);
 
-        vkCmdEndRenderPass(commandBuffers[i]);
-        vkEndCommandBuffer(commandBuffers[i]);
+        vkCmdEndRenderPass(frameCommandBuffers[i]);
+        vkEndCommandBuffer(frameCommandBuffers[i]);
     }
 }
 
@@ -566,24 +567,60 @@ void Engine::endOneTimeSubmitCommandsSyncWithFence(VkCommandBuffer commandBuffer
 void Engine::loadResources() {
     VkCommandBuffer commandBuffer = beginOneTimeSubmitCommands();
 
-    geometry.initFromFile(this, commandBuffer,
-            "/storage/emulated/0/Documents/mydreamland/geometry/vertices.dat");
+    std::queue<std::string> resDirQueue;
+    std::string rootDir = "/storage/emulated/0/Documents/mydreamland/resources/";
+    resDirQueue.push("");
 
-    VkBuffer stagingBuffer = VK_NULL_HANDLE;
-    VkDeviceMemory stagingBufferMemory = VK_NULL_HANDLE;
-    texture.initFromFile(this, commandBuffer, stagingBuffer, stagingBufferMemory,
-                         "/storage/emulated/0/Documents/mydreamland/texture/texture.jpg");
+    while(!resDirQueue.empty()) {
+        std::string dirRelPath = resDirQueue.front();
+        resDirQueue.pop();
+        std::string dirAbsPath = rootDir + dirRelPath;
+        struct DIR *dir = opendir(dirAbsPath.c_str());
 
-    material.init(this, &texture);
+        struct dirent *dirEntry;
+        while((dirEntry = readdir(dir)) != nullptr) {
+            if(strcmp(dirEntry->d_name, ".") == 0 || strcmp(dirEntry->d_name, "..") == 0) {
+                continue;
+            }
+
+            std::string fileRelPath = dirRelPath + dirEntry->d_name;
+            std::string fileAbsPath = dirAbsPath + dirEntry->d_name;
+            struct stat fileStat;
+            lstat(fileAbsPath.c_str(), &fileStat);
+            if(S_ISREG(fileStat.st_mode)) {
+                char *ext = strrchr(dirEntry->d_name, '.') + 1;
+                if(strcmp(ext, "geo") == 0) {
+                    Geometry geo;
+                    geo.initFromFile(this, commandBuffer, fileAbsPath.c_str());
+                    geometries.emplace(fileRelPath, geo);
+                } else if(strcmp(ext, "jpg") == 0) {
+                    Texture tex;
+                    tex.initFromFile(this, commandBuffer, fileAbsPath.c_str());
+                    textures.emplace(fileRelPath, tex);
+                }
+            } else if(S_ISDIR(fileStat.st_mode)) {
+                resDirQueue.push(fileRelPath);
+            }
+        }
+
+        closedir(dir);
+    }
+
+    Material mat;
+    mat.init(this, &textures["statue.jpg"]);
+    materials.emplace("internal/base.mat", mat);
 
     endOneTimeSubmitCommandsSyncWithFence(commandBuffer);
-
-    vkDestroyBuffer(vkDevice, stagingBuffer, nullptr);
-    vkFreeMemory(vkDevice, stagingBufferMemory, nullptr);
 }
 
 void Engine::destroyResources() {
-    material.destroy(this);
-    texture.destroy(this);
-    geometry.destroy(this);
+    for(auto it = materials.begin(); it != materials.end(); it++) {
+        it->second.destroy(this);
+    }
+    for(auto it = textures.begin(); it != textures.end(); it++) {
+        it->second.destroy(this);
+    }
+    for(auto it = geometries.begin(); it != geometries.end(); it++) {
+        it->second.destroy(this);
+    }
 }
