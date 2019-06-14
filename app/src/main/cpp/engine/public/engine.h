@@ -268,6 +268,7 @@ private:
 
     void createDescriptorSetLayouts();
     void createDescriptorPools();
+    void prefillStaticSets();
 
     void createFrameSyncObjs();
 

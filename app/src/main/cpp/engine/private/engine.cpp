@@ -51,6 +51,8 @@ void Engine::init() {
     createCmdPool();
     allocFrameCmdBuffers();
 
+    createSamplers();
+
     createDescriptorSetLayouts();
     createDescriptorPools();
 

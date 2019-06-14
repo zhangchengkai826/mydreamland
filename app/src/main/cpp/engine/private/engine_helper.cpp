@@ -526,7 +526,7 @@ void Engine::createDescriptorPools() {
     VkDescriptorPoolSize staticPoolSize = {
             .descriptorCount = 1,
             .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-    }
+    };
     VkDescriptorPoolCreateInfo staticPoolCreateInfo{
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
             .pNext = nullptr,
@@ -553,8 +553,8 @@ void Engine::createDescriptorPools() {
     for(int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         VkDescriptorPoolSize resettablePoolSize = {
             .descriptorCount = MAX_TEXTURES_PER_FRAME,
-            .type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-        }
+            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        };
         VkDescriptorPoolCreateInfo resettableCreateInfo{
                 .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
                 .pNext = nullptr,
@@ -565,6 +565,53 @@ void Engine::createDescriptorPools() {
         };
         vkCreateDescriptorPool(vkDevice, &resettableCreateInfo, nullptr, &resettableDescriptorPool[i]);
     }
+}
+
+void Engine::prefillStaticSets() {
+    uint32_t bufferStride = sizeof(glm::mat4);
+    uint32_t bufferSize = bufferStride * MAX_FRAMES_IN_FLIGHT;
+    createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                 uniformBuffer, uniformBuffersMemory);
+
+    glm::mat4 V = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f),
+            glm::vec3(0.0f, 0.0f, 1.0f));
+    glm::mat4 P = glm::perspective(glm::radians(45.0f),
+            physicalDeviceSurfaceCapabilities.currentExtent.width /
+            static_cast<float>(physicalDeviceSurfaceCapabilities.currentExtent.height),
+            0.1f, 10.0f);
+    glm::mat4 PV = P * V;
+
+    void *data;
+    vkMapMemory(vkDevice, uniformBuffersMemory, 0, bufferSize, 0, &data);
+    for(int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        memcpy(reinterpret_cast<uint8_t *>(data) + bufferStride, &PV, sizeof(PV));
+    }
+    vkUnmapMemory(vkDevice, uniformBuffersMemory);
+
+    std::vector<VkWriteDescriptorSet> writeDescriptorSets;
+    for(int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        VkDescriptorBufferInfo bufferInfo{
+                .buffer = uniformBuffer,
+                .offset = bufferStride * i,
+                .range = bufferStride,
+        };
+        VkWriteDescriptorSet write{
+            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+            .pNext = nullptr,
+            .dstSet = staticDescriptorSets[i],
+            .dstBinding = 0,
+            .dstArrayElement = 0,
+            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .descriptorCount = 1,
+            .pBufferInfo = &bufferInfo,
+            .pImageInfo = nullptr,
+            .pTexelBufferView = nullptr,
+        };
+        writeDescriptorSets.push_back(write);
+    }
+    vkUpdateDescriptorSets(vkDevice, static_cast<uint32_t>(writeDescriptorSets.size()),
+                           writeDescriptorSets.data(), 0, nullptr);
 }
 
 void Engine::createFrameSyncObjs() {
