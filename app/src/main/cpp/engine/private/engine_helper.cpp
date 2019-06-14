@@ -446,6 +446,9 @@ void Engine::recordFrameCmdBuffers(int imageIndex) {
         vkCmdPushConstants(frameCommandBuffers[currentFrame], it->second.mat->graphicsPipelineLayout,
                            VK_SHADER_STAGE_VERTEX_BIT, 0, 64, &it->second.modelMat);
 
+        __android_log_print(ANDROID_LOG_INFO, "main",
+                            "render modelMat: %s", glm::to_string(it->second.modelMat).c_str());
+
         vkCmdDrawIndexed(frameCommandBuffers[currentFrame], static_cast<uint32_t>(
                 it->second.geo->nIndices), 1, 0, 0, 0);
     }
