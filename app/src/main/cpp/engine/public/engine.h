@@ -182,7 +182,7 @@ public:
 private:
     constexpr static int NUM_IMAGES_IN_SWAPCHAIN = 3;
     constexpr static int MAX_FRAMES_IN_FLIGHT = 2;
-    constexpr static int MAX_SAMPLED_IMAGE_DESCRIPTORS = 8;
+    constexpr static int MAX_TEXTURES_PER_FRAME = 8;
 
 #ifdef DEBUG
     std::vector<VkLayerProperties> *validationLayerProperties;
@@ -263,6 +263,8 @@ private:
 
     void createCmdPool();
     void allocFrameCmdBuffers();
+
+    void createSamplers();
 
     void createDescriptorSetLayouts();
     void createDescriptorPools();

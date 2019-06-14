@@ -455,7 +455,7 @@ void Engine::recordFrameCmdBuffers(int imageIndex) {
     vkEndCommandBuffer(frameCommandBuffers[currentFrame]);
 }
 
-void Engine::createDescriptorSetLayouts() {
+void Engine::createSamplers() {
     VkSamplerCreateInfo samplerCreateInfo{
             .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
             .pNext = nullptr,
@@ -477,18 +477,15 @@ void Engine::createDescriptorSetLayouts() {
             .maxLod = 0.0f,
     };
     vkCreateSampler(vkDevice, &samplerCreateInfo, nullptr, &sampler);
+}
 
-    std::array<VkDescriptorSetLayoutBinding, 2> staticSetLayoutBinding{{
+void Engine::createDescriptorSetLayouts() {
+    std::array<VkDescriptorSetLayoutBinding, 1> staticSetLayoutBinding{{
         {.binding = 0,
         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
         .descriptorCount = 1,
         .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
         .pImmutableSamplers = nullptr,},
-        {.binding = 1,
-        .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
-        .descriptorCount = 1,
-        .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
-        .pImmutableSamplers = &sampler,},
     }};
     VkDescriptorSetLayoutCreateInfo staticSetLayoutCreateInfo{
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
@@ -500,13 +497,13 @@ void Engine::createDescriptorSetLayouts() {
     vkCreateDescriptorSetLayout(vkDevice, &staticSetLayoutCreateInfo, nullptr,
                                 &staticSetLayout);
 
-    VkDescriptorSetLayoutBinding resettableSetLayoutBinding{
-            .binding = 0,
-            .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-            .descriptorCount = MAX_SAMPLED_IMAGE_DESCRIPTORS,
-            .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
-            .pImmutableSamplers = nullptr,
-    };
+    std::array<VkDescriptorSetLayoutBinding, 1> resettableSetLayoutBinding{{
+        {.binding = 0,
+        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        .descriptorCount = MAX_TEXTURES_PER_FRAME,
+        .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+        .pImmutableSamplers = nullptr,}
+    }};
     VkDescriptorBindingFlagsEXT bindingFlagsExt = {VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT};
     VkDescriptorSetLayoutBindingFlagsCreateInfoEXT resettableSetLayoutBindingFlagsCreateInfo{
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT,
@@ -516,10 +513,10 @@ void Engine::createDescriptorSetLayouts() {
     };
     VkDescriptorSetLayoutCreateInfo resettableSetLayoutCreateInfo{
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-            .pNext = &bindingFlagsExt,
+            .pNext = &resettableSetLayoutBindingFlagsCreateInfo,
             .flags = 0,
-            .bindingCount = 1,
-            .pBindings = &staticSetLayoutBinding,
+            .bindingCount = static_cast<uint32_t>(resettableSetLayoutBinding.size()),
+            .pBindings = resettableSetLayoutBinding.data(),
     };
     vkCreateDescriptorSetLayout(vkDevice, &resettableSetLayoutCreateInfo, nullptr,
                                 &resettableSetLayout);
@@ -555,7 +552,7 @@ void Engine::createDescriptorPools() {
 
     for(int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         VkDescriptorPoolSize resettablePoolSize = {
-            .descriptorCount = MAX_SAMPLED_IMAGE_DESCRIPTORS,
+            .descriptorCount = MAX_TEXTURES_PER_FRAME,
             .type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
         }
         VkDescriptorPoolCreateInfo resettableCreateInfo{
