@@ -65,7 +65,7 @@ void Engine::loadResources() {
                     Geometry geo;
                     geo.initFromFile(this, commandBuffer, fileAbsPath.c_str());
                     geometries->emplace(fileRelPath, geo);
-                } else if(strcmp(ext, "jpg") == 0) {
+                } else if(strcmp(ext, "jpg") == 0 || strcmp(ext, "png") == 0) {
                     Texture tex;
                     tex.initFromFile(this, commandBuffer, fileAbsPath.c_str());
                     textures->emplace(fileRelPath, tex);
