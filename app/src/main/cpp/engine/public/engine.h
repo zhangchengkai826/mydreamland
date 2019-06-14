@@ -182,6 +182,7 @@ public:
 private:
     constexpr static int NUM_IMAGES_IN_SWAPCHAIN = 3;
     constexpr static int MAX_FRAMES_IN_FLIGHT = 2;
+    constexpr static int RESETTABLE_POOL_SAMPLED_IMAGE_COUNT = 8;
 
 #ifdef DEBUG
     std::vector<VkLayerProperties> *validationLayerProperties;
@@ -221,6 +222,20 @@ private:
     VkBuffer uniformBuffer;
     VkDeviceMemory uniformBuffersMemory;
 
+    /* descriptor sets is allocated at init, and never gets reset.
+     * the memory referenced by each descriptor may change each frame,
+     * and after record vkCmdBindDescriptorSets, things referenced by descriptor set
+     * (resources, device memory, etc) must not be changed until the command buffer finishes executing
+     * on the GPU, so each frame should have its own descriptor set.
+     */
+    VkDescriptorPool staticDescriptorPool;
+    VkDescriptorSet staticDescriptorSets[MAX_FRAMES_IN_FLIGHT];
+
+    /* each frame will have its own resettable descriptor pool,
+     * and at the start of each frame, the corresponding descriptor pool will get reset.
+     */
+    VkDescriptorPool resettableDescriptorPool[MAX_FRAMES_IN_FLIGHT];
+
     std::map<std::string, Geometry> *geometries;
     std::map<std::string, Texture> *textures;
     std::map<std::string, Material> *materials;
@@ -243,6 +258,7 @@ private:
 
     void createCmdPool();
     void allocFrameCmdBuffers();
+    void createDescriptorPools();
 
     void createFrameSyncObjs();
 

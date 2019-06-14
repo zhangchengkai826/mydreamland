@@ -455,6 +455,47 @@ void Engine::recordFrameCmdBuffers(int imageIndex) {
     vkEndCommandBuffer(frameCommandBuffers[currentFrame]);
 }
 
+void Engine::createDescriptorPools() {
+    VkDescriptorPoolSize staticPoolSize = {
+            .descriptorCount = 1,
+            .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+    }
+    VkDescriptorPoolCreateInfo staticPoolCreateInfo{
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = 0,
+            .poolSizeCount = 1,
+            .pPoolSizes = &staticPoolSize,
+            .maxSets = MAX_FRAMES_IN_FLIGHT,
+    };
+    vkCreateDescriptorPool(vkDevice, &staticPoolCreateInfo, nullptr, &staticDescriptorPool);
+
+    for(int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        VkDescriptorSetAllocateInfo staticSetsAllocateInfo{
+                .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+                .pNext = nullptr,
+                .descriptorPool = staticDescriptorPool,
+                .descriptorSetCount = MAX_FRAMES_IN_FLIGHT,
+                .pSetLayouts = &descriptorSetLayout,
+        };
+        vkAllocateDescriptorSets(vkDevice, &staticSetsAllocateInfo, staticDescriptorSets);
+
+        VkDescriptorPoolSize resettablePoolSize = {
+            .descriptorCount = RESETTABLE_POOL_SAMPLED_IMAGE_COUNT,
+            .type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+        }
+        VkDescriptorPoolCreateInfo resettableCreateInfo{
+                .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+                .pNext = nullptr,
+                .flags = 0,
+                .poolSizeCount = 1,
+                .pPoolSizes = &resettablePoolSize,
+                .maxSets = 1,
+        };
+        vkCreateDescriptorPool(vkDevice, &resettableCreateInfo, nullptr, &resettableDescriptorPool[i]);
+    }
+}
+
 void Engine::createFrameSyncObjs() {
     imageAvailableSemaphores->resize(MAX_FRAMES_IN_FLIGHT);
     renderFinishedSemaphores->resize(MAX_FRAMES_IN_FLIGHT);
