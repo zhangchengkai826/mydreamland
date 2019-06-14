@@ -456,19 +456,46 @@ void Engine::recordFrameCmdBuffers(int imageIndex) {
 }
 
 void Engine::createDescriptorSetLayouts() {
-    VkDescriptorSetLayoutBinding staticSetLayoutBinding{
-            .binding = 0,
-            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-            .descriptorCount = 1,
-            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-            .pImmutableSamplers = nullptr,
+    VkSamplerCreateInfo samplerCreateInfo{
+            .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = 0,
+            .magFilter = VK_FILTER_LINEAR,
+            .minFilter = VK_FILTER_LINEAR,
+            .addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+            .addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+            .addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+            .anisotropyEnable = VK_TRUE,
+            .maxAnisotropy = 16,
+            .borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
+            .unnormalizedCoordinates = VK_FALSE,
+            .compareEnable = VK_FALSE,
+            .compareOp = VK_COMPARE_OP_ALWAYS,
+            .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+            .mipLodBias = 0.0f,
+            .minLod = 0.0f,
+            .maxLod = 0.0f,
     };
+    vkCreateSampler(vkDevice, &samplerCreateInfo, nullptr, &sampler);
+
+    std::array<VkDescriptorSetLayoutBinding, 2> staticSetLayoutBinding{{
+        {.binding = 0,
+        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        .descriptorCount = 1,
+        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+        .pImmutableSamplers = nullptr,},
+        {.binding = 1,
+        .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
+        .descriptorCount = 1,
+        .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+        .pImmutableSamplers = &sampler,},
+    }};
     VkDescriptorSetLayoutCreateInfo staticSetLayoutCreateInfo{
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
             .pNext = nullptr,
             .flags = 0,
-            .bindingCount = 1,
-            .pBindings = &staticSetLayoutBinding,
+            .bindingCount = static_cast<uint32_t>(staticSetLayoutBinding.size()),
+            .pBindings = staticSetLayoutBinding.data(),
     };
     vkCreateDescriptorSetLayout(vkDevice, &staticSetLayoutCreateInfo, nullptr,
                                 &staticSetLayout);

@@ -222,6 +222,8 @@ private:
     VkBuffer uniformBuffer;
     VkDeviceMemory uniformBuffersMemory;
 
+    VkSampler sampler;
+
     VkDescriptorSetLayout staticSetLayout;
     VkDescriptorSetLayout resettableSetLayout;
 

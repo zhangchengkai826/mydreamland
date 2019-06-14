@@ -82,6 +82,7 @@ void Engine::destroy() {
     vkDestroyDescriptorPool(vkDevice, staticDescriptorPool, nullptr);
     vkDestroyDescriptorSetLayout(vkDevice, resettableSetLayout, nullptr);
     vkDestroyDescriptorSetLayout(vkDevice, staticSetLayout, nullptr);
+    vkDestroySampler(vkDevice, sampler, nullptr);
 
     vkDestroyCommandPool(vkDevice, commandPool, nullptr);
 
