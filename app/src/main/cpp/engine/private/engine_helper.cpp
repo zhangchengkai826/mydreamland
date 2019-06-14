@@ -455,6 +455,49 @@ void Engine::recordFrameCmdBuffers(int imageIndex) {
     vkEndCommandBuffer(frameCommandBuffers[currentFrame]);
 }
 
+void Engine::createDescriptorSetLayouts() {
+    VkDescriptorSetLayoutBinding staticSetLayoutBinding{
+            .binding = 0,
+            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .descriptorCount = 1,
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+            .pImmutableSamplers = nullptr,
+    };
+    VkDescriptorSetLayoutCreateInfo staticSetLayoutCreateInfo{
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = 0,
+            .bindingCount = 1,
+            .pBindings = &staticSetLayoutBinding,
+    };
+    vkCreateDescriptorSetLayout(vkDevice, &staticSetLayoutCreateInfo, nullptr,
+                                &staticSetLayout);
+
+    VkDescriptorSetLayoutBinding resettableSetLayoutBinding{
+            .binding = 0,
+            .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+            .descriptorCount = MAX_SAMPLED_IMAGE_DESCRIPTORS,
+            .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .pImmutableSamplers = nullptr,
+    };
+    VkDescriptorBindingFlagsEXT bindingFlagsExt = {VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT};
+    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT resettableSetLayoutBindingFlagsCreateInfo{
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT,
+            .pNext = nullptr,
+            .bindingCount = 1,
+            .pBindingFlags = &bindingFlagsExt,
+    };
+    VkDescriptorSetLayoutCreateInfo resettableSetLayoutCreateInfo{
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+            .pNext = &bindingFlagsExt,
+            .flags = 0,
+            .bindingCount = 1,
+            .pBindings = &staticSetLayoutBinding,
+    };
+    vkCreateDescriptorSetLayout(vkDevice, &resettableSetLayoutCreateInfo, nullptr,
+                                &resettableSetLayout);
+}
+
 void Engine::createDescriptorPools() {
     VkDescriptorPoolSize staticPoolSize = {
             .descriptorCount = 1,
@@ -470,18 +513,22 @@ void Engine::createDescriptorPools() {
     };
     vkCreateDescriptorPool(vkDevice, &staticPoolCreateInfo, nullptr, &staticDescriptorPool);
 
+    VkDescriptorSetLayout layouts[MAX_FRAMES_IN_FLIGHT];
     for(int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        VkDescriptorSetAllocateInfo staticSetsAllocateInfo{
-                .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-                .pNext = nullptr,
-                .descriptorPool = staticDescriptorPool,
-                .descriptorSetCount = MAX_FRAMES_IN_FLIGHT,
-                .pSetLayouts = &descriptorSetLayout,
-        };
-        vkAllocateDescriptorSets(vkDevice, &staticSetsAllocateInfo, staticDescriptorSets);
+        layouts[i] = staticSetLayout;
+    };
+    VkDescriptorSetAllocateInfo staticSetsAllocateInfo{
+            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+            .pNext = nullptr,
+            .descriptorPool = staticDescriptorPool,
+            .descriptorSetCount = MAX_FRAMES_IN_FLIGHT,
+            .pSetLayouts = layouts,
+    };
+    vkAllocateDescriptorSets(vkDevice, &staticSetsAllocateInfo, staticDescriptorSets);
 
+    for(int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         VkDescriptorPoolSize resettablePoolSize = {
-            .descriptorCount = RESETTABLE_POOL_SAMPLED_IMAGE_COUNT,
+            .descriptorCount = MAX_SAMPLED_IMAGE_DESCRIPTORS,
             .type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
         }
         VkDescriptorPoolCreateInfo resettableCreateInfo{

@@ -182,7 +182,7 @@ public:
 private:
     constexpr static int NUM_IMAGES_IN_SWAPCHAIN = 3;
     constexpr static int MAX_FRAMES_IN_FLIGHT = 2;
-    constexpr static int RESETTABLE_POOL_SAMPLED_IMAGE_COUNT = 8;
+    constexpr static int MAX_SAMPLED_IMAGE_DESCRIPTORS = 8;
 
 #ifdef DEBUG
     std::vector<VkLayerProperties> *validationLayerProperties;
@@ -222,6 +222,9 @@ private:
     VkBuffer uniformBuffer;
     VkDeviceMemory uniformBuffersMemory;
 
+    VkDescriptorSetLayout staticSetLayout;
+    VkDescriptorSetLayout resettableSetLayout;
+
     /* descriptor sets is allocated at init, and never gets reset.
      * the memory referenced by each descriptor may change each frame,
      * and after record vkCmdBindDescriptorSets, things referenced by descriptor set
@@ -258,6 +261,8 @@ private:
 
     void createCmdPool();
     void allocFrameCmdBuffers();
+
+    void createDescriptorSetLayouts();
     void createDescriptorPools();
 
     void createFrameSyncObjs();

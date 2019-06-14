@@ -51,6 +51,9 @@ void Engine::init() {
     createCmdPool();
     allocFrameCmdBuffers();
 
+    createDescriptorSetLayouts();
+    createDescriptorPools();
+
     createFrameSyncObjs();
     currentFrame = 0;
 
@@ -72,6 +75,13 @@ void Engine::destroy() {
         vkDestroySemaphore(vkDevice, (*renderFinishedSemaphores)[i], nullptr);
         vkDestroySemaphore(vkDevice, (*imageAvailableSemaphores)[i], nullptr);
     }
+
+    for(int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        vkDestroyDescriptorPool(vkDevice, resettableDescriptorPool[i], nullptr);
+    }
+    vkDestroyDescriptorPool(vkDevice, staticDescriptorPool, nullptr);
+    vkDestroyDescriptorSetLayout(vkDevice, resettableSetLayout, nullptr);
+    vkDestroyDescriptorSetLayout(vkDevice, staticSetLayout, nullptr);
 
     vkDestroyCommandPool(vkDevice, commandPool, nullptr);
 
