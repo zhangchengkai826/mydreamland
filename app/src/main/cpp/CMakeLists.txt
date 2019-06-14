@@ -39,7 +39,8 @@ add_library(engine STATIC
         engine/private/engine_physics.cpp
         engine/private/engine_texture.cpp
         engine/private/engine_geometry.cpp
-        engine/private/engine_material.cpp)
+        engine/private/engine_material.cpp
+        engine/private/engine_resource.cpp)
 
 target_include_directories(engine PRIVATE
         engine/public)

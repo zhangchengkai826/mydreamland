@@ -221,7 +221,6 @@ private:
     std::map<std::string, Texture> *textures;
     std::map<std::string, Material> *materials;
 
-    /* engine_helper.cpp */
     void createVKInstance();
     void createVKAndroidSurface();
 
@@ -253,10 +252,7 @@ private:
     VkCommandBuffer beginOneTimeSubmitCommands();
     void endOneTimeSubmitCommandsSyncWithFence(VkCommandBuffer commandBuffer);
 
-    /* engine_physics.cpp */
     void updateUniformBuffer();
-
-    /* engine_texture.cpp */
 
     void createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkFormat format,
                      VkImageTiling tiling, VkImageUsageFlags usage,
@@ -273,14 +269,13 @@ private:
     VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags,
                                 uint32_t mipLevels);
 
-    /* engine_buffer_helper.cpp */
     uint32_t findOptimalMemoryTypeIndexSupportSpecifiedPropertyFlags(uint32_t targetMemoryypeBits,
             VkMemoryPropertyFlags targetMemoryPropertyFlags);
     void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
             VkMemoryPropertyFlags propertyFlags, VkBuffer &buffer, VkDeviceMemory &bufferMemory);
     void copyBuffer(VkBuffer srcBuffer, VkBuffer destBuffer, VkDeviceSize size);
 
-    /* engine_debug_output.cpp */
+    /* debug */
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugReportCallback(
             VkDebugReportFlagsEXT msgFlags,
             VkDebugReportObjectTypeEXT objType,
