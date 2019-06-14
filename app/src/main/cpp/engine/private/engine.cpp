@@ -18,7 +18,6 @@ void Engine::init() {
 
     geometries = new std::map<std::string, Geometry>();
     textures = new std::map<std::string, Texture>();
-    materials = new std::map<std::string, Material>();
     object3ds = new std::map<std::string, Object3D>();
 
 #ifdef DEBUG
@@ -129,7 +128,6 @@ void Engine::destroy() {
 #endif
 
     delete object3ds;
-    delete materials;
     delete textures;
     delete geometries;
 

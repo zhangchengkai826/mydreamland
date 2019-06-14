@@ -434,17 +434,17 @@ void Engine::recordFrameCmdBuffers(int imageIndex) {
                              VK_INDEX_TYPE_UINT16);
 
         vkCmdBindDescriptorSets(frameCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                it->second.mat->graphicsPipelineLayout, 0, 1,
-                                &it->second.mat->descriptorSet, 0, nullptr);
+                                it->second.tex->graphicsPipelineLayout, 0, 1,
+                                &it->second.tex->descriptorSet, 0, nullptr);
 
         /* note that vkCmdPushConstants.pValues is instantly remembered by the command buffer, and if
          * the data pointed by pValues changes afterwords, it has no effect on command buffer
          */
-        vkCmdPushConstants(frameCommandBuffers[currentFrame], it->second.mat->graphicsPipelineLayout,
+        vkCmdPushConstants(frameCommandBuffers[currentFrame], it->second.tex->graphicsPipelineLayout,
                            VK_SHADER_STAGE_VERTEX_BIT, 0, 64, &it->second.modelMat);
 
         vkCmdBindPipeline(frameCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS,
-                          it->second.mat->graphicsPipeline);
+                          it->second.tex->graphicsPipeline);
 
         vkCmdDrawIndexed(frameCommandBuffers[currentFrame], static_cast<uint32_t>(
                 it->second.geo->nIndices), 1, 0, 0, 0);

@@ -3,9 +3,9 @@
 //
 #include <engine.h>
 
-void Object3D::init(Geometry *geo, Material *mat) {
+void Object3D::init(Geometry *geo, Texture *tex) {
     this->geo = geo;
-    this->mat = mat;
+    this->tex = tex;
     this->animController.t = 0;
     this->animController.tMax = 0;
 
@@ -78,12 +78,8 @@ void Engine::loadResources() {
         closedir(dir);
     }
 
-    Material mat;
-    mat.init(this, &(*textures)["statue.jpg"]);
-    materials->emplace("internal/base.mat", mat);
-
     Object3D obj3d;
-    obj3d.init(&(*geometries)["plane.geo"], &(*materials)["internal/base.mat"]);
+    obj3d.init(&(*geometries)["plane.geo"], &(*textures)["statue.jpg"]);
     obj3d.setPostion(0, 0, -0.5f);
     obj3d.animController.tMax = 3;
     obj3d.animController.rotZ[0] = glm::vec2(-3, -900);

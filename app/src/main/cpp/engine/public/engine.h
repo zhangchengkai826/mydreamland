@@ -109,7 +109,7 @@ public:
 
 class Object3D {
 public:
-    void init(Geometry *geo, Material *mat);
+    void init(Geometry *geo, Texture *tex);
     void destroy();
 
     void setPostion(float x, float y, float z);
@@ -117,25 +117,16 @@ public:
     void refreshModelMat();
 
     Geometry *geo;
-    Material *mat;
+    Texture *tex;
 
     glm::mat4 modelMat;
 
     AnimController animController;
-
-private:
-};
-
-struct UniformBuffer {
-    alignas(16) glm::mat4 model;
-    alignas(16) glm::mat4 view;
-    alignas(16) glm::mat4 proj;
 };
 
 class Engine {
     friend class Geometry;
     friend class Texture;
-    friend class Material;
 public:
     pthread_mutex_t mutex;
 
@@ -223,7 +214,6 @@ private:
 
     std::map<std::string, Geometry> *geometries;
     std::map<std::string, Texture> *textures;
-    std::map<std::string, Material> *materials;
 
     void createVKInstance();
     void createVKAndroidSurface();
