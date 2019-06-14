@@ -8,21 +8,32 @@ void Object3D::init(Geometry *geo, Material *mat) {
     this->mat = mat;
     this->animController.t = 0;
     this->animController.tMax = 0;
-    this->animController.posX.push_back(glm::vec2(0, 0));
-    this->animController.posY.push_back(glm::vec2(0, 0));
-    this->animController.posZ.push_back(glm::vec2(0, 0));
-    this->animController.rotX.push_back(glm::vec2(0, 0));
-    this->animController.rotY.push_back(glm::vec2(0, 0));
-    this->animController.rotZ.push_back(glm::vec2(0, 0));
-    this->animController.scaleX.push_back(glm::vec2(0, 1));
-    this->animController.scaleY.push_back(glm::vec2(0, 1));
-    this->animController.scaleZ.push_back(glm::vec2(0, 1));
 
-    this->modelMat = this->animController.advance(0);
+    for(int i = 0; i < 2; i++) {
+        this->animController.posX.push_back(glm::vec2(0, 0));
+        this->animController.posY.push_back(glm::vec2(0, 0));
+        this->animController.posZ.push_back(glm::vec2(0, 0));
+        this->animController.rotX.push_back(glm::vec2(0, 0));
+        this->animController.rotY.push_back(glm::vec2(0, 0));
+        this->animController.rotZ.push_back(glm::vec2(0, 0));
+        this->animController.scaleX.push_back(glm::vec2(0, 1));
+        this->animController.scaleY.push_back(glm::vec2(0, 1));
+        this->animController.scaleZ.push_back(glm::vec2(0, 1));
+    }
 }
 
 void Object3D::destroy() {
 
+}
+
+void Object3D::setPostion(float x, float y, float z) {
+    animController.posX[1].y = x;
+    animController.posY[1].y = y;
+    animController.posZ[1].y = z;
+}
+
+void Object3D::refreshModelMat() {
+    modelMat = animController.advance(0);
 }
 
 void Engine::loadResources() {
@@ -73,15 +84,18 @@ void Engine::loadResources() {
 
     Object3D obj3d;
     obj3d.init(&(*geometries)["plane.geo"], &(*materials)["internal/base.mat"]);
+    obj3d.setPostion(0, 0, -1);
     obj3d.animController.tMax = 3;
-
     obj3d.animController.rotZ[0] = glm::vec2(-3, -900);
-    obj3d.animController.rotZ.push_back(glm::vec2(0, 0));
     obj3d.animController.rotZ.push_back(glm::vec2(1.5f, -90));
     obj3d.animController.rotZ.push_back(glm::vec2(3, 0));
     obj3d.animController.rotZ.push_back(glm::vec2(6, -900));
-
+    obj3d.refreshModelMat();
     object3ds->emplace("internal/plane.obj3d", obj3d);
+
+    obj3d.setPostion(0, 0, 1);
+    obj3d.refreshModelMat();
+    object3ds->emplace("internal/plane2.obj3d", obj3d);
 
     endOneTimeSubmitCommandsSyncWithFence(commandBuffer);
 }

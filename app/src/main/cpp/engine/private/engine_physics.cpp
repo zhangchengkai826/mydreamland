@@ -7,6 +7,7 @@
 float AnimController::interpolate(std::vector<glm::vec2> &curve) {
     int i;
     for(i = 0; i < curve.size(); i++) {
+        /* curve[i].x <= curve[i+1].x */
         if(t < curve[i].x) {
             break;
         }
@@ -27,6 +28,7 @@ glm::mat4 AnimController::advance(float dt) {
     if(t >= tMax) {
         t = 0.0f;
     }
+    /* 0 <= t < tMax */
 
     glm::mat4 result(1.0f); /* identity */
     glm::vec3 T, R, S;

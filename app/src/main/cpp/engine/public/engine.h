@@ -135,6 +135,10 @@ public:
     void init(Geometry *geo, Material *mat);
     void destroy();
 
+    void setPostion(float x, float y, float z);
+
+    void refreshModelMat();
+
     Geometry *geo;
     Material *mat;
 
