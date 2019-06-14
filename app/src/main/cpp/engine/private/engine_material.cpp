@@ -4,143 +4,29 @@
 
 #include <engine.h>
 
-void Material::init(Engine *engine, Texture *texture) {
-    createDescriptorSetLayout(engine);
-    createDescriptorPool(engine);
-    createDescriptorSets(engine, texture);
-    createGraphicsPipelineLayout(engine);
-    createGraphicsPipeline(engine);
-}
-
-void Material::destroy(Engine *engine) {
-    vkDestroyPipeline(engine->vkDevice, graphicsPipeline, nullptr);
-    vkDestroyPipelineLayout(engine->vkDevice, graphicsPipelineLayout, nullptr);
-    vkDestroyDescriptorPool(engine->vkDevice, descriptorPool, nullptr);
-    vkDestroyDescriptorSetLayout(engine->vkDevice, descriptorSetLayout, nullptr);
-}
-
-void Material::createDescriptorSetLayout(Engine *engine) {
-    VkDescriptorSetLayoutBinding uniformLayoutBinding{
-            .binding = 0,
-            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-            .descriptorCount = 1,
-            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-            .pImmutableSamplers = nullptr,
-    };
-    VkDescriptorSetLayoutBinding samplerLayoutBinding{
-            .binding = 1,
-            .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            .descriptorCount = 1,
-            .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
-            .pImmutableSamplers = nullptr,
-    };
-
-    std::array<VkDescriptorSetLayoutBinding, 2> bindings = {uniformLayoutBinding,
-                                                            samplerLayoutBinding};
-    VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo{
-            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = 0,
-            .bindingCount = static_cast<uint32_t>(bindings.size()),
-            .pBindings = bindings.data(),
-    };
-    vkCreateDescriptorSetLayout(engine->vkDevice, &descriptorSetLayoutCreateInfo, nullptr,
-            &descriptorSetLayout);
-}
-
-void Material::createDescriptorPool(Engine *engine) {
-    std::array<VkDescriptorPoolSize, 2> poolSizes = {{
-         {.descriptorCount = 1,
-                 .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,},
-         {.descriptorCount = 1,
-                 .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,},
-    }};
-    VkDescriptorPoolCreateInfo createInfo{
-            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = 0,
-            .poolSizeCount = static_cast<uint32_t>(poolSizes.size()),
-            .pPoolSizes = poolSizes.data(),
-            .maxSets = 1,
-    };
-
-    vkCreateDescriptorPool(engine->vkDevice, &createInfo, nullptr, &descriptorPool);
-}
-
-void Material::createDescriptorSets(Engine *engine, Texture *texture) {
-    VkDescriptorSetAllocateInfo allocateInfo{
-            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-            .pNext = nullptr,
-            .descriptorPool = descriptorPool,
-            .descriptorSetCount = 1,
-            .pSetLayouts = &descriptorSetLayout,
-    };
-    vkAllocateDescriptorSets(engine->vkDevice, &allocateInfo, &descriptorSet);
-
-    VkDescriptorBufferInfo bufferInfo{
-            .buffer = engine->uniformBuffer,
-            .offset = 0,
-            .range = sizeof(UniformBuffer),
-    };
-    VkDescriptorImageInfo imageInfo{
-            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            .imageView = texture->imageView,
-            .sampler = texture->sampler,
-    };
-
-    std::array<VkWriteDescriptorSet, 2> writeDescriptorSets = {{
-       {
-           .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-           .pNext = nullptr,
-           .dstSet = descriptorSet,
-           .dstBinding = 0,
-           .dstArrayElement = 0,
-           .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-           .descriptorCount = 1,
-           .pBufferInfo = &bufferInfo,
-           .pImageInfo = nullptr,
-           .pTexelBufferView = nullptr,
-       },
-       {
-           .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-           .pNext = nullptr,
-           .dstSet = descriptorSet,
-           .dstBinding = 1,
-           .dstArrayElement = 0,
-           .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-           .descriptorCount = 1,
-           .pBufferInfo = nullptr,
-           .pImageInfo = &imageInfo,
-           .pTexelBufferView = nullptr,
-       },
-    }};
-    vkUpdateDescriptorSets(engine->vkDevice, static_cast<uint32_t>(writeDescriptorSets.size()),
-                           writeDescriptorSets.data(), 0, nullptr);
-}
-
-void Material::createGraphicsPipelineLayout(Engine *engine) {
+void Engine::createPipelineLayout() {
     VkPushConstantRange range{
         .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
         .offset = 0,
         .size = 64,
     };
-
+    std::array<VkDescriptorSetLayout, 2> layouts = {staticSetLayout, resettableSetLayout};
     VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
             .pNext = nullptr,
             .flags = 0,
-            .setLayoutCount = 1,
-            .pSetLayouts = &descriptorSetLayout,
+            .setLayoutCount = static_cast<uint32_t>(layouts.size()),
+            .pSetLayouts = layouts.data(),
             .pushConstantRangeCount = 1,
             .pPushConstantRanges = &range,
     };
-    vkCreatePipelineLayout(engine->vkDevice, &pipelineLayoutCreateInfo, nullptr,
-                           &graphicsPipelineLayout);
+    vkCreatePipelineLayout(vkDevice, &pipelineLayoutCreateInfo, nullptr,
+                           &pipelineLayout3D);
 }
 
-void Material::createGraphicsPipeline(Engine *engine) {
-    VkShaderModule vertShaderModule = createShaderModule(engine, "shaders/shader.vert.spv");
-    VkShaderModule fragShaderModule = createShaderModule(engine, "shaders/shader.frag.spv");
+void Engine::createPipeline() {
+    VkShaderModule vertShaderModule = createShaderModule("shaders/shader.vert.spv");
+    VkShaderModule fragShaderModule = createShaderModule("shaders/shader.frag.spv");
 
     VkPipelineShaderStageCreateInfo vertShaderStageInfo{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
@@ -186,15 +72,15 @@ void Material::createGraphicsPipeline(Engine *engine) {
             .x = 0,
             .y = 0,
             .width = static_cast<float>(
-                    engine->physicalDeviceSurfaceCapabilities.currentExtent.width),
+                    physicalDeviceSurfaceCapabilities.currentExtent.width),
             .height = static_cast<float>(
-                    engine->physicalDeviceSurfaceCapabilities.currentExtent.height),
+                    physicalDeviceSurfaceCapabilities.currentExtent.height),
             .minDepth = 0.0f,
             .maxDepth = 1.0f,
     };
     VkRect2D scissor{
             .offset = {0, 0},
-            .extent = engine->physicalDeviceSurfaceCapabilities.currentExtent,
+            .extent = physicalDeviceSurfaceCapabilities.currentExtent,
     };
     VkPipelineViewportStateCreateInfo viewportStateCreateInfo{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
@@ -289,22 +175,21 @@ void Material::createGraphicsPipeline(Engine *engine) {
             .pDepthStencilState = &depthStencilStateCreateInfo,
             .pColorBlendState = &colorBlendStateCreateInfo,
             .pDynamicState = nullptr,
-            .layout = graphicsPipelineLayout,
-            .renderPass = engine->renderPass,
+            .layout = pipelineLayout3D,
+            .renderPass = renderPass,
             .subpass = 0,
             .basePipelineHandle = VK_NULL_HANDLE,
             .basePipelineIndex = -1,
     };
-    vkCreateGraphicsPipelines(engine->vkDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr,
-                              &graphicsPipeline);
+    vkCreateGraphicsPipelines(vkDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr,
+                              &pipeline3D);
 
-    vkDestroyShaderModule(engine->vkDevice, vertShaderModule, nullptr);
-    vkDestroyShaderModule(engine->vkDevice, fragShaderModule, nullptr);
+    vkDestroyShaderModule(vkDevice, vertShaderModule, nullptr);
+    vkDestroyShaderModule(vkDevice, fragShaderModule, nullptr);
 }
 
-
-VkShaderModule Material::createShaderModule(Engine *engine, const char *fileName) {
-    AAsset* shaderFile = AAssetManager_open(engine->activity->assetManager,
+VkShaderModule Engine::createShaderModule(const char *fileName) {
+    AAsset* shaderFile = AAssetManager_open(activity->assetManager,
                                             fileName, AASSET_MODE_BUFFER);
     size_t shaderFileLen = AAsset_getLength(shaderFile);
     std::vector<char> content(shaderFileLen);
@@ -317,6 +202,6 @@ VkShaderModule Material::createShaderModule(Engine *engine, const char *fileName
             .pCode = reinterpret_cast<const uint32_t *>(content.data()),
     };
     VkShaderModule shaderModule;
-    vkCreateShaderModule(engine->vkDevice, &vertShaderModuleCreateInfo, nullptr, &shaderModule);
+    vkCreateShaderModule(vkDevice, &vertShaderModuleCreateInfo, nullptr, &shaderModule);
     return shaderModule;
 }

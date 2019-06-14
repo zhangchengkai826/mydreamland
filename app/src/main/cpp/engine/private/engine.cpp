@@ -57,9 +57,12 @@ void Engine::init() {
     createDescriptorPools();
     prefillStaticSets();
 
+    createPipelineLayout();
+    createPipeline();
+
     createFrameSyncObjs();
     currentFrame = 0;
-    
+
     loadResources();
 }
 
@@ -77,6 +80,11 @@ void Engine::destroy() {
         vkDestroySemaphore(vkDevice, (*imageAvailableSemaphores)[i], nullptr);
     }
 
+    vkDestroyPipeline(vkDevice, pipeline3D, nullptr);
+    vkDestroyPipelineLayout(vkDevice, pipelineLayout3D, nullptr);
+
+    vkDestroyBuffer(vkDevice, uniformBuffer, nullptr);
+    vkFreeMemory(vkDevice, uniformBuffersMemory, nullptr);
     for(int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         vkDestroyDescriptorPool(vkDevice, resettableDescriptorPool[i], nullptr);
     }

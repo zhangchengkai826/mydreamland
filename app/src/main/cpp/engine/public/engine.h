@@ -72,7 +72,6 @@ public:
     VkImage image;
     VkDeviceMemory imageMemory;
     VkImageView imageView;
-    VkSampler sampler;
 
     void initFromFile(Engine *engine, VkCommandBuffer commandBuffer, const char *fileName);
     void destroy(Engine *engine);
@@ -80,28 +79,6 @@ public:
 private:
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
-};
-
-class Material {
-public:
-    VkDescriptorSet descriptorSet; /* read only, can be used simultaneously in multiple frames */
-    VkPipeline graphicsPipeline;
-    VkPipelineLayout graphicsPipelineLayout;
-
-    void init(Engine *engine, Texture *texture);
-    void destroy(Engine *engine);
-
-private:
-    VkDescriptorSetLayout descriptorSetLayout;
-    VkDescriptorPool descriptorPool;
-
-    VkShaderModule createShaderModule(Engine *engine, const char *fileName);
-
-    void createDescriptorSetLayout(Engine *engine);
-    void createDescriptorPool(Engine *engine);
-    void createDescriptorSets(Engine *engine, Texture *texture);
-    void createGraphicsPipelineLayout(Engine *engine);
-    void createGraphicsPipeline(Engine *engine);
 };
 
 class AnimController {
@@ -241,6 +218,9 @@ private:
      */
     VkDescriptorPool resettableDescriptorPool[MAX_FRAMES_IN_FLIGHT];
 
+    VkPipeline pipeline3D;
+    VkPipelineLayout pipelineLayout3D;
+
     std::map<std::string, Geometry> *geometries;
     std::map<std::string, Texture> *textures;
     std::map<std::string, Material> *materials;
@@ -270,12 +250,17 @@ private:
     void createDescriptorPools();
     void prefillStaticSets();
 
+    void createPipelineLayout();
+    void createPipeline();
+
     void createFrameSyncObjs();
 
     void loadResources();
     void destroyResources();
 
     void recordFrameCmdBuffers(int imageIndex);
+
+    VkShaderModule createShaderModule(const char *fileName);
 
     VkCommandBuffer beginOneTimeSubmitCommands();
     void endOneTimeSubmitCommandsSyncWithFence(VkCommandBuffer commandBuffer);
