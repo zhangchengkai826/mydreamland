@@ -611,10 +611,13 @@ void Engine::loadResources() {
     Object3D obj3d;
     obj3d.init(&(*geometries)["plane.geo"], &(*materials)["internal/base.mat"]);
     obj3d.animController.tMax = 3;
+
     obj3d.animController.rotZ[0] = glm::vec2(-3, -900);
     obj3d.animController.rotZ.push_back(glm::vec2(0, 0));
+    obj3d.animController.rotZ.push_back(glm::vec2(1.5f, -90));
     obj3d.animController.rotZ.push_back(glm::vec2(3, 0));
     obj3d.animController.rotZ.push_back(glm::vec2(6, -900));
+
     object3ds->emplace("internal/plane.obj3d", obj3d);
 
     endOneTimeSubmitCommandsSyncWithFence(commandBuffer);

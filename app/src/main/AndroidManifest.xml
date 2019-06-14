@@ -9,7 +9,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.NoActionBar"
-        android:hasCode="true">
+        android:hasCode="true"
+        android:debuggable="true">
         <activity android:name="android.app.NativeActivity" android:screenOrientation="landscape">
             <meta-data android:name="android.app.lib_name" android:value="main" />
             <intent-filter>

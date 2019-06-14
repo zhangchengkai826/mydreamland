@@ -122,7 +122,7 @@ void Engine::logPhysicalDeviceAvailableExtensions() {
     uint32_t deviceExtensionCount = 0;
     vkEnumerateDeviceExtensionProperties(vkPhysicalDevice, nullptr, &deviceExtensionCount, nullptr);
     std::vector<VkExtensionProperties> deviceExtension(deviceExtensionCount);
-    vkEnumerateInstanceExtensionProperties(nullptr, &deviceExtensionCount, deviceExtension.data());
+    vkEnumerateDeviceExtensionProperties(vkPhysicalDevice, nullptr, &deviceExtensionCount, deviceExtension.data());
     __android_log_print(ANDROID_LOG_INFO, "main",
             "Vulkan Selected Physical Device Available Extensions:");
     for(const auto &extension: deviceExtension) {
