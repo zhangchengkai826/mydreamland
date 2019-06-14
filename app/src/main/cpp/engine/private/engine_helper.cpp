@@ -393,6 +393,27 @@ void Engine::createCmdPool() {
     vkCreateCommandPool(vkDevice, &commandPoolCreateInfo, nullptr, &commandPool);
 }
 
+void Engine::prepareResettableSets() {
+    vkResetDescriptorPool(vkDevice, resettableDescriptorPool[currentFrame], 0);
+    uint32_t descriptorCount = object3ds->size();
+    VkDescriptorSetVariableDescriptorCountAllocateInfoEXT ext{
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO_EXT,
+        .pNext = nullptr,
+        .descriptorSetCount = 1,
+        .pDescriptorCounts = &descriptorCount,
+    };
+    VkDescriptorSetAllocateInfo allocateInfo{
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+        .pNext = &ext,
+        .descriptorPool = resettableDescriptorPool[currentFrame],
+        .descriptorSetCount = 1,
+        .pSetLayouts = &resettableSetLayout,
+    };
+    vkAllocateDescriptorSets(vkDevice, &allocateInfo, &resettableDescriptorSets[currentFrame]);
+
+
+}
+
 void Engine::recordFrameCmdBuffers(int imageIndex) {
     VkCommandBufferBeginInfo beginInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -402,8 +423,7 @@ void Engine::recordFrameCmdBuffers(int imageIndex) {
     };
     /* implicitly reset command buffer */
     vkBeginCommandBuffer(frameCommandBuffers[currentFrame], &beginInfo);
-    
-    
+
     std::array<VkClearValue, 2> clearValues{{
         {.color = {.float32 = {0.0f, 0.0f, 0.0f, 1.0f}}},
         {.depthStencil = {.depth = 1.0f, .stencil = 0}},
@@ -433,18 +453,20 @@ void Engine::recordFrameCmdBuffers(int imageIndex) {
         vkCmdBindIndexBuffer(frameCommandBuffers[currentFrame], it->second.geo->indexBuffer, 0,
                              VK_INDEX_TYPE_UINT16);
 
+        std::array<VkDescriptorSet, 2> descriptorSets =
+                {staticDescriptorSets[currentFrame], resettableDescriptorSets[currentFrame]};
         vkCmdBindDescriptorSets(frameCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                it->second.tex->graphicsPipelineLayout, 0, 1,
-                                &it->second.tex->descriptorSet, 0, nullptr);
+                                pipelineLayout3D, 0, static_cast<uint32_t>(descriptorSets.size()),
+                                descriptorSets.data(), 0, nullptr);
 
         /* note that vkCmdPushConstants.pValues is instantly remembered by the command buffer, and if
          * the data pointed by pValues changes afterwords, it has no effect on command buffer
          */
-        vkCmdPushConstants(frameCommandBuffers[currentFrame], it->second.tex->graphicsPipelineLayout,
+        vkCmdPushConstants(frameCommandBuffers[currentFrame], pipelineLayout3D,
                            VK_SHADER_STAGE_VERTEX_BIT, 0, 64, &it->second.modelMat);
 
         vkCmdBindPipeline(frameCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS,
-                          it->second.tex->graphicsPipeline);
+                          pipeline3D);
 
         vkCmdDrawIndexed(frameCommandBuffers[currentFrame], static_cast<uint32_t>(
                 it->second.geo->nIndices), 1, 0, 0, 0);

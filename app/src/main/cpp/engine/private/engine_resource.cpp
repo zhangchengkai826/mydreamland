@@ -100,9 +100,6 @@ void Engine::destroyResources() {
     for(auto it = object3ds->begin(); it != object3ds->end(); it++) {
         it->second.destroy();
     }
-    for(auto it = materials->begin(); it != materials->end(); it++) {
-        it->second.destroy(this);
-    }
     for(auto it = textures->begin(); it != textures->end(); it++) {
         it->second.destroy(this);
     }
