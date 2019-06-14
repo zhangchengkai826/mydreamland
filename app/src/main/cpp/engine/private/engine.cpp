@@ -55,12 +55,11 @@ void Engine::init() {
 
     createDescriptorSetLayouts();
     createDescriptorPools();
+    prefillStaticSets();
 
     createFrameSyncObjs();
     currentFrame = 0;
-
-    createUniformBuffers();
-
+    
     loadResources();
 }
 

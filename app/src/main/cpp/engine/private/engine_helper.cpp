@@ -580,6 +580,12 @@ void Engine::prefillStaticSets() {
             physicalDeviceSurfaceCapabilities.currentExtent.width /
             static_cast<float>(physicalDeviceSurfaceCapabilities.currentExtent.height),
             0.1f, 10.0f);
+    /* Vulkan NDC y-axis points downwards, while OpenGL's pointing upwards
+    *
+    * projection matrix determines handedness, so Vulkan is right-handedness instead of OpenGL's
+    * left-handedness
+    */
+    P[1][1] *= -1;
     glm::mat4 PV = P * V;
 
     void *data;
@@ -635,36 +641,6 @@ void Engine::createFrameSyncObjs() {
                           &(*renderFinishedSemaphores)[i]);
         vkCreateFence(vkDevice, &fenceCreateInfo, nullptr, &(*inFlightFrameFences)[i]);
     }
-}
-
-
-void Engine::createUniformBuffers() {
-    VkCommandBuffer commandBuffer = beginOneTimeSubmitCommands();
-
-    VkDeviceSize bufferSize = sizeof(UniformBuffer);
-    UniformBuffer ubo{
-            .model = glm::mat4(1.0f),
-            .view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f),
-                    glm::vec3(0.0f, 0.0f, 1.0f)),
-            .proj = glm::perspective(glm::radians(45.0f),
-                    physicalDeviceSurfaceCapabilities.currentExtent.width /
-                    static_cast<float>(physicalDeviceSurfaceCapabilities.currentExtent.height),
-                    0.1f, 10.0f),
-    };
-    /* Vulkan NDC y-axis points downwards, while OpenGL's pointing upwards
-     *
-     * projection matrix determines handedness, so Vulkan is right-handedness instead of OpenGL's
-     * left-handedness
-     */
-    ubo.proj[1][1] *= -1;
-
-    createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                uniformBuffer, uniformBuffersMemory);
-
-    vkCmdUpdateBuffer(commandBuffer, uniformBuffer, 0, bufferSize, &ubo);
-
-    endOneTimeSubmitCommandsSyncWithFence(commandBuffer);
 }
 
 VkCommandBuffer Engine::beginOneTimeSubmitCommands() {
