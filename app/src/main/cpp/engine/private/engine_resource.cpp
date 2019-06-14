@@ -84,7 +84,7 @@ void Engine::loadResources() {
 
     Object3D obj3d;
     obj3d.init(&(*geometries)["plane.geo"], &(*materials)["internal/base.mat"]);
-    obj3d.setPostion(0, 0, -1);
+    obj3d.setPostion(0, 0, -0.5f);
     obj3d.animController.tMax = 3;
     obj3d.animController.rotZ[0] = glm::vec2(-3, -900);
     obj3d.animController.rotZ.push_back(glm::vec2(1.5f, -90));
@@ -93,7 +93,7 @@ void Engine::loadResources() {
     obj3d.refreshModelMat();
     object3ds->emplace("internal/plane.obj3d", obj3d);
 
-    obj3d.setPostion(0, 0, 1);
+    obj3d.setPostion(0, 0, 0);
     obj3d.refreshModelMat();
     object3ds->emplace("internal/plane2.obj3d", obj3d);
 

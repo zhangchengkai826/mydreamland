@@ -270,7 +270,7 @@ void Engine::createRenderPass() {
             .format = VK_FORMAT_D24_UNORM_S8_UINT,
             .samples = VK_SAMPLE_COUNT_1_BIT,
             .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-            .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+            .storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
             .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
             .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
             .flags = 0,
@@ -426,9 +426,6 @@ void Engine::recordFrameCmdBuffers(int imageIndex) {
 
     pthread_mutex_lock(&mutex);
     for(auto it = object3ds->begin(); it != object3ds->end(); it++) {
-        vkCmdBindPipeline(frameCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS,
-                          it->second.mat->graphicsPipeline);
-
         VkBuffer vertexBuffers[] = {it->second.geo->vertexBuffer};
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(frameCommandBuffers[currentFrame], 0, 1, vertexBuffers, offsets);
@@ -445,6 +442,9 @@ void Engine::recordFrameCmdBuffers(int imageIndex) {
          */
         vkCmdPushConstants(frameCommandBuffers[currentFrame], it->second.mat->graphicsPipelineLayout,
                            VK_SHADER_STAGE_VERTEX_BIT, 0, 64, &it->second.modelMat);
+
+        vkCmdBindPipeline(frameCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS,
+                          it->second.mat->graphicsPipeline);
 
         vkCmdDrawIndexed(frameCommandBuffers[currentFrame], static_cast<uint32_t>(
                 it->second.geo->nIndices), 1, 0, 0, 0);
