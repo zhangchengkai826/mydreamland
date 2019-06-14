@@ -29,8 +29,8 @@ static void *physicsLoop(void *arg) {
         for(auto it = engine.object3ds->begin(); it != engine.object3ds->end(); it++) {
             it->second.modelMat = it->second.animController.advance(dt);
 
-            __android_log_print(ANDROID_LOG_INFO, "main",
-                                "physics modelMat: %s", glm::to_string(it->second.modelMat).c_str());
+            /*__android_log_print(ANDROID_LOG_INFO, "main",
+                                "physics modelMat: %s", glm::to_string(it->second.modelMat).c_str());*/
         }
         pthread_mutex_unlock(&engine.mutex);
 

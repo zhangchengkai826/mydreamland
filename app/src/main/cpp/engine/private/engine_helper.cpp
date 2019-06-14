@@ -446,9 +446,6 @@ void Engine::recordFrameCmdBuffers(int imageIndex) {
         vkCmdPushConstants(frameCommandBuffers[currentFrame], it->second.mat->graphicsPipelineLayout,
                            VK_SHADER_STAGE_VERTEX_BIT, 0, 64, &it->second.modelMat);
 
-        __android_log_print(ANDROID_LOG_INFO, "main",
-                            "render modelMat: %s", glm::to_string(it->second.modelMat).c_str());
-
         vkCmdDrawIndexed(frameCommandBuffers[currentFrame], static_cast<uint32_t>(
                 it->second.geo->nIndices), 1, 0, 0, 0);
     }
@@ -672,7 +669,7 @@ float AnimController::interpolate(std::vector<glm::vec2> &curve) {
     }
     /* 0 <= i <= curve.size() */
     if(i < 2) {
-        return curve[i].y;
+        return curve[i-1].y;
     } else if(i > curve.size()-2) {
         return curve[i-1].y;
     }
@@ -699,6 +696,9 @@ glm::mat4 AnimController::advance(float dt) {
     S.x = interpolate(scaleX);
     S.y = interpolate(scaleY);
     S.z = interpolate(scaleZ);
+
+    /*__android_log_print(ANDROID_LOG_INFO, "main",
+                    "S: (%f, %f, %f)", S.x, S.y, S.z);*/
 
     /* result = T * Rx * Ry * Rz * S */
     result = glm::translate(result, T);
