@@ -195,7 +195,7 @@ private:
     VkSampler sampler;
 
     VkDescriptorSetLayout staticSetLayout;
-    VkDescriptorSetLayout resettableSetLayout;
+    //VkDescriptorSetLayout resettableSetLayout;
 
     /* descriptor sets is allocated at init, and never gets reset.
      * the memory referenced by each descriptor may change each frame,
@@ -251,7 +251,6 @@ private:
     void loadResources();
     void destroyResources();
 
-    void prepareResettableSets();
     void recordFrameCmdBuffers(int imageIndex);
 
     VkShaderModule createShaderModule(const char *fileName);

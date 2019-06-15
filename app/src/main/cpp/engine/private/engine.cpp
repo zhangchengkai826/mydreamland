@@ -54,7 +54,6 @@ void Engine::init() {
 
     createDescriptorSetLayouts();
     createDescriptorPools();
-    prefillStaticSets();
 
     createPipelineLayout();
     createPipeline();
@@ -63,6 +62,7 @@ void Engine::init() {
     currentFrame = 0;
 
     loadResources();
+    prefillStaticSets();
 }
 
 void Engine::destroy() {
@@ -81,11 +81,7 @@ void Engine::destroy() {
 
     vkDestroyBuffer(vkDevice, uniformBuffer, nullptr);
     vkFreeMemory(vkDevice, uniformBuffersMemory, nullptr);
-    for(int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        vkDestroyDescriptorPool(vkDevice, resettableDescriptorPool[i], nullptr);
-    }
     vkDestroyDescriptorPool(vkDevice, staticDescriptorPool, nullptr);
-    vkDestroyDescriptorSetLayout(vkDevice, resettableSetLayout, nullptr);
     vkDestroyDescriptorSetLayout(vkDevice, staticSetLayout, nullptr);
     vkDestroySampler(vkDevice, sampler, nullptr);
 
@@ -150,7 +146,6 @@ void Engine::drawFrame() {
                           std::numeric_limits<uint64_t>::max(),
                           (*imageAvailableSemaphores)[currentFrame], VK_NULL_HANDLE, &imageIndex);
 
-    prepareResettableSets();
     recordFrameCmdBuffers(imageIndex);
 
     VkSemaphore waitSemaphores[] = {(*imageAvailableSemaphores)[currentFrame]};

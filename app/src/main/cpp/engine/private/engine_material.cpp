@@ -13,7 +13,7 @@ void Engine::createPipelineLayout() {
         .offset = 64,
         .size = 4,},
     }};
-    std::array<VkDescriptorSetLayout, 2> layouts = {staticSetLayout, resettableSetLayout};
+    std::array<VkDescriptorSetLayout, 1> layouts = {staticSetLayout};
     VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
             .pNext = nullptr,

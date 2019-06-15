@@ -3,7 +3,7 @@
 
 #define MAX_TEXTURES_PER_FRAME 8
 
-layout(set = 1, binding = 0) uniform sampler2D texSampler[MAX_TEXTURES_PER_FRAME];
+layout(set = 0, binding = 1) uniform sampler2D texSampler[MAX_TEXTURES_PER_FRAME];
 layout(push_constant) uniform FragConstant {
     layout(offset = 64) int texId;
 } fc;
