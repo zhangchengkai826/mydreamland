@@ -394,8 +394,22 @@ void Engine::createCmdPool() {
 }
 
 void Engine::prepareResettableSets() {
+    std::vector<VkImageView> views;
+    int texId = 0;
+
+    pthread_mutex_lock(&mutex);
+    for(auto it = object3ds->begin(); it != object3ds->end(); it++) {
+        VkImageView v = it->second.tex->imageView;
+        if(std::find(views.cbegin(), views.cend(), v) == views.cend()) {
+            views.push_back(v);
+            it->second.texId = texId;
+            texId++;
+        }
+    }
+    pthread_mutex_unlock(&mutex);
+
     vkResetDescriptorPool(vkDevice, resettableDescriptorPool[currentFrame], 0);
-    uint32_t descriptorCount = object3ds->size();
+    uint32_t descriptorCount = views.size();
     VkDescriptorSetVariableDescriptorCountAllocateInfoEXT ext{
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO_EXT,
         .pNext = nullptr,
@@ -411,7 +425,28 @@ void Engine::prepareResettableSets() {
     };
     vkAllocateDescriptorSets(vkDevice, &allocateInfo, &resettableDescriptorSets[currentFrame]);
 
-
+    std::vector<VkDescriptorImageInfo> imageInfo;
+    for(int i = 0; i < views.size(); i++) {
+        VkDescriptorImageInfo info{
+            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            .imageView = views[i],
+            .sampler = sampler,
+        };
+        imageInfo.push_back(info);
+    }
+    VkWriteDescriptorSet write{
+            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+            .pNext = nullptr,
+            .dstSet = resettableDescriptorSets[currentFrame],
+            .dstBinding = 0,
+            .dstArrayElement = 0,
+            .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .descriptorCount = imageInfo.size(),
+            .pBufferInfo = nullptr,
+            .pImageInfo = imageInfo.data(),
+            .pTexelBufferView = nullptr,
+    };
+    vkUpdateDescriptorSets(vkDevice, 1, &write, 0, nullptr);
 }
 
 void Engine::recordFrameCmdBuffers(int imageIndex) {

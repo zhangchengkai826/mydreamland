@@ -119,9 +119,11 @@ public:
     Geometry *geo;
     Texture *tex;
 
-    glm::mat4 modelMat;
-
     AnimController animController;
+
+    /* transient */
+    int texId;
+    glm::mat4 modelMat;
 };
 
 class Engine {
