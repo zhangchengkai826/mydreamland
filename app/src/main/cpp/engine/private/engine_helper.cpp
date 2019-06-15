@@ -441,7 +441,7 @@ void Engine::prepareResettableSets() {
             .dstBinding = 0,
             .dstArrayElement = 0,
             .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            .descriptorCount = imageInfo.size(),
+            .descriptorCount = static_cast<uint32_t>(imageInfo.size()),
             .pBufferInfo = nullptr,
             .pImageInfo = imageInfo.data(),
             .pTexelBufferView = nullptr,
