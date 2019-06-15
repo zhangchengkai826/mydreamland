@@ -241,14 +241,12 @@ void Engine::createSwapChain() {
 
     // retrieve swap chain images
     vkGetSwapchainImagesKHR(vkDevice, vkSwapchain, &imageCount, nullptr);
-    swapChainImages->resize(NUM_IMAGES_IN_SWAPCHAIN);
     vkGetSwapchainImagesKHR(vkDevice, vkSwapchain, &imageCount,
-                            swapChainImages->data());
+                            swapChainImages);
 
     // create swap chain image views
-    swapChainImageViews->resize(NUM_IMAGES_IN_SWAPCHAIN);
-    for(int i = 0; i < swapChainImageViews->size(); i++) {
-        (*swapChainImageViews)[i] = createImageView((*swapChainImages)[i],
+    for(int i = 0; i < NUM_IMAGES_IN_SWAPCHAIN; i++) {
+        swapChainImageViews[i] = createImageView(swapChainImages[i],
                                                  physicalDeviceSurfaceFormat.format,
                                                  VK_IMAGE_ASPECT_COLOR_BIT, 1);
     }
@@ -345,27 +343,23 @@ void Engine::createRenderPass() {
 }
 
 void Engine::createDepthStencilResources() {
-    depthStencilImageMemorys->resize(NUM_IMAGES_IN_SWAPCHAIN);
-    depthStencilImages->resize(NUM_IMAGES_IN_SWAPCHAIN);
-    depthStencilImageViews->resize(NUM_IMAGES_IN_SWAPCHAIN);
     for(int i = 0; i < NUM_IMAGES_IN_SWAPCHAIN; i++) {
         createImage(physicalDeviceSurfaceCapabilities.currentExtent.width,
                     physicalDeviceSurfaceCapabilities.currentExtent.height, 1,
                     VK_FORMAT_D24_UNORM_S8_UINT, VK_IMAGE_TILING_OPTIMAL,
                     VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                    (*depthStencilImages)[i], (*depthStencilImageMemorys)[i]);
-        (*depthStencilImageViews)[i] = createImageView((*depthStencilImages)[i],
+                    depthStencilImages[i], depthStencilImageMemorys[i]);
+        depthStencilImageViews[i] = createImageView(depthStencilImages[i],
                 VK_FORMAT_D24_UNORM_S8_UINT,
                 VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 1);
     }
 }
 
 void Engine::createFrameBuffers() {
-    swapChainFrameBuffers->resize(NUM_IMAGES_IN_SWAPCHAIN);
-    for(size_t i = 0; i < swapChainFrameBuffers->size(); i++) {
+    for(size_t i = 0; i < NUM_IMAGES_IN_SWAPCHAIN; i++) {
         std::array<VkImageView, 2> attachments = {
-                (*swapChainImageViews)[i],
-                (*depthStencilImageViews)[i],
+                swapChainImageViews[i],
+                depthStencilImageViews[i],
         };
         VkFramebufferCreateInfo framebufferCreateInfo{
                 .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
@@ -379,7 +373,7 @@ void Engine::createFrameBuffers() {
                 .layers = 1
         };
         vkCreateFramebuffer(vkDevice, &framebufferCreateInfo, nullptr,
-                            &(*swapChainFrameBuffers)[i]);
+                            &swapChainFrameBuffers[i]);
     }
 }
 
@@ -411,7 +405,7 @@ void Engine::recordFrameCmdBuffers(int imageIndex) {
             .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
             .pNext = nullptr,
             .renderPass = renderPass,
-            .framebuffer = (*swapChainFrameBuffers)[imageIndex],
+            .framebuffer = swapChainFrameBuffers[imageIndex],
             .renderArea.offset = {0, 0},
             .renderArea.extent = physicalDeviceSurfaceCapabilities.currentExtent,
             .clearValueCount = static_cast<uint32_t>(clearValues.size()),
@@ -637,9 +631,6 @@ void Engine::prefillStaticSets() {
 }
 
 void Engine::createFrameSyncObjs() {
-    imageAvailableSemaphores->resize(MAX_FRAMES_IN_FLIGHT);
-    renderFinishedSemaphores->resize(MAX_FRAMES_IN_FLIGHT);
-    inFlightFrameFences->resize(MAX_FRAMES_IN_FLIGHT);
     VkSemaphoreCreateInfo semaphoreCreateInfo{
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
             .pNext = nullptr,
@@ -652,10 +643,10 @@ void Engine::createFrameSyncObjs() {
     };
     for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         vkCreateSemaphore(vkDevice, &semaphoreCreateInfo, nullptr,
-                          &(*imageAvailableSemaphores)[i]);
+                          &imageAvailableSemaphores[i]);
         vkCreateSemaphore(vkDevice, &semaphoreCreateInfo, nullptr,
-                          &(*renderFinishedSemaphores)[i]);
-        vkCreateFence(vkDevice, &fenceCreateInfo, nullptr, &(*inFlightFrameFences)[i]);
+                          &renderFinishedSemaphores[i]);
+        vkCreateFence(vkDevice, &fenceCreateInfo, nullptr, &inFlightFrameFences[i]);
     }
 }
 

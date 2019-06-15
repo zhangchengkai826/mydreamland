@@ -190,20 +190,20 @@ private:
     VkQueue graphicsQueue;
 
     VkSwapchainKHR vkSwapchain;
-    std::vector<VkImage> *swapChainImages;
-    std::vector<VkImageView> *swapChainImageViews;
-    std::vector<VkImage> *depthStencilImages;
-    std::vector<VkDeviceMemory> *depthStencilImageMemorys;
-    std::vector<VkImageView> *depthStencilImageViews;
+    VkImage swapChainImages[NUM_IMAGES_IN_SWAPCHAIN];
+    VkImageView swapChainImageViews[NUM_IMAGES_IN_SWAPCHAIN];
+    VkImage depthStencilImages[NUM_IMAGES_IN_SWAPCHAIN];
+    VkDeviceMemory depthStencilImageMemorys[NUM_IMAGES_IN_SWAPCHAIN];
+    VkImageView depthStencilImageViews[NUM_IMAGES_IN_SWAPCHAIN];
     VkRenderPass renderPass;
-    std::vector<VkFramebuffer> *swapChainFrameBuffers;
+    VkFramebuffer swapChainFrameBuffers[NUM_IMAGES_IN_SWAPCHAIN];
 
     VkCommandPool commandPool;
     VkCommandBuffer frameCommandBuffers[MAX_FRAMES_IN_FLIGHT];
 
-    std::vector<VkSemaphore> *imageAvailableSemaphores;
-    std::vector<VkSemaphore> *renderFinishedSemaphores;
-    std::vector<VkFence> *inFlightFrameFences;
+    VkSemaphore imageAvailableSemaphores[MAX_FRAMES_IN_FLIGHT];
+    VkSemaphore renderFinishedSemaphores[MAX_FRAMES_IN_FLIGHT];
+    VkFence inFlightFrameFences[MAX_FRAMES_IN_FLIGHT];
     int currentFrame;
 
     VkBuffer uniformBuffer;
