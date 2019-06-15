@@ -539,11 +539,16 @@ void Engine::createSamplers() {
 }
 
 void Engine::createDescriptorSetLayouts() {
-    std::array<VkDescriptorSetLayoutBinding, 1> staticSetLayoutBinding{{
+    std::array<VkDescriptorSetLayoutBinding, 2> staticSetLayoutBinding{{
         {.binding = 0,
         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
         .descriptorCount = 1,
         .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+        .pImmutableSamplers = nullptr,},
+        {.binding = 1,
+        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        .descriptorCount = MAX_TEXTURES_PER_FRAME,
+        .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
         .pImmutableSamplers = nullptr,},
     }};
     VkDescriptorSetLayoutCreateInfo staticSetLayoutCreateInfo{
@@ -555,43 +560,21 @@ void Engine::createDescriptorSetLayouts() {
     };
     vkCreateDescriptorSetLayout(vkDevice, &staticSetLayoutCreateInfo, nullptr,
                                 &staticSetLayout);
-
-    std::array<VkDescriptorSetLayoutBinding, 1> resettableSetLayoutBinding{{
-        {.binding = 0,
-        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        .descriptorCount = MAX_TEXTURES_PER_FRAME,
-        .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
-        .pImmutableSamplers = nullptr,}
-    }};
-    VkDescriptorBindingFlagsEXT bindingFlagsExt = {VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT};
-    VkDescriptorSetLayoutBindingFlagsCreateInfoEXT resettableSetLayoutBindingFlagsCreateInfo{
-            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT,
-            .pNext = nullptr,
-            .bindingCount = 1,
-            .pBindingFlags = &bindingFlagsExt,
-    };
-    VkDescriptorSetLayoutCreateInfo resettableSetLayoutCreateInfo{
-            .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-            .pNext = &resettableSetLayoutBindingFlagsCreateInfo,
-            .flags = 0,
-            .bindingCount = static_cast<uint32_t>(resettableSetLayoutBinding.size()),
-            .pBindings = resettableSetLayoutBinding.data(),
-    };
-    vkCreateDescriptorSetLayout(vkDevice, &resettableSetLayoutCreateInfo, nullptr,
-                                &resettableSetLayout);
 }
 
 void Engine::createDescriptorPools() {
-    VkDescriptorPoolSize staticPoolSize = {
-            .descriptorCount = MAX_FRAMES_IN_FLIGHT,
-            .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-    };
+    std::array<VkDescriptorPoolSize, 2> staticPoolSize = {{
+        {.descriptorCount = MAX_FRAMES_IN_FLIGHT,
+        .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,},
+        {.descriptorCount = MAX_FRAMES_IN_FLIGHT * MAX_TEXTURES_PER_FRAME,
+        .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,}
+    }};
     VkDescriptorPoolCreateInfo staticPoolCreateInfo{
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
             .pNext = nullptr,
             .flags = 0,
-            .poolSizeCount = 1,
-            .pPoolSizes = &staticPoolSize,
+            .poolSizeCount = static_cast<uint32_t>(staticPoolSize.size()),
+            .pPoolSizes = staticPoolSize.data(),
             .maxSets = MAX_FRAMES_IN_FLIGHT,
     };
     vkCreateDescriptorPool(vkDevice, &staticPoolCreateInfo, nullptr, &staticDescriptorPool);
@@ -608,24 +591,6 @@ void Engine::createDescriptorPools() {
             .pSetLayouts = layouts,
     };
     vkAllocateDescriptorSets(vkDevice, &staticSetsAllocateInfo, staticDescriptorSets);
-    /*__android_log_print(ANDROID_LOG_INFO, "main",
-                                "alloc result no: %d", result);*/
-
-    for(int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        VkDescriptorPoolSize resettablePoolSize = {
-            .descriptorCount = MAX_TEXTURES_PER_FRAME,
-            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        };
-        VkDescriptorPoolCreateInfo resettableCreateInfo{
-                .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-                .pNext = nullptr,
-                .flags = 0,
-                .poolSizeCount = 1,
-                .pPoolSizes = &resettablePoolSize,
-                .maxSets = 1,
-        };
-        vkCreateDescriptorPool(vkDevice, &resettableCreateInfo, nullptr, &resettableDescriptorPool[i]);
-    }
 }
 
 void Engine::prefillStaticSets() {

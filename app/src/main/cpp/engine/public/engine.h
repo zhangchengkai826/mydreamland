@@ -209,8 +209,8 @@ private:
     /* each frame will have its own resettable descriptor pool,
      * and at the start of each frame, the corresponding descriptor pool will get reset.
      */
-    VkDescriptorPool resettableDescriptorPool[MAX_FRAMES_IN_FLIGHT];
-    VkDescriptorSet resettableDescriptorSets[MAX_FRAMES_IN_FLIGHT];
+    //VkDescriptorPool resettableDescriptorPool[MAX_FRAMES_IN_FLIGHT];
+    //VkDescriptorSet resettableDescriptorSets[MAX_FRAMES_IN_FLIGHT];
 
     VkPipeline pipeline3D;
     VkPipelineLayout pipelineLayout3D;
