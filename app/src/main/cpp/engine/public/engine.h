@@ -52,7 +52,15 @@ public:
 };
 std::ifstream &operator>>(std::ifstream &f, Vertex &v);
 
-class Geometry {
+class Resource{
+public:
+    virtual void initFromFile(Engine *engine, VkCommandBuffer commandBuffer,
+                                  const char *filename) = 0;
+    virtual void destroy(Engine *engine) = 0;
+    virtual ~Resource(){}
+};
+
+class Geometry: public Resource {
 public:
     VkBuffer vertexBuffer;
     VkDeviceMemory vertexBufferMemory;
@@ -63,22 +71,30 @@ public:
     uint32_t nIndices;
 
     void initFromFile(Engine *engine, VkCommandBuffer commandBuffer,
-                      const char *filename);
-    void destroy(Engine *engine);
+                      const char *filename) override;
+    void destroy(Engine *engine) override;
 };
 
-class Texture {
+class Texture: public Resource {
 public:
     VkImage image;
     VkDeviceMemory imageMemory;
     VkImageView imageView;
 
-    void initFromFile(Engine *engine, VkCommandBuffer commandBuffer, const char *fileName);
-    void destroy(Engine *engine);
+    void initFromFile(Engine *engine, VkCommandBuffer commandBuffer, const char *fileName) override;
+    void destroy(Engine *engine) override;
 
 private:
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
+};
+
+class ResourceMgr{
+public:
+    std::map<std::string, Resource *> resources;
+
+    void destroy(Engine *engine);
+    Resource *findOrLoad(Engine *engine, VkCommandBuffer &commandBuffer, const char *name);
 };
 
 class AnimController {
@@ -109,7 +125,7 @@ public:
 
 class Object3D {
 public:
-    void init(Geometry *geo, Texture *tex);
+    void init(Engine *engine, VkCommandBuffer &commandBuffer, const char *geo, const char *tex);
     void destroy();
 
     void setPostion(float x, float y, float z);
@@ -143,6 +159,7 @@ public:
     ANativeWindow *window;
 
     bool bAnimating;
+    ResourceMgr resourceMgr;
 
     void init();
     void destroy();
@@ -215,9 +232,6 @@ private:
     VkPipeline pipeline3D;
     VkPipelineLayout pipelineLayout3D;
 
-    std::map<std::string, Geometry> *geometries;
-    std::map<std::string, Texture> *textures;
-
     void createVKInstance();
     void createVKAndroidSurface();
 
@@ -249,7 +263,6 @@ private:
     void createFrameSyncObjs();
 
     void loadResources();
-    void destroyResources();
 
     void recordFrameCmdBuffers(int imageIndex);
 

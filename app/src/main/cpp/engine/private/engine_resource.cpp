@@ -3,9 +3,10 @@
 //
 #include <engine.h>
 
-void Object3D::init(Geometry *geo, Texture *tex) {
-    this->geo = geo;
-    this->tex = tex;
+void
+Object3D::init(Engine *engine, VkCommandBuffer &commandBuffer, const char *geo, const char *tex) {
+    this->geo = dynamic_cast<Geometry *>(engine->resourceMgr.findOrLoad(engine, commandBuffer, geo));
+    this->tex = dynamic_cast<Texture *>(engine->resourceMgr.findOrLoad(engine, commandBuffer, tex));
     this->animController.t = 0;
     this->animController.tMax = 0;
 
@@ -39,47 +40,8 @@ void Object3D::refreshModelMat() {
 void Engine::loadResources() {
     VkCommandBuffer commandBuffer = beginOneTimeSubmitCommands();
 
-    std::queue<std::string> resDirQueue;
-    std::string rootDir = "/storage/emulated/0/Documents/mydreamland/resources/";
-    resDirQueue.push("");
-
-    while(!resDirQueue.empty()) {
-        std::string dirRelPath = resDirQueue.front();
-        resDirQueue.pop();
-        std::string dirAbsPath = rootDir + dirRelPath;
-        struct DIR *dir = opendir(dirAbsPath.c_str());
-
-        struct dirent *dirEntry;
-        while((dirEntry = readdir(dir)) != nullptr) {
-            if(strcmp(dirEntry->d_name, ".") == 0 || strcmp(dirEntry->d_name, "..") == 0) {
-                continue;
-            }
-
-            std::string fileRelPath = dirRelPath + dirEntry->d_name;
-            std::string fileAbsPath = dirAbsPath + dirEntry->d_name;
-            struct stat fileStat;
-            lstat(fileAbsPath.c_str(), &fileStat);
-            if(S_ISREG(fileStat.st_mode)) {
-                char *ext = strrchr(dirEntry->d_name, '.') + 1;
-                if(strcmp(ext, "geo") == 0) {
-                    Geometry geo;
-                    geo.initFromFile(this, commandBuffer, fileAbsPath.c_str());
-                    geometries->emplace(fileRelPath, geo);
-                } else if(strcmp(ext, "jpg") == 0 || strcmp(ext, "png") == 0) {
-                    Texture tex;
-                    tex.initFromFile(this, commandBuffer, fileAbsPath.c_str());
-                    textures->emplace(fileRelPath, tex);
-                }
-            } else if(S_ISDIR(fileStat.st_mode)) {
-                resDirQueue.push(fileRelPath);
-            }
-        }
-
-        closedir(dir);
-    }
-
     Object3D obj3d;
-    obj3d.init(&(*geometries)["plane.geo"], &(*textures)["statue.jpg"]);
+    obj3d.init(this, commandBuffer, "plane.geo", "statue.jpg");
     obj3d.setPostion(0, 0, -0.5f);
     obj3d.animController.tMax = 3;
     obj3d.animController.rotZ[0] = glm::vec2(-3, -900);
@@ -96,14 +58,33 @@ void Engine::loadResources() {
     endOneTimeSubmitCommandsSyncWithFence(commandBuffer);
 }
 
-void Engine::destroyResources() {
-    for(auto it = object3ds->begin(); it != object3ds->end(); it++) {
-        it->second.destroy();
+void ResourceMgr::destroy(Engine *engine) {
+    for(auto it = resources.begin(); it != resources.end(); it++) {
+        it->second->destroy(engine);
+        delete it->second;
     }
-    for(auto it = textures->begin(); it != textures->end(); it++) {
-        it->second.destroy(this);
+}
+
+Resource *ResourceMgr::findOrLoad(Engine *engine, VkCommandBuffer &commandBuffer,
+                                  const char *name) {
+    std::string k(name);
+    auto it = resources.find(k);
+    if(it != resources.end()) {
+        return it->second;
     }
-    for(auto it = geometries->begin(); it != geometries->end(); it++) {
-        it->second.destroy(this);
+
+    const char *ext = strrchr(name, '.') + 1;
+    std::string fileAbsDir = "/storage/emulated/0/Documents/mydreamland/resources/" + k;
+    if(!strcmp(ext, "geo")) {
+        Geometry *geo = new Geometry();
+        geo->initFromFile(engine, commandBuffer, fileAbsDir.c_str());
+        resources.emplace(k, geo);
+        return resources[k];
+    } else if(!strcmp(ext, "jpg") || !strcmp(ext, "png")) {
+        Texture *tex = new Texture();
+        tex->initFromFile(engine, commandBuffer, fileAbsDir.c_str());
+        resources.emplace(k, tex);
+        return resources[k];
     }
+    throw std::runtime_error("ResourceMgr::findOrLoad error!");
 }

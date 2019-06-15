@@ -16,8 +16,6 @@ void Engine::init() {
     renderFinishedSemaphores = new std::vector<VkSemaphore>();
     inFlightFrameFences = new std::vector<VkFence>();
 
-    geometries = new std::map<std::string, Geometry>();
-    textures = new std::map<std::string, Texture>();
     object3ds = new std::map<std::string, Object3D>();
 
 #ifdef DEBUG
@@ -68,7 +66,10 @@ void Engine::init() {
 void Engine::destroy() {
     vkDeviceWaitIdle(vkDevice);
 
-    destroyResources();
+    for(auto it = object3ds->begin(); it != object3ds->end(); it++) {
+        it->second.destroy();
+    }
+    resourceMgr.destroy(this);
 
     for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         vkDestroyFence(vkDevice, (*inFlightFrameFences)[i], nullptr);
@@ -121,8 +122,6 @@ void Engine::destroy() {
 #endif
 
     delete object3ds;
-    delete textures;
-    delete geometries;
 
     delete inFlightFrameFences;
     delete renderFinishedSemaphores;
