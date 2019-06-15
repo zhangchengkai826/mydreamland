@@ -153,6 +153,7 @@ void Engine::drawFrame() {
                           std::numeric_limits<uint64_t>::max(),
                           (*imageAvailableSemaphores)[currentFrame], VK_NULL_HANDLE, &imageIndex);
 
+    prepareResettableSets();
     recordFrameCmdBuffers(imageIndex);
 
     VkSemaphore waitSemaphores[] = {(*imageAvailableSemaphores)[currentFrame]};

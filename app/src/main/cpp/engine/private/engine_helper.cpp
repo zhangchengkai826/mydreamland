@@ -479,6 +479,12 @@ void Engine::recordFrameCmdBuffers(int imageIndex) {
     vkCmdBeginRenderPass(frameCommandBuffers[currentFrame], &renderPassBeginInfo,
                          VK_SUBPASS_CONTENTS_INLINE);
 
+    std::array<VkDescriptorSet, 1> frameDescriptorSets =
+            {resettableDescriptorSets[currentFrame]};
+    vkCmdBindDescriptorSets(frameCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            pipelineLayout3D, 1, static_cast<uint32_t>(frameDescriptorSets.size()),
+                            frameDescriptorSets.data(), 0, nullptr);
+
     pthread_mutex_lock(&mutex);
     for(auto it = object3ds->begin(); it != object3ds->end(); it++) {
         VkBuffer vertexBuffers[] = {it->second.geo->vertexBuffer};
@@ -488,17 +494,19 @@ void Engine::recordFrameCmdBuffers(int imageIndex) {
         vkCmdBindIndexBuffer(frameCommandBuffers[currentFrame], it->second.geo->indexBuffer, 0,
                              VK_INDEX_TYPE_UINT16);
 
-        std::array<VkDescriptorSet, 2> descriptorSets =
-                {staticDescriptorSets[currentFrame], resettableDescriptorSets[currentFrame]};
+        std::array<VkDescriptorSet, 1> objDescriptorSets =
+                {staticDescriptorSets[currentFrame]};
         vkCmdBindDescriptorSets(frameCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                pipelineLayout3D, 0, static_cast<uint32_t>(descriptorSets.size()),
-                                descriptorSets.data(), 0, nullptr);
+                                pipelineLayout3D, 0, static_cast<uint32_t>(objDescriptorSets.size()),
+                                objDescriptorSets.data(), 0, nullptr);
 
         /* note that vkCmdPushConstants.pValues is instantly remembered by the command buffer, and if
          * the data pointed by pValues changes afterwords, it has no effect on command buffer
          */
         vkCmdPushConstants(frameCommandBuffers[currentFrame], pipelineLayout3D,
                            VK_SHADER_STAGE_VERTEX_BIT, 0, 64, &it->second.modelMat);
+        vkCmdPushConstants(frameCommandBuffers[currentFrame], pipelineLayout3D,
+                           VK_SHADER_STAGE_VERTEX_BIT, 64, 4, &it->second.texId);
 
         vkCmdBindPipeline(frameCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS,
                           pipeline3D);

@@ -5,11 +5,14 @@
 #include <engine.h>
 
 void Engine::createPipelineLayout() {
-    VkPushConstantRange range{
-        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+    std::array<VkPushConstantRange, 2> range{{
+        {.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
         .offset = 0,
-        .size = 64,
-    };
+        .size = 64,},
+        {.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+        .offset = 64,
+        .size = 4,},
+    }};
     std::array<VkDescriptorSetLayout, 2> layouts = {staticSetLayout, resettableSetLayout};
     VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
@@ -17,8 +20,8 @@ void Engine::createPipelineLayout() {
             .flags = 0,
             .setLayoutCount = static_cast<uint32_t>(layouts.size()),
             .pSetLayouts = layouts.data(),
-            .pushConstantRangeCount = 1,
-            .pPushConstantRanges = &range,
+            .pushConstantRangeCount = static_cast<uint32_t>(range.size()),
+            .pPushConstantRanges = range.data(),
     };
     vkCreatePipelineLayout(vkDevice, &pipelineLayoutCreateInfo, nullptr,
                            &pipelineLayout3D);
