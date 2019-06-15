@@ -70,9 +70,6 @@ void Engine::destroy() {
 
     destroyResources();
 
-    vkDestroyBuffer(vkDevice, uniformBuffer, nullptr);
-    vkFreeMemory(vkDevice, uniformBuffersMemory, nullptr);
-
     for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         vkDestroyFence(vkDevice, (*inFlightFrameFences)[i], nullptr);
         vkDestroySemaphore(vkDevice, (*renderFinishedSemaphores)[i], nullptr);

@@ -5,7 +5,7 @@
 
 layout(set = 1, binding = 0) uniform sampler2D texSampler[MAX_TEXTURES_PER_FRAME];
 layout(push_constant) uniform FragConstant {
-    layout(offset = 64) uint texId;
+    layout(offset = 64) int texId;
 } fc;
 
 layout(location = 0) in vec3 fragColor;
