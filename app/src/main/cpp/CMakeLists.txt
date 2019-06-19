@@ -51,8 +51,7 @@ target_include_directories(engine PRIVATE
 set(CGAL_SOURCE_DIR C:/Users/andys/Documents/repos/cgal)
 set(CGAL_BUILD_DIR C:/Users/andys/Documents/repos/cgal_android)
 add_subdirectory(${CGAL_SOURCE_DIR} ${CGAL_BUILD_DIR})
-add_library(cgal STATIC IMPORTED)
-set_target_properties(cgal PROPERTIES IMPORTED_LOCATION ${CGAL_BUILD_DIR}/lib/libcgal.so)
+
 target_include_directories(engine PRIVATE ${CGAL_BUILD_DIR}/include)
 
 # Searches for a specified prebuilt library and stores the path as a
@@ -79,6 +78,6 @@ target_link_libraries( # Specifies the target library.
                        # included in the NDK.
         android
         vulkan
-        cgal
+        CGAL
         engine
         ${log-lib} )
