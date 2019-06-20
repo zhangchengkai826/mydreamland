@@ -2,6 +2,7 @@
 // Created by andys on 6/5/2019.
 //
 #include <engine.h>
+#include <mdlcg.h>
 
 VkVertexInputBindingDescription Vertex::getBindingDescription() {
     VkVertexInputBindingDescription bindingDescription{
@@ -53,24 +54,65 @@ void Geometry::initFromFile(Engine *engine, VkCommandBuffer commandBuffer,
     std::vector<Vertex> vertices;
     std::vector<uint16_t> indices;
 
-    std::ifstream f(filename);
-    std::string ignore;
+    const char vRandPrefix[] = "/storage/emulated/0/Documents/mydreamland/resources/$Rand";
+    if(!strncmp(filename, vRandPrefix, strlen(vRandPrefix))) {
+        /* init from 'virtual' file (CG obj) */
+        CG::Mesh m(100, 1.f);
 
-    f >> ignore >> nVertices;
-    for(int i =0; i < nVertices; i++) {
-        Vertex vertex;
-        f >> vertex;
-        vertices.push_back(vertex);
+        Vertex v;
+        v.color[0] = v.color[1] = v.color[2] = 1.f;
+        int cnt = 0;
+        nVertices = 0;
+        for(auto e: m.vertices) {
+            v.pos[cnt] = e;
+            cnt++;
+            if(cnt == 3) {
+                switch(nVertices % 4) {
+                    case 0:
+                        v.texCoord[0] = v.texCoord[1] = 0.f;
+                        break;
+                    case 1:
+                        v.texCoord[0] = 1.f;
+                        v.texCoord[1] = 0.f;
+                        break;
+                    case 2:
+                        v.texCoord[0] = v.texCoord[1] = 1.f;
+                        break;
+                    case 3:
+                        v.texCoord[0] = 0.f;
+                        v.texCoord[1] = 1.f;
+                        break;
+                }
+                vertices.push_back(v);
+                nVertices++;
+                cnt = 0;
+            }
+        }
+
+        for(auto e: m.indices) {
+            indices.push_back(e);
+        }
+        nIndices = static_cast<uint32_t>(indices.size());
+    } else {
+        std::ifstream f(filename);
+        std::string ignore;
+
+        f >> ignore >> nVertices;
+        for(int i =0; i < nVertices; i++) {
+            Vertex vertex;
+            f >> vertex;
+            vertices.push_back(vertex);
+        }
+
+        f >> ignore >> nIndices;
+        for(int i = 0; i < nIndices; i++) {
+            uint16_t indice;
+            f >> indice;
+            indices.push_back(indice);
+        }
+
+        f.close();
     }
-
-    f >> ignore >> nIndices;
-    for(int i = 0; i < nIndices; i++) {
-        uint16_t indice;
-        f >> indice;
-        indices.push_back(indice);
-    }
-
-    f.close();
 
     /* GPU-side commands */
     VkDeviceSize bufferSize;

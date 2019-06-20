@@ -3,8 +3,6 @@
 //
 #include <mdlcg.h>
 
-#include <vector>
-
 #include <android/log.h>
 
 #include <CGAL/Simple_cartesian.h>
@@ -13,22 +11,26 @@
 #include <CGAL/Surface_mesh.h>
 #include <CGAL/convex_hull_3_to_face_graph.h>
 
-void mdlcgtmp() {
-    CGAL::Random_points_in_sphere_3<CGAL::Simple_cartesian<float>::Point_3> gen(100.f);
+CG::Mesh::Mesh(int n, float r) {
+    CGAL::Random_points_in_sphere_3<CGAL::Simple_cartesian<float>::Point_3> gen(r);
     std::vector<CGAL::Simple_cartesian<float>::Point_3> points;
-
     CGAL::cpp11::copy_n(gen, 250, std::back_inserter(points));
+
     CGAL::Delaunay_triangulation_3<CGAL::Simple_cartesian<float>> T;
     T.insert(points.begin(), points.end());
 
     CGAL::Surface_mesh<CGAL::Simple_cartesian<float>::Point_3> chull;
     CGAL::convex_hull_3_to_face_graph(T, chull);
 
-    __android_log_print(ANDROID_LOG_INFO, "mdlog", "vertices: %d\nfaces: %d", chull.num_vertices(), chull.num_faces());
+    for(auto p: chull.points()) {
+        vertices.push_back(p.x());
+        vertices.push_back(p.y());
+        vertices.push_back(p.z());
+    }
+
     for(auto f: chull.faces()) {
-        __android_log_print(ANDROID_LOG_INFO, "mdlog", "face: %d", f);
         for(auto v: chull.vertices_around_face(chull.halfedge(f))) {
-            __android_log_print(ANDROID_LOG_INFO, "mdlog", "vertex: %d (%f, %f, %f)", v, points[v].x(), points[v].y(), points[v].z());
+            indices.push_back(v);
         }
     }
 }

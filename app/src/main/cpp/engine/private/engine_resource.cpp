@@ -40,20 +40,21 @@ void Object3D::refreshModelMat() {
 void Engine::loadResources() {
     VkCommandBuffer commandBuffer = beginOneTimeSubmitCommands();
 
-    Object3D obj3d;
-    obj3d.init(this, commandBuffer, "plane.geo", "statue.jpg");
-    obj3d.setPostion(0, 0, -0.5f);
-    obj3d.animController.tMax = 3;
-    obj3d.animController.rotZ[0] = glm::vec2(-3, -900);
-    obj3d.animController.rotZ.push_back(glm::vec2(1.5f, -90));
-    obj3d.animController.rotZ.push_back(glm::vec2(3, 0));
-    obj3d.animController.rotZ.push_back(glm::vec2(6, -900));
-    obj3d.refreshModelMat();
-    object3ds->emplace("internal/plane.obj3d", obj3d);
+    Object3D obj3d[2];
+    obj3d[0].init(this, commandBuffer, "plane.geo", "statue.jpg");
+    obj3d[0].setPostion(0, 0, -0.75f);
+    obj3d[0].animController.tMax = 3;
+    obj3d[0].animController.rotZ[0] = glm::vec2(-3, -900);
+    obj3d[0].animController.rotZ.push_back(glm::vec2(1.5f, -90));
+    obj3d[0].animController.rotZ.push_back(glm::vec2(3, 0));
+    obj3d[0].animController.rotZ.push_back(glm::vec2(6, -900));
+    obj3d[0].refreshModelMat();
+    object3ds->emplace("internal/plane.obj3d", obj3d[0]);
 
-    obj3d.setPostion(0, 0, 0);
-    obj3d.refreshModelMat();
-    object3ds->emplace("internal/plane2.obj3d", obj3d);
+    obj3d[1].init(this, commandBuffer, "$Rand1.geo", "statue.jpg");
+    obj3d[1].setPostion(0, 0, 0);
+    obj3d[1].refreshModelMat();
+    object3ds->emplace("internal/rand1.obj3d", obj3d[1]);
 
     endOneTimeSubmitCommandsSyncWithFence(commandBuffer);
 }
