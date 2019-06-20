@@ -24,5 +24,11 @@ void mdlcgtmp() {
     CGAL::Surface_mesh<CGAL::Simple_cartesian<float>::Point_3> chull;
     CGAL::convex_hull_3_to_face_graph(T, chull);
 
-    __android_log_print(ANDROID_LOG_INFO, "mdlog", "%d", CGAL::num_vertices(chull));
+    __android_log_print(ANDROID_LOG_INFO, "mdlog", "vertices: %d\nfaces: %d", chull.num_vertices(), chull.num_faces());
+    for(auto f: chull.faces()) {
+        __android_log_print(ANDROID_LOG_INFO, "mdlog", "face: %d", f);
+        for(auto v: chull.vertices_around_face(chull.halfedge(f))) {
+            __android_log_print(ANDROID_LOG_INFO, "mdlog", "vertex: %d (%f, %f, %f)", v, points[v].x(), points[v].y(), points[v].z());
+        }
+    }
 }
