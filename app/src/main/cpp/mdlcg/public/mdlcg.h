@@ -5,4 +5,6 @@
 #ifndef MYDREAMLAND_MDLCG_H
 #define MYDREAMLAND_MDLCG_H
 
+void mdlcgtmp();
+
 #endif //MYDREAMLAND_MDLCG_H

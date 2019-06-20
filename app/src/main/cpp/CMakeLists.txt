@@ -44,9 +44,10 @@ add_library(engine STATIC
 
 target_include_directories(engine PRIVATE
         engine/public)
-
 target_include_directories(engine PRIVATE
         include)
+target_include_directories(engine PRIVATE
+        mdlcg/public)
 
 set(CGAL_SOURCE_DIR C:/Users/andys/Documents/repos/cgal)
 set(CGAL_BUILD_DIR C:/Users/andys/Documents/repos/cgal_android)
@@ -57,7 +58,7 @@ add_library(mdlcg STATIC
 target_include_directories(mdlcg PRIVATE mdlcg/public)
 target_include_directories(mdlcg PRIVATE ${CGAL_INCLUDE_DIRS})
 target_include_directories(mdlcg PRIVATE C:/Users/andys/Documents/repos/boost_1.69.0_prebuilt_ndk_19/include)
-set_target_properties(mdlcg PROPERTIES COMPILE_FLAGS "-w")
+set_target_properties(mdlcg PROPERTIES COMPILE_FLAGS "-w -std=c++14")
 
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because CMake includes system libraries in the search path by

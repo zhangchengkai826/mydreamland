@@ -4,7 +4,11 @@
 
 #include "engine.h"
 
+#include <mdlcg.h>
+
 void Engine::init() {
+    mdlcgtmp();
+
     object3ds = new std::map<std::string, Object3D>();
 
 #ifdef DEBUG
