@@ -212,7 +212,6 @@ private:
     VkSampler sampler;
 
     VkDescriptorSetLayout staticSetLayout;
-    //VkDescriptorSetLayout resettableSetLayout;
 
     /* descriptor sets is allocated at init, and never gets reset.
      * the memory referenced by each descriptor may change each frame,
@@ -222,12 +221,6 @@ private:
      */
     VkDescriptorPool staticDescriptorPool;
     VkDescriptorSet staticDescriptorSets[MAX_FRAMES_IN_FLIGHT];
-
-    /* each frame will have its own resettable descriptor pool,
-     * and at the start of each frame, the corresponding descriptor pool will get reset.
-     */
-    //VkDescriptorPool resettableDescriptorPool[MAX_FRAMES_IN_FLIGHT];
-    //VkDescriptorSet resettableDescriptorSets[MAX_FRAMES_IN_FLIGHT];
 
     VkPipeline pipeline3D;
     VkPipelineLayout pipelineLayout3D;

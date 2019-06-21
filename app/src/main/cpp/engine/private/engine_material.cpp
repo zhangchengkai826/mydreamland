@@ -28,8 +28,8 @@ void Engine::createPipelineLayout() {
 }
 
 void Engine::createPipeline() {
-    VkShaderModule vertShaderModule = createShaderModule("shaders/shader.vert.spv");
-    VkShaderModule fragShaderModule = createShaderModule("shaders/shader.frag.spv");
+    VkShaderModule vertShaderModule = createShaderModule("shaders/3d.vert.spv");
+    VkShaderModule fragShaderModule = createShaderModule("shaders/3d.frag.spv");
 
     VkPipelineShaderStageCreateInfo vertShaderStageInfo{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
