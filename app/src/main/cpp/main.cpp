@@ -6,14 +6,86 @@
 
 static Engine engine;
 
-static pthread_t renderLoopTID, physicsLoopTID;
-static pthread_mutex_t renderLoopShouldExit, physicsLoopShouldExit;
+static pthread_t renderLoopTID, physicsLoopTID, inputLoopTID;
+static pthread_mutex_t renderLoopShouldExit, physicsLoopShouldExit, inputLoopShouldExit;
+
+static pthread_mutex_t renderInputSync = PTHREAD_MUTEX_INITIALIZER;
+
+static void *inputLoop(void *arg) {
+    int rate = 30; /* unit: s^-1 */
+    float dt = 1.0f / rate;
+    long dt_nsec = static_cast<int>(dt * 1000000000);
+
+    int x, y;
+
+    while(true) {
+        if(pthread_mutex_trylock(&inputLoopShouldExit) == 0) {
+            // lock succeed
+            pthread_mutex_unlock(&inputLoopShouldExit);
+            break;
+        };
+
+        pthread_mutex_lock(&renderInputSync);
+
+        // do tasks here
+        if(engine.inputQueue) {
+            __android_log_print(ANDROID_LOG_INFO, "main",
+                                "### inputLoop ###");
+            AInputEvent *event;
+            if(AInputQueue_getEvent(engine.inputQueue, &event) >= 0) {
+
+                if(AInputEvent_getType(event) == AINPUT_EVENT_TYPE_MOTION) {
+                    switch(AMotionEvent_getAction(event)) {
+                        case AMOTION_EVENT_ACTION_DOWN: {
+                            x = static_cast<int>(AMotionEvent_getX(event, 0));
+                            y = static_cast<int>(AMotionEvent_getY(event, 0));
+
+                            __android_log_print(ANDROID_LOG_INFO, "main",
+                                                "Tap Down!!! (%d, %d)", x, y);
+                            break;
+                        }
+                        case AMOTION_EVENT_ACTION_MOVE: {
+                            x = static_cast<int>(AMotionEvent_getX(event, 0));
+                            y = static_cast<int>(AMotionEvent_getY(event, 0));
+
+                            __android_log_print(ANDROID_LOG_INFO, "main",
+                                                "Tap Move!!! (%d, %d)", x, y);
+                            break;
+                        }
+                        case AMOTION_EVENT_ACTION_UP: {
+                            x = static_cast<int>(AMotionEvent_getX(event, 0));
+                            y = static_cast<int>(AMotionEvent_getY(event, 0));
+
+                            __android_log_print(ANDROID_LOG_INFO, "main",
+                                                "Tap Up!!! (%d, %d)", x, y);
+                            break;
+                        }
+                        default:
+                            break;
+                    }
+                }
+
+                AInputQueue_finishEvent(engine.inputQueue, event, 1);
+            }
+        }
+
+        pthread_mutex_unlock(&renderInputSync);
+
+        timespec tm{
+                .tv_sec = 0,
+                .tv_nsec = dt_nsec,
+        };
+        nanosleep(&tm, nullptr);
+    }
+    return nullptr;
+}
 
 static void *physicsLoop(void *arg) {
     int rate = 24; /* unit: s^-1 */
     float dt = 1.0f / rate;
     long dt_nsec = static_cast<int>(dt * 1000000000);
     int loopId = 0; /* 0 <= loopId < rate */
+
     while(true) {
         if(pthread_mutex_trylock(&physicsLoopShouldExit) == 0) {
             // lock succeed
@@ -118,12 +190,15 @@ static void ANativeActivity_onNativeWindowCreated(ANativeActivity *activity,
 
     pthread_mutex_init(&renderLoopShouldExit, nullptr);
     pthread_mutex_init(&physicsLoopShouldExit, nullptr);
+    pthread_mutex_init(&inputLoopShouldExit, nullptr);
 
     pthread_mutex_lock(&renderLoopShouldExit);
     pthread_mutex_lock(&physicsLoopShouldExit);
+    pthread_mutex_lock(&inputLoopShouldExit);
 
     pthread_create(&renderLoopTID, nullptr, renderLoop, nullptr);
     pthread_create(&physicsLoopTID, nullptr, physicsLoop, nullptr);
+    pthread_create(&inputLoopTID, nullptr, inputLoop, nullptr);
 }
 
 /* if user **press power button when app window is showing**, this method is NOT guaranteed to be
@@ -137,12 +212,15 @@ static void ANativeActivity_onNativeWindowDestroyed(ANativeActivity *activity,
 
     pthread_mutex_unlock(&renderLoopShouldExit);
     pthread_mutex_unlock(&physicsLoopShouldExit);
+    pthread_mutex_unlock(&inputLoopShouldExit);
 
     pthread_join(renderLoopTID, nullptr);
     pthread_join(physicsLoopTID, nullptr);
+    pthread_join(inputLoopTID, nullptr);
 
     pthread_mutex_destroy(&renderLoopShouldExit);
     pthread_mutex_destroy(&physicsLoopShouldExit);
+    pthread_mutex_destroy(&inputLoopShouldExit);
 
     /* global destroy, only main thread exists */
 
@@ -151,6 +229,24 @@ static void ANativeActivity_onNativeWindowDestroyed(ANativeActivity *activity,
     pthread_mutex_destroy(&engine.mutex);
 
     /* global destroy end */
+}
+
+static void ANativeActivity_onInputQueueCreated(ANativeActivity* activity, AInputQueue* queue) {
+    __android_log_print(ANDROID_LOG_INFO, "main",
+                        "### ANativeActivity_onInputQueueCreated ###");
+
+    pthread_mutex_destroy(&physicsLoopShouldExit);
+    engine.inputQueue = queue;
+    pthread_mutex_unlock(&renderInputSync);
+}
+
+static void ANativeActivity_onInputQueueDestroyed(ANativeActivity* activity, AInputQueue* queue) {
+    __android_log_print(ANDROID_LOG_INFO, "main",
+                        "### ANativeActivity_onInputQueueDestroyed ###");
+
+    pthread_mutex_destroy(&physicsLoopShouldExit);
+    engine.inputQueue = nullptr;
+    pthread_mutex_unlock(&renderInputSync);
 }
 
 static void ANativeActivity_onResume(ANativeActivity* activity) {
@@ -195,4 +291,8 @@ void ANativeActivity_onCreate(ANativeActivity *activity, void *savedState,
     activity->callbacks->onNativeWindowDestroyed = ANativeActivity_onNativeWindowDestroyed;
     activity->callbacks->onResume = ANativeActivity_onResume;
     activity->callbacks->onPause = ANativeActivity_onPause;
+    activity->callbacks->onInputQueueCreated = ANativeActivity_onInputQueueCreated;
+    activity->callbacks->onInputQueueDestroyed = ANativeActivity_onInputQueueDestroyed;
+
+    engine.inputQueue = nullptr;
 }

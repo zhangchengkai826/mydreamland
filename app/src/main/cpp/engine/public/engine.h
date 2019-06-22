@@ -148,6 +148,9 @@ class Engine {
 public:
     pthread_mutex_t mutex;
 
+    /* input thread access them */
+    AInputQueue *inputQueue;
+
     /* render & physics threads both access them */
     std::atomic_int *fpsFrameCounter;
     std::map<std::string, Object3D> *object3ds; /* assume now that it's fixed-length after init() in main thread */
