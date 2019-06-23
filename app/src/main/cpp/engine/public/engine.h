@@ -225,8 +225,8 @@ private:
     VkDescriptorPool staticDescriptorPool;
     VkDescriptorSet staticDescriptorSets[MAX_FRAMES_IN_FLIGHT];
 
-    VkPipeline pipeline3D;
-    VkPipelineLayout pipelineLayout3D;
+    std::map<std::string, VkPipeline> *pipelines;
+    VkPipelineLayout pipelineLayout;
 
     void createVKInstance();
     void createVKAndroidSurface();
@@ -254,7 +254,8 @@ private:
     void prefillStaticSets();
 
     void createPipelineLayout();
-    void createPipeline();
+    void create3DPipeline();
+    void create2DPipeline();
 
     void createFrameSyncObjs();
 

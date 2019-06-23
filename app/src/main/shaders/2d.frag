@@ -3,9 +3,9 @@
 
 #define MAX_TEXTURES_PER_FRAME 8
 
-layout(set = 0, binding = 0) uniform sampler2D texSampler[MAX_TEXTURES_PER_FRAME];
+layout(set = 0, binding = 1) uniform sampler2D texSampler[MAX_TEXTURES_PER_FRAME];
 layout(push_constant) uniform FragConstant {
-    layout(offset = 0) int texId;
+    layout(offset = 64) int texId;
 } fc;
 
 layout(location = 0) in vec3 fragColor;
@@ -14,5 +14,6 @@ layout(location = 1) in vec2 fragTexCoord;
 layout(location = 0) out vec4 outColor;
 
 void main() {
-    outColor = vec4(fragColor * texture(texSampler[fc.texId], fragTexCoord).rgb, 1.0f);
+    vec4 sampledColor = texture(texSampler[fc.texId], fragTexCoord);
+    outColor = vec4(fragColor * sampledColor.rgb, sampledColor.a);
 }

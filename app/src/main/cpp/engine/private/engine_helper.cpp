@@ -420,7 +420,7 @@ void Engine::recordFrameCmdBuffers(int imageIndex) {
     std::array<VkDescriptorSet, 1> frameDescriptorSets =
             {staticDescriptorSets[currentFrame]};
     vkCmdBindDescriptorSets(frameCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            pipelineLayout3D, 0, static_cast<uint32_t>(frameDescriptorSets.size()),
+                            pipelineLayout, 0, static_cast<uint32_t>(frameDescriptorSets.size()),
                             frameDescriptorSets.data(), 0, nullptr);
 
     pthread_mutex_lock(&mutex);
@@ -435,13 +435,13 @@ void Engine::recordFrameCmdBuffers(int imageIndex) {
         /* note that vkCmdPushConstants.pValues is instantly remembered by the command buffer, and if
          * the data pointed by pValues changes afterwords, it has no effect on command buffer
          */
-        vkCmdPushConstants(frameCommandBuffers[currentFrame], pipelineLayout3D,
+        vkCmdPushConstants(frameCommandBuffers[currentFrame], pipelineLayout,
                            VK_SHADER_STAGE_VERTEX_BIT, 0, 64, &it->second.modelMat);
-        vkCmdPushConstants(frameCommandBuffers[currentFrame], pipelineLayout3D,
+        vkCmdPushConstants(frameCommandBuffers[currentFrame], pipelineLayout,
                            VK_SHADER_STAGE_FRAGMENT_BIT, 64, 4, &it->second.texId);
 
         vkCmdBindPipeline(frameCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS,
-                          pipeline3D);
+                          (*pipelines)["3d"]);
 
         vkCmdDrawIndexed(frameCommandBuffers[currentFrame], static_cast<uint32_t>(
                 it->second.geo->nIndices), 1, 0, 0, 0);

@@ -7,6 +7,7 @@
 #include <mdlcg.h>
 
 void Engine::init() {
+    pipelines = new std::map<std::string, VkPipeline>();
     object3ds = new std::map<std::string, Object3D>();
 
 #ifdef DEBUG
@@ -45,7 +46,8 @@ void Engine::init() {
     createDescriptorPools();
 
     createPipelineLayout();
-    createPipeline();
+    create3DPipeline();
+    create2DPipeline();
 
     createFrameSyncObjs();
     currentFrame = 0;
@@ -68,8 +70,10 @@ void Engine::destroy() {
         vkDestroySemaphore(vkDevice, imageAvailableSemaphores[i], nullptr);
     }
 
-    vkDestroyPipeline(vkDevice, pipeline3D, nullptr);
-    vkDestroyPipelineLayout(vkDevice, pipelineLayout3D, nullptr);
+    for(auto it = pipelines->begin(); it != pipelines->end(); it++) {
+        vkDestroyPipeline(vkDevice, it->second, nullptr);
+    }
+    vkDestroyPipelineLayout(vkDevice, pipelineLayout, nullptr);
 
     vkDestroyBuffer(vkDevice, uniformBuffer, nullptr);
     vkFreeMemory(vkDevice, uniformBuffersMemory, nullptr);
@@ -113,6 +117,7 @@ void Engine::destroy() {
 #endif
 
     delete object3ds;
+    delete pipelines;
 }
 
 void Engine::drawFrame() {
