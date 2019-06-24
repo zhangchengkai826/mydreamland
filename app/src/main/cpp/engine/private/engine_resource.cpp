@@ -51,7 +51,7 @@ void Engine::loadResources() {
     obj3d[0].refreshModelMat();
     object3ds->emplace("internal/plane.obj3d", obj3d[0]);
 
-    obj3d[1].init(this, commandBuffer, "$Rand1.geo", "statue.jpg");
+    obj3d[1].init(this, commandBuffer, "$Rand1.geo", "earth.png");
     obj3d[1].setPostion(0, 0, 0);
     obj3d[1].refreshModelMat();
     object3ds->emplace("internal/rand1.obj3d", obj3d[1]);

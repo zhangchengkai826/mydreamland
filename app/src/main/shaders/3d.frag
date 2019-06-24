@@ -1,7 +1,7 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-#define MAX_TEXTURES_PER_FRAME 8
+layout(constant_id = 0) const int MAX_TEXTURES_PER_FRAME = 1;
 
 layout(set = 0, binding = 1) uniform sampler2D texSampler[MAX_TEXTURES_PER_FRAME];
 layout(push_constant) uniform FragConstant {

@@ -31,6 +31,20 @@ void Engine::create3DPipeline() {
     VkShaderModule vertShaderModule = createShaderModule("shaders/3d.vert.spv");
     VkShaderModule fragShaderModule = createShaderModule("shaders/3d.frag.spv");
 
+    VkSpecializationMapEntry specializationMapEntry{
+        .constantID = 0,
+        .offset = 0,
+        .size = 4,
+    };
+
+    int specializeData = MAX_TEXTURES_PER_FRAME;
+    VkSpecializationInfo specializationInfo{
+        .mapEntryCount = 1,
+        .pMapEntries = &specializationMapEntry,
+        .dataSize = 4,
+        .pData = &specializeData,
+    };
+
     VkPipelineShaderStageCreateInfo vertShaderStageInfo{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
             .pNext = nullptr,
@@ -47,7 +61,7 @@ void Engine::create3DPipeline() {
             .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
             .module = fragShaderModule,
             .pName = "main",
-            .pSpecializationInfo = nullptr,
+            .pSpecializationInfo = &specializationInfo,
     };
     VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
 
@@ -197,6 +211,20 @@ void Engine::create2DPipeline() {
     VkShaderModule vertShaderModule = createShaderModule("shaders/2d.vert.spv");
     VkShaderModule fragShaderModule = createShaderModule("shaders/2d.frag.spv");
 
+    VkSpecializationMapEntry specializationMapEntry{
+            .constantID = 0,
+            .offset = 0,
+            .size = 4,
+    };
+
+    int specializeData = MAX_TEXTURES_PER_FRAME;
+    VkSpecializationInfo specializationInfo{
+            .mapEntryCount = 1,
+            .pMapEntries = &specializationMapEntry,
+            .dataSize = 4,
+            .pData = &specializeData,
+    };
+
     VkPipelineShaderStageCreateInfo vertShaderStageInfo{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
             .pNext = nullptr,
@@ -213,7 +241,7 @@ void Engine::create2DPipeline() {
             .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
             .module = fragShaderModule,
             .pName = "main",
-            .pSpecializationInfo = nullptr,
+            .pSpecializationInfo = &specializationInfo,
     };
     VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
 
