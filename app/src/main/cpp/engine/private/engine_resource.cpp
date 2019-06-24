@@ -37,6 +37,19 @@ void Object3D::refreshModelMat() {
     modelMat = animController.advance(0);
 }
 
+void Object2D::init(Engine *engine, VkCommandBuffer &commandBuffer, const char *geo, const char *tex) {
+    this->geo = dynamic_cast<Geometry *>(engine->resourceMgr.findOrLoad(engine, commandBuffer, geo));
+    this->tex = dynamic_cast<Texture *>(engine->resourceMgr.findOrLoad(engine, commandBuffer, tex));
+}
+
+void Object2D::destroy() {
+
+}
+
+void Object2D::refreshModelMat() {
+
+}
+
 void Engine::loadResources() {
     VkCommandBuffer commandBuffer = beginOneTimeSubmitCommands();
 

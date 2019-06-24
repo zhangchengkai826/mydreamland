@@ -142,6 +142,20 @@ public:
     glm::mat4 modelMat;
 };
 
+class Object2D {
+public:
+    void init(Engine *engine, VkCommandBuffer &commandBuffer, const char *geo, const char *tex);
+    void destroy();
+
+    void refreshModelMat();
+
+    Geometry *geo;
+    Texture *tex;
+
+    float x, y, ax, ay;
+    glm::mat4x4 modelMat;
+};
+
 class Engine {
     friend class Geometry;
     friend class Texture;
