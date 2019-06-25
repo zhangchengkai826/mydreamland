@@ -456,9 +456,6 @@ void Engine::recordFrameCmdBuffers(int imageIndex) {
         vkCmdBindIndexBuffer(frameCommandBuffers[currentFrame], it->second.geo->indexBuffer, 0,
                              VK_INDEX_TYPE_UINT16);
 
-        /* note that vkCmdPushConstants.pValues is instantly remembered by the command buffer, and if
-         * the data pointed by pValues changes afterwords, it has no effect on command buffer
-         */
         vkCmdPushConstants(frameCommandBuffers[currentFrame], pipelineLayout,
                            VK_SHADER_STAGE_VERTEX_BIT, 0, 64, &it->second.modelMat);
         vkCmdPushConstants(frameCommandBuffers[currentFrame], pipelineLayout,
