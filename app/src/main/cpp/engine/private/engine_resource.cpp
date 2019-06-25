@@ -37,9 +37,18 @@ void Object3D::refreshModelMat() {
     modelMat = animController.advance(0);
 }
 
-void Object2D::init(Engine *engine, VkCommandBuffer &commandBuffer, const char *geo, const char *tex) {
-    this->geo = dynamic_cast<Geometry *>(engine->resourceMgr.findOrLoad(engine, commandBuffer, geo));
+void Object2D::init(Engine *engine, VkCommandBuffer &commandBuffer, const char *tex, float x,
+                    float y,
+                    float ax, float ay, float sx, float sy) {
+    this->geo = dynamic_cast<Geometry *>(engine->resourceMgr.findOrLoad(engine, commandBuffer, "$UnitQuad2D.geo"));
     this->tex = dynamic_cast<Texture *>(engine->resourceMgr.findOrLoad(engine, commandBuffer, tex));
+    this->x = x;
+    this->y = y;
+    this->ax = ax;
+    this->ay = ay;
+    this->sx = sx;
+    this->sy = sy;
+    refreshModelMat();
 }
 
 void Object2D::destroy() {
@@ -47,7 +56,10 @@ void Object2D::destroy() {
 }
 
 void Object2D::refreshModelMat() {
-
+    glm::mat4 result(1.0f);
+    result = glm::scale(result, glm::vec3(sx, sy, 0));
+    result = glm::translate(result, glm::vec3(x - ax * sx, y - ay * sy, 0));
+    modelMat = result;
 }
 
 void Engine::loadResources() {

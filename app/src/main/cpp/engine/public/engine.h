@@ -144,7 +144,8 @@ public:
 
 class Object2D {
 public:
-    void init(Engine *engine, VkCommandBuffer &commandBuffer, const char *geo, const char *tex);
+    void init(Engine *engine, VkCommandBuffer &commandBuffer, const char *tex, float x, float y,
+              float ax, float ay, float sx, float sy);
     void destroy();
 
     void refreshModelMat();
@@ -152,7 +153,7 @@ public:
     Geometry *geo;
     Texture *tex;
 
-    float x, y, ax, ay;
+    float x, y, ax, ay, sx, sy;
     glm::mat4x4 modelMat;
 };
 

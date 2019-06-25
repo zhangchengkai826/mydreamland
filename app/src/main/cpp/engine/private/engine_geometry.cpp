@@ -55,6 +55,7 @@ void Geometry::initFromFile(Engine *engine, VkCommandBuffer commandBuffer,
     std::vector<uint16_t> indices;
 
     const char vRandPrefix[] = "/storage/emulated/0/Documents/mydreamland/resources/$Rand";
+    const char vUnitQuad2DPrefix[] = "/storage/emulated/0/Documents/mydreamland/resources/$UnitQuad2D";
     if(!strncmp(filename, vRandPrefix, strlen(vRandPrefix))) {
         /* init from 'virtual' file (CG obj) */
         CG::Mesh m(100, 1.f);
@@ -92,6 +93,17 @@ void Geometry::initFromFile(Engine *engine, VkCommandBuffer commandBuffer,
         for(auto e: m.indices) {
             indices.push_back(e);
         }
+        nIndices = static_cast<uint32_t>(indices.size());
+    } else if(!strncmp(filename, vUnitQuad2DPrefix, strlen(vUnitQuad2DPrefix))) {
+        std::vector<Vertex> vertices;
+        std::vector<uint16_t> indices = {0, 2, 1, 0, 3, 2};
+
+        vertices.push_back(Vertex{.pos = glm::vec3(0, 0, 0), .color = glm::vec3(1, 1, 1), .texCoord = glm::vec2(0, 0)});
+        vertices.push_back(Vertex{.pos = glm::vec3(1, 0, 0), .color = glm::vec3(1, 1, 1), .texCoord = glm::vec2(1, 0)});
+        vertices.push_back(Vertex{.pos = glm::vec3(1, 1, 0), .color = glm::vec3(1, 1, 1), .texCoord = glm::vec2(1, 1)});
+        vertices.push_back(Vertex{.pos = glm::vec3(0, 1, 0), .color = glm::vec3(1, 1, 1), .texCoord = glm::vec2(0, 1)});
+
+        nVertices = static_cast<uint32_t>(vertices.size());
         nIndices = static_cast<uint32_t>(indices.size());
     } else {
         std::ifstream f(filename);
