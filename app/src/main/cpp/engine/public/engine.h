@@ -155,6 +155,9 @@ public:
 
     float x, y, ax, ay, sx, sy;
     glm::mat4x4 modelMat;
+
+    /* transient */
+    int texId;
 };
 
 class Engine {
@@ -242,6 +245,8 @@ private:
 
     std::map<std::string, VkPipeline> *pipelines;
     VkPipelineLayout pipelineLayout;
+
+    std::map<std::string, Object2D> *object2ds;
 
     void createVKInstance();
     void createVKAndroidSurface();

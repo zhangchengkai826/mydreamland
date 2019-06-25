@@ -9,6 +9,7 @@
 void Engine::init() {
     pipelines = new std::map<std::string, VkPipeline>();
     object3ds = new std::map<std::string, Object3D>();
+    object2ds = new std::map<std::string, Object2D>();
 
 #ifdef DEBUG
     validationLayerProperties = new std::vector<VkLayerProperties>();
@@ -59,6 +60,9 @@ void Engine::init() {
 void Engine::destroy() {
     vkDeviceWaitIdle(vkDevice);
 
+    for(auto it = object2ds->begin(); it != object2ds->end(); it++) {
+        it->second.destroy();
+    }
     for(auto it = object3ds->begin(); it != object3ds->end(); it++) {
         it->second.destroy();
     }
@@ -116,6 +120,7 @@ void Engine::destroy() {
     delete validationLayerProperties;
 #endif
 
+    delete object2ds;
     delete object3ds;
     delete pipelines;
 }

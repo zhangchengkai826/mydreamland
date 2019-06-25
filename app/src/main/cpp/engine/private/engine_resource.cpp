@@ -57,8 +57,12 @@ void Object2D::destroy() {
 
 void Object2D::refreshModelMat() {
     glm::mat4 result(1.0f);
-    result = glm::scale(result, glm::vec3(sx, sy, 0));
-    result = glm::translate(result, glm::vec3(x - ax * sx, y - ay * sy, 0));
+    result[0][0] = sx;
+    result[1][1] = sy;
+    result[3][0] = x - ax * sx;
+    result[3][1] = y - ay * sy;
+    __android_log_print(ANDROID_LOG_INFO, "main",
+                        "2d modelMat: %s\nrx: %f, ry: %f", glm::to_string(result).c_str(), x - ax * sx, y - ay * sy);
     modelMat = result;
 }
 
@@ -80,6 +84,10 @@ void Engine::loadResources() {
     obj3d[1].setPostion(0, 0, 0);
     obj3d[1].refreshModelMat();
     object3ds->emplace("internal/rand1.obj3d", obj3d[1]);
+
+    Object2D obj2d[1];
+    obj2d[0].init(this, commandBuffer, "lever.png", 200, 100, 0.5f, 0.5f, 512, 512);
+    object2ds->emplace("internal/lever.obj2d", obj2d[0]);
 
     endOneTimeSubmitCommandsSyncWithFence(commandBuffer);
 }

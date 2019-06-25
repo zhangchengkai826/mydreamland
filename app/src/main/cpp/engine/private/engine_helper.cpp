@@ -448,6 +448,30 @@ void Engine::recordFrameCmdBuffers(int imageIndex) {
     }
     pthread_mutex_unlock(&mutex);
 
+    for(auto it = object2ds->begin(); it != object2ds->end(); it++) {
+        VkBuffer vertexBuffers[] = {it->second.geo->vertexBuffer};
+        VkDeviceSize offsets[] = {0};
+        vkCmdBindVertexBuffers(frameCommandBuffers[currentFrame], 0, 1, vertexBuffers, offsets);
+
+        vkCmdBindIndexBuffer(frameCommandBuffers[currentFrame], it->second.geo->indexBuffer, 0,
+                             VK_INDEX_TYPE_UINT16);
+
+        /* note that vkCmdPushConstants.pValues is instantly remembered by the command buffer, and if
+         * the data pointed by pValues changes afterwords, it has no effect on command buffer
+         */
+        vkCmdPushConstants(frameCommandBuffers[currentFrame], pipelineLayout,
+                           VK_SHADER_STAGE_VERTEX_BIT, 0, 64, &it->second.modelMat);
+        vkCmdPushConstants(frameCommandBuffers[currentFrame], pipelineLayout,
+                           VK_SHADER_STAGE_FRAGMENT_BIT, 64, 4, &it->second.texId);
+
+        vkCmdBindPipeline(frameCommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS,
+                          (*pipelines)["2d"]);
+
+        vkCmdDrawIndexed(frameCommandBuffers[currentFrame], static_cast<uint32_t>(
+                it->second.geo->nIndices), 1, 0, 0, 0);
+
+    }
+
     vkCmdEndRenderPass(frameCommandBuffers[currentFrame]);
     vkEndCommandBuffer(frameCommandBuffers[currentFrame]);
 }
@@ -585,6 +609,15 @@ void Engine::prefillStaticSets() {
     int texId = -1;
 
     for(auto it = object3ds->begin(); it != object3ds->end(); it++) {
+        VkImageView v = it->second.tex->imageView;
+        if(std::find(views.cbegin(), views.cend(), v) == views.cend()) {
+            views.push_back(v);
+            texId++;
+        }
+        it->second.texId = texId;
+    }
+
+    for(auto it = object2ds->begin(); it != object2ds->end(); it++) {
         VkImageView v = it->second.tex->imageView;
         if(std::find(views.cbegin(), views.cend(), v) == views.cend()) {
             views.push_back(v);
