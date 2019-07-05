@@ -13,5 +13,5 @@ layout(location = 0) out vec3 fragColor;
 layout(location = 1) out vec2 fragTexCoord;
 
 void main() {
-    gl_Position = vc.M * vec4(inPosition.xy, 0.0f, 1.0);
+    gl_Position = vec4((vc.M * vec4(inPosition.xy, 0.0f, 0.0f)).xy, 0.0f, 1.0f);
 }

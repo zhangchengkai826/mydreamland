@@ -58,9 +58,11 @@ void Object2D::destroy() {
 void Object2D::refreshModelMat() {
     glm::mat4 result(1.0f);
     result[0][0] = sx;
-    result[1][1] = sy;
-    result[3][0] = x - ax * sx;
-    result[3][1] = y - ay * sy;
+    result[1][1] = -sy;  /* flip y axis */
+    result[0][2] = x - ax * sx;
+    result[1][2] = y - ay * sy;
+    result[2][2] = 0;
+    result[3][3] = 0;
     __android_log_print(ANDROID_LOG_INFO, "main",
                         "2d modelMat: %s\nrx: %f, ry: %f", glm::to_string(result).c_str(), x - ax * sx, y - ay * sy);
     modelMat = result;
