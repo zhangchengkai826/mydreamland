@@ -100,7 +100,7 @@ void Geometry::initFromFile(Engine *engine, VkCommandBuffer commandBuffer,
         vertices.push_back(Vertex{.pos = glm::vec3(1, 1, 0), .color = glm::vec3(1, 1, 1), .texCoord = glm::vec2(1, 1)});
         vertices.push_back(Vertex{.pos = glm::vec3(0, 1, 0), .color = glm::vec3(1, 1, 1), .texCoord = glm::vec2(0, 1)});
 
-        indices.insert(indices.end(), {0, 1, 2, 0, 3, 2});
+        indices.insert(indices.end(), {0, 1, 2, 0, 2, 3});
 
         nVertices = static_cast<uint32_t>(vertices.size());
         nIndices = static_cast<uint32_t>(indices.size());

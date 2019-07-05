@@ -398,7 +398,7 @@ void Engine::recordFrameCmdBuffers(int imageIndex) {
     vkBeginCommandBuffer(frameCommandBuffers[currentFrame], &beginInfo);
 
     std::array<VkClearValue, 2> clearValues{{
-        {.color = {.float32 = {0.0f, 0.0f, 0.0f, 1.0f}}},
+        {.color = {.float32 = {0.0f, 1.0f, 0.0f, 1.0f}}},
         {.depthStencil = {.depth = 1.0f, .stencil = 0}},
     }};
     VkRenderPassBeginInfo renderPassBeginInfo{

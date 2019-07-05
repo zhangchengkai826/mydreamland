@@ -58,7 +58,7 @@ void Object2D::destroy() {
 void Object2D::refreshModelMat() {
     glm::mat4 result(1.0f);
     result[0][0] = sx;
-    result[1][1] = -sy;  /* flip y axis */
+    result[1][1] = sy;  /* no need to flip y axis */
     result[0][2] = x - ax * sx;
     result[1][2] = y - ay * sy;
     result[2][2] = 0;
@@ -88,7 +88,7 @@ void Engine::loadResources() {
     object3ds->emplace("internal/rand1.obj3d", obj3d[1]);
 
     Object2D obj2d[1];
-    obj2d[0].init(this, commandBuffer, "earth.png", 200, 100, 0.5f, 0.5f, 512, 512);
+    obj2d[0].init(this, commandBuffer, "earth.png", 0, 0, 0, 0, 0.5f, 0.5f);
     object2ds->emplace("internal/lever.obj2d", obj2d[0]);
 
     endOneTimeSubmitCommandsSyncWithFence(commandBuffer);
@@ -99,6 +99,7 @@ void ResourceMgr::destroy(Engine *engine) {
         it->second->destroy(engine);
         delete it->second;
     }
+    resources.clear();
 }
 
 Resource *ResourceMgr::findOrLoad(Engine *engine, VkCommandBuffer &commandBuffer,
