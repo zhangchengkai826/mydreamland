@@ -37,17 +37,20 @@ void Object3D::refreshModelMat() {
     modelMat = animController.advance(0);
 }
 
-void Object2D::init(Engine *engine, VkCommandBuffer &commandBuffer, const char *tex, float x,
-                    float y,
-                    float ax, float ay, float sx, float sy) {
+void
+Object2D::init(Engine *engine, VkCommandBuffer &commandBuffer, const char *tex, float posX,
+               float posY,
+               float anchorX, float anchorY, float width, float height, float screenX, float screenY) {
     this->geo = dynamic_cast<Geometry *>(engine->resourceMgr.findOrLoad(engine, commandBuffer, "$UnitQuad2D.geo"));
     this->tex = dynamic_cast<Texture *>(engine->resourceMgr.findOrLoad(engine, commandBuffer, tex));
-    this->x = x;
-    this->y = y;
-    this->ax = ax;
-    this->ay = ay;
-    this->sx = sx;
-    this->sy = sy;
+    this->posX = posX;
+    this->posY = posY;
+    this->anchorX = anchorX;
+    this->anchorY = anchorY;
+    this->width = width;
+    this->height = height;
+    this->ratioW = 1.f / (screenX / 2.f);
+    this->ratioH = 1.f / (screenY / 2.f);
     refreshModelMat();
 }
 
@@ -56,15 +59,24 @@ void Object2D::destroy() {
 }
 
 void Object2D::refreshModelMat() {
+    float ndcW = width * ratioW;
+    float ndcH = height * ratioH;
+    float ndcX = posX * ratioW;
+    float ndcY = posY * ratioH;
+
+    /* NDC is [x/y: -1 ~ 1] but underlying geo is a (0,0)-(1,1) quad, so minus 1 here */
+    float dx = -1.f + ndcX - ndcW * anchorX;
+    float dy = -1.f + ndcY - ndcH * anchorY;
+
     glm::mat4 result(1.0f);
-    result[0][0] = sx;
-    result[1][1] = sy;  /* no need to flip y axis */
-    result[0][2] = x - ax * sx;
-    result[1][2] = y - ay * sy;
+    result[0][0] = ndcW;
+    result[1][1] = ndcH;  /* no need to flip y axis */
+    result[2][0] = dx;  /* [col][row] */
+    result[2][1] = dy;
     result[2][2] = 0;
     result[3][3] = 0;
     __android_log_print(ANDROID_LOG_INFO, "main",
-                        "2d modelMat: %s\nrx: %f, ry: %f", glm::to_string(result).c_str(), x - ax * sx, y - ay * sy);
+                        "2d modelMat: %s", glm::to_string(result).c_str());
     modelMat = result;
 }
 
@@ -88,7 +100,9 @@ void Engine::loadResources() {
     object3ds->emplace("internal/rand1.obj3d", obj3d[1]);
 
     Object2D obj2d[1];
-    obj2d[0].init(this, commandBuffer, "lever.png", 0, 0, 0, 0, 0.5f, 0.5f);
+    obj2d[0].init(this, commandBuffer, "ball.png", 0, 0, 0.5f, 0.5f, 256, 256,
+            physicalDeviceSurfaceCapabilities.currentExtent.width,
+            physicalDeviceSurfaceCapabilities.currentExtent.height);
     object2ds->emplace("internal/lever.obj2d", obj2d[0]);
 
     endOneTimeSubmitCommandsSyncWithFence(commandBuffer);

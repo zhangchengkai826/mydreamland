@@ -144,8 +144,9 @@ public:
 
 class Object2D {
 public:
-    void init(Engine *engine, VkCommandBuffer &commandBuffer, const char *tex, float x, float y,
-              float ax, float ay, float sx, float sy);
+    void init(Engine *engine, VkCommandBuffer &commandBuffer, const char *tex, float posX,
+              float posY,
+              float anchorX, float anchorY, float width, float height, float screenX, float screenY);
     void destroy();
 
     void refreshModelMat();
@@ -153,7 +154,18 @@ public:
     Geometry *geo;
     Texture *tex;
 
-    float x, y, ax, ay, sx, sy;
+    /* in pixels */
+    float posX, posY;
+
+    /* [0.0f, 1.0f] */
+    float anchorX, anchorY;
+
+    /* in pixels */
+    float width, height;
+
+    /* map pixels to NDC [x/y: -1.0f ~ 1.0f] */
+    float ratioW, ratioH;
+
     glm::mat4x4 modelMat;
 
     /* transient */
