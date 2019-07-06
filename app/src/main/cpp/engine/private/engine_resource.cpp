@@ -99,11 +99,17 @@ void Engine::loadResources() {
     obj3d[1].refreshModelMat();
     object3ds->emplace("internal/rand1.obj3d", obj3d[1]);
 
-    Object2D obj2d[1];
-    obj2d[0].init(this, commandBuffer, "ball.png", 0, 0, 0.5f, 0.5f, 256, 256,
-            physicalDeviceSurfaceCapabilities.currentExtent.width,
-            physicalDeviceSurfaceCapabilities.currentExtent.height);
-    object2ds->emplace("internal/lever.obj2d", obj2d[0]);
+    Object2D obj2d[2];
+    float screenX = physicalDeviceSurfaceCapabilities.currentExtent.width;
+    float screenY = physicalDeviceSurfaceCapabilities.currentExtent.height;
+    float sideMargin = 200.f, bottomMargin = 200.f;
+    float ballDimension = 128.f;
+    obj2d[0].init(this, commandBuffer, "ball.png", sideMargin, screenY - bottomMargin, 0.5f, 0.5f,
+                  ballDimension, ballDimension, screenX, screenY);
+    object2ds->emplace("internal/btnLeft.obj2d", obj2d[0]);
+    obj2d[1].init(this, commandBuffer, "ball.png", screenX - sideMargin, screenY - bottomMargin, 0.5f, 0.5f,
+                  ballDimension, ballDimension, screenX, screenY);
+    object2ds->emplace("internal/btnRight.obj2d", obj2d[1]);
 
     endOneTimeSubmitCommandsSyncWithFence(commandBuffer);
 }
