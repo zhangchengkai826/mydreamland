@@ -88,7 +88,7 @@ void Engine::loadResources() {
     object3ds->emplace("internal/rand1.obj3d", obj3d[1]);
 
     Object2D obj2d[1];
-    obj2d[0].init(this, commandBuffer, "earth.png", 0, 0, 0, 0, 0.5f, 0.5f);
+    obj2d[0].init(this, commandBuffer, "lever.png", 0, 0, 0, 0, 0.5f, 0.5f);
     object2ds->emplace("internal/lever.obj2d", obj2d[0]);
 
     endOneTimeSubmitCommandsSyncWithFence(commandBuffer);
