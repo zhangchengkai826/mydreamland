@@ -565,11 +565,20 @@ void Engine::prefillStaticSets() {
             physicalDeviceSurfaceCapabilities.currentExtent.width /
             static_cast<float>(physicalDeviceSurfaceCapabilities.currentExtent.height),
             0.1f, 10.0f);
-    /* Vulkan NDC y-axis points downwards, while OpenGL's pointing upwards
-    *
-    * projection matrix determines handedness, so Vulkan is right-handedness instead of OpenGL's
-    * left-handedness
-    */
+    /* Vulkan NDC y-axis points downwards, while OpenGL's pointing upwards.
+     * Both of their NDC z-axis points inwards, so Vulkan is right-handed while OpenGL left-handed.
+     * Glm is designed for OpenGL, and it's generated PVM matrices will eventually put points into
+     * OpenGL's NDC space. So suppose we use glm to transform a vertex X into NDC (-0.2, 0.5, 0.2).
+     * If we are using OpenGL, X will appear in the upper half of the screen, which is what we expected.
+     * But if we are using Vulkan, X will appear in the lower half of the screen, as if we make the camera
+     * upside-down. To solve this problem, in Vulkan, we adjust P matrix to flip the NDC y value of all vertices.
+     * Because we flip one axis, we should also flip the front dace definition
+     * from CLOCKWISE(left-handed, OpenGL convention) to COUNTER-CLOCKWISE (right-handed, Vulkan convention).
+     * (Here we assume glm-generated PVM matrices operates on OpenGL conventional clockwise-as-front-face 3d models.)
+     *
+     * Both Vulkan & OpenGL's NDC range is [x/y: -1 ~ 1, z: 0 ~ 1]
+     * Vertices with NDC outside this range is clipped.
+     */
     P[1][1] *= -1;
     glm::mat4 PV = P * V;
 
