@@ -9,7 +9,7 @@ static Engine engine;
 static pthread_t renderLoopTID, physicsLoopTID, inputLoopTID;
 static pthread_mutex_t renderLoopShouldExit, physicsLoopShouldExit, inputLoopShouldExit;
 
-static pthread_mutex_t renderInputSync = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t windowInputSync = PTHREAD_MUTEX_INITIALIZER;
 
 static void *inputLoop(void *arg) {
     int rate = 30; /* unit: s^-1 */
@@ -25,7 +25,7 @@ static void *inputLoop(void *arg) {
             break;
         };
 
-        pthread_mutex_lock(&renderInputSync);
+        pthread_mutex_lock(&windowInputSync);
 
         // do tasks here
         if(engine.inputQueue) {
@@ -69,7 +69,7 @@ static void *inputLoop(void *arg) {
             }
         }
 
-        pthread_mutex_unlock(&renderInputSync);
+        pthread_mutex_unlock(&windowInputSync);
 
         timespec tm{
                 .tv_sec = 0,
@@ -235,18 +235,18 @@ static void ANativeActivity_onInputQueueCreated(ANativeActivity* activity, AInpu
     __android_log_print(ANDROID_LOG_INFO, "main",
                         "### ANativeActivity_onInputQueueCreated ###");
 
-    pthread_mutex_destroy(&physicsLoopShouldExit);
+    pthread_mutex_lock(&windowInputSync);
     engine.inputQueue = queue;
-    pthread_mutex_unlock(&renderInputSync);
+    pthread_mutex_unlock(&windowInputSync);
 }
 
 static void ANativeActivity_onInputQueueDestroyed(ANativeActivity* activity, AInputQueue* queue) {
     __android_log_print(ANDROID_LOG_INFO, "main",
                         "### ANativeActivity_onInputQueueDestroyed ###");
 
-    pthread_mutex_destroy(&physicsLoopShouldExit);
+    pthread_mutex_lock(&windowInputSync);
     engine.inputQueue = nullptr;
-    pthread_mutex_unlock(&renderInputSync);
+    pthread_mutex_unlock(&windowInputSync);
 }
 
 static void ANativeActivity_onResume(ANativeActivity* activity) {
@@ -293,6 +293,8 @@ void ANativeActivity_onCreate(ANativeActivity *activity, void *savedState,
     activity->callbacks->onPause = ANativeActivity_onPause;
     activity->callbacks->onInputQueueCreated = ANativeActivity_onInputQueueCreated;
     activity->callbacks->onInputQueueDestroyed = ANativeActivity_onInputQueueDestroyed;
+
+    /* global initialize (only init those which do not need destroying */
 
     engine.inputQueue = nullptr;
 }
