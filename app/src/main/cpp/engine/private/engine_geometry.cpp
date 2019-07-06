@@ -58,7 +58,7 @@ void Geometry::initFromFile(Engine *engine, VkCommandBuffer commandBuffer,
     const char vUnitQuad2DPrefix[] = "/storage/emulated/0/Documents/mydreamland/resources/$UnitQuad2D";
     if(!strncmp(filename, vRandPrefix, strlen(vRandPrefix))) {
         /* init from 'virtual' file (CG obj) */
-        CG::Mesh m(100, 1.f);
+        CG::Mesh m(100, 0.5f);
 
         Vertex v;
         v.color[0] = v.color[1] = v.color[2] = 1.f;
